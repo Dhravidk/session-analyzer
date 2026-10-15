@@ -13,6 +13,10 @@ The analyzer combines deterministic measurements with contextual investigation b
 
 ## Problem
 
+Claude Code already provides `/insights`, which analyzes recent local sessions across projects to report usage patterns, friction and suggested features. Its focus is a retrospective across sessions. [Claude Code command reference](https://code.claude.com/docs/en/commands)
+
+The developer feedback motivating this project is that the supplied `/insights` reports were largely **“AI slop”** and unhelpful for understanding a specific session: repetitive summaries, generic advice and recommendations whose supporting evidence and practical value were difficult to assess. This analyzer is intended to address that gap through a focused single-session investigation, inspectable evidence and specific next actions only when justified. Whether it achieves better diagnostic usefulness remains subject to independent evaluation.
+
 Long session logs mix requests, scope changes, tool calls, retries, subagent work and completion claims. A developer may need to inspect many records to establish whether the final revision was checked or why an attempt failed. Aggregate counts and generic advice do not answer those questions.
 
 A repeated call can be legitimate, a failing test can be intentional, and a denied command can reflect correct behavior. The analyzer must investigate the surrounding context before describing these events as problems or recommending a persistent change.
