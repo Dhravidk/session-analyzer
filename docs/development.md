@@ -2,6 +2,8 @@
 
 The repository records the session analyzer's source, tests, skills and documentation. Its first source-controlled baseline is the existing 0.12.1 implementation, imported on October 15, 2026 in commits grouped by subsystem. These import commits are reviewable slices of one snapshot, not a reconstruction of the earlier development sequence. Use the final `v0.12.1` tag as the complete initial checkout; intermediate import commits can depend on files added by later import commits.
 
+The [baseline validation record](git-baseline-validation.md) documents the clean-checkout test and tracked-data boundaries.
+
 Subsequent work should use small, independently usable commits: make one coherent change, run the relevant checks, review the staged diff, and commit with a description of the behavior changed. Keep unrelated work separate. Do not amend prior history unless explicitly requested.
 
 ```sh
