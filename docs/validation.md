@@ -1,3 +1,13 @@
+# Validation — 0.14.1 source-link captions
+
+October 15, 2026. Twenty-eight caption, report-presentation, nested-pattern and clean-package checks passed in 1.815 seconds. Seven new cases cover input/result direction, preserved exact references and long explanations, literal path/command fields, ambiguous tool associations, task-notification summaries, thinking/missing-source states, duplicate labels and HTML escaping. The actual migration report rendered in 0.047 seconds in one local check; this is not a general performance benchmark.
+
+The expanded Outcome source list was exercised in the saved migration report. It shows the saved suite description, the counts-command description, the output-file name and the stopped-task notification, with tool/record kind, turn and time underneath. Enter opens the original source identity and citation range. Keyboard copying returned the exact 109-character retained result. At 390 × 844 the list's client and content widths were both 354 pixels; the long notification wrapped without overflow. The full source inspector and collapse behavior remain functional. The browser-exported HTML matched the current renderer and its embedded report payload matched the unchanged saved JSON.
+
+Artifacts: `.analysis/source-captions-0.14.1/checks.log`, `export-check.json`, `desktop.png`, and `narrow.png`. No Claude-authored record or recommendation was changed, and no model call was made. The existing real report's grouping and wording limitations remain as recorded for 0.14.0.
+
+---
+
 # Validation — 0.14.0 contextual findings and episode patterns
 
 October 15, 2026. The full backend run discovered 259 tests: 257 passed and two optional private-corpus checks were skipped (24.212 s). After the final citation-order and nested-reference changes, 60 focused checks passed (5.690 s), including the new association/pattern cases, existing evidence prerequisites, presentation, semantic consistency and isolated packaging. Both report and library JavaScript passed syntax checks. Logs and screenshots are retained locally under `.analysis/contextual-findings-0.14.0/`.

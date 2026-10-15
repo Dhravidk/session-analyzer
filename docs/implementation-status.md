@@ -1,3 +1,11 @@
+# Implementation status — 0.14.1
+
+Expanded source lists retain their icon/count and replace numbered placeholders with short literal captions. Saved explanations, tool descriptions, file/command fields and task-notification summaries identify the record; quieter metadata distinguishes input/result, turn or child, and time. Long captions are bounded with full wording on hover and in the source inspector. Unknown or ambiguous metadata does not generate a description or a judgment. Exact citations, source copies and Claude-authored report data remain unchanged.
+
+Twenty-eight relevant checks passed, including seven new caption regressions. The real migration report was checked on desktop and at 390 pixels; keyboard navigation, exact copying and current-renderer HTML export passed. This presentation change does not require or claim a new Claude investigation. See [validation](validation.md).
+
+---
+
 # Implementation status — 0.14.0
 
 Turn/finding links now state their evidence relationship and open the canonical finding at the selected turn's retained record. Roles come from explicit saved associations or the recorded outcome of an already-linked tool result; absent roles remain Related evidence. Multiple records have a selector. Full finding, source/context inspection, exact copying and saved review qualifications remain accessible. Filters name the selected finding, counts distinguish findings from linked turns, and the library title compacts while reading with an accessible expansion control.

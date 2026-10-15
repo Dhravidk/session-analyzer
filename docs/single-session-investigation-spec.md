@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 16 · October 15, 2026 · Governing contract for version 0.14.0 (earlier release sections retained as history)
+Revision 17 · October 15, 2026 · Governing contract for version 0.14.1 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -674,3 +674,9 @@ For new Claude saves, optional `evidence_links` contains a role, inspected refer
 An incident may contain one `episode` or a `pattern` of at least two episodes, never both. A pattern saves an evidenced characteristic, references, membership basis, and individually keyed episodes with saved titles, resolution, the existing same-goal episode contract and open questions. The same tool or read-only behavior does not prove a shared goal, cause or need for improvement. Nested episodes receive the existing verification, scope, revision, structural-child and chronology checks. Unknown or unresolved children prevent a recovered pattern label. Resources use the union of explicit identities across all selected episodes; overlaps and distinct attempts remain visible. One pattern is one top-level finding.
 
 The report opens unknown/unresolved episodes and folds recovered supporting episodes. Remaining work links to the specific saved unfinished episode; it does not invent a next action. Historical mixed findings remain unchanged until Claude saves a reviewed revision. Future writing gives the title, synopsis, outcome and detailed reasoning distinct purposes. The renderer cannot repair repetition or contested grouping in an old analysis.
+
+## 0.14.1 — Representative source-link captions
+
+Keep the source icon and reference count. Expanded citation lists use a compact literal caption rather than Source 1/2/3. Prefer the saved citation explanation; otherwise use a uniquely linked tool's saved description, path, command or query, a recorded task-notification summary, an admitted artifact label, or a literal text preview. A description of an attempted action is not an execution verdict. Ambiguous tool associations cannot borrow a description from one arbitrarily selected call. Thinking text is not used as an evidence-link preview.
+
+Captions show at most 80 characters with an explicit ellipsis when shortened. The original explanation remains in the citation and source inspector; full caption text is available on hover. Secondary text identifies input versus result, the applicable main turn or child identity, and recorded time. Equal captions receive a record/range discriminator. Missing source text and missing exported records remain explicit. Source identities, citation ranges, disclosure, copied text, saved Claude prose and exports are unchanged. This is deterministic presentation without another model call.
