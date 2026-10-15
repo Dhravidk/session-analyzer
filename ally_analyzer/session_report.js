@@ -15,7 +15,13 @@
   let parentEvidenceDialog = null;
   let copyTimer;
   let selectedSource=null, sourceReturnFocus=null, sourceReportAnchor=null;
-  let sourceExpanded=false, sourceScrollTop=0;
+  let sourceScrollTop=0, sourceWidthRatio=0.42, sourceDrag=null, sourceResizeFrame=0;
+  const sourceDivider=document.getElementById('source-divider');
+  const sourceWidthKey='ally-source-width-ratio-v1';
+  try {
+    const saved=Number(sessionStorage.getItem(sourceWidthKey));
+    if(Number.isFinite(saved) && saved>0 && saved<1)sourceWidthRatio=saved;
+  } catch {}
   const mobileInspector=window.matchMedia('(max-width: 760px)');
   const embedded=document.body.classList.contains('library-embedded');
   if(embedded){
@@ -269,21 +275,77 @@
   }
   function syncInspectorMode() {
     const opened=!sourceDialog.hidden;
-    const modal=opened && (mobileInspector.matches || sourceExpanded);
+    const modal=opened && mobileInspector.matches;
     sourceDialog.setAttribute('role',modal?'dialog':'complementary');
     if (modal) sourceDialog.setAttribute('aria-modal','true');else sourceDialog.removeAttribute('aria-modal');
     for (const el of document.querySelectorAll('#report-column,.product,.report-nav')) el.inert=modal;
     document.body.classList.toggle('modal-source-open',modal);
-    document.body.classList.toggle('source-expanded',opened && sourceExpanded && !mobileInspector.matches);
+    document.body.classList.remove('source-expanded'); // Older HTML exports may retain this class.
+    sourceDivider.hidden=!opened || mobileInspector.matches;
+    if(opened && !mobileInspector.matches)syncSourceWidth();
     const reopen=document.querySelector('[data-source-reopen]');
     reopen.hidden=embedded?opened:!selectedSource || opened;
-    const expand=document.querySelector('[data-source-expand]');
-    expand.hidden=mobileInspector.matches;
-    expand.setAttribute('aria-pressed',String(sourceExpanded));
-    expand.setAttribute('aria-label',sourceExpanded?'Restore source width':'Expand source');
-    expand.title=sourceExpanded?'Restore side-by-side view':'Expand source to full width';
-    expand.querySelector('span:last-child').textContent=sourceExpanded?'Restore':'Expand';
   }
+  function sourceWidthBounds() {
+    const nav=parseFloat(getComputedStyle(document.getElementById('report-column')).marginLeft)||0;
+    const available=document.documentElement.clientWidth-nav;
+    return {available,min:320,max:Math.max(320,Math.floor(available-360))};
+  }
+  function syncSourceWidth() {
+    const bounds=sourceWidthBounds();
+    const width=Math.round(Math.max(bounds.min,Math.min(bounds.max,bounds.available*sourceWidthRatio)));
+    document.body.style.setProperty('--source-width',width+'px');
+    sourceDivider.setAttribute('aria-valuemin',String(bounds.min));
+    sourceDivider.setAttribute('aria-valuemax',String(bounds.max));
+    sourceDivider.setAttribute('aria-valuenow',String(width));
+    sourceDivider.setAttribute('aria-valuetext','Source '+width+' pixels; report '+Math.round(bounds.available-width)+' pixels');
+  }
+  function setSourceWidth(width) {
+    const bounds=sourceWidthBounds(),scroll=sourceDialog.scrollTop;
+    sourceWidthRatio=Math.max(bounds.min,Math.min(bounds.max,width))/bounds.available;
+    preserveReportPosition(syncSourceWidth);sourceDialog.scrollTop=scroll;
+  }
+  function rememberSourceWidth() {
+    try{sessionStorage.setItem(sourceWidthKey,String(sourceWidthRatio));}catch{}
+  }
+  function endSourceResize(cancel=false) {
+    if(!sourceDrag)return;
+    const drag=sourceDrag;sourceDrag=null;
+    cancelAnimationFrame(sourceResizeFrame);sourceResizeFrame=0;
+    if(cancel){sourceWidthRatio=drag.ratio;preserveReportPosition(syncSourceWidth);}
+    else {setSourceWidth(drag.width+drag.startX-drag.lastX);rememberSourceWidth();}
+    if(sourceDivider.hasPointerCapture(drag.pointerId))sourceDivider.releasePointerCapture(drag.pointerId);
+    document.body.classList.remove('source-resizing');
+  }
+  sourceDivider.addEventListener('pointerdown',event=>{
+    if(event.button!==0 || !event.isPrimary || sourceDrag || sourceDivider.hidden)return;
+    hideWrapTooltip();event.preventDefault();sourceDivider.focus({preventScroll:true});
+    sourceDrag={pointerId:event.pointerId,startX:event.clientX,lastX:event.clientX,
+                width:sourceDialog.getBoundingClientRect().width,ratio:sourceWidthRatio};
+    sourceDivider.setPointerCapture(event.pointerId);document.body.classList.add('source-resizing');
+  });
+  sourceDivider.addEventListener('pointermove',event=>{
+    if(!sourceDrag || sourceDrag.pointerId!==event.pointerId)return;
+    sourceDrag.lastX=event.clientX;
+    if(!sourceResizeFrame)sourceResizeFrame=requestAnimationFrame(()=>{
+      sourceResizeFrame=0;
+      if(sourceDrag)setSourceWidth(sourceDrag.width+sourceDrag.startX-sourceDrag.lastX);
+    });
+  });
+  sourceDivider.addEventListener('pointerup',event=>{
+    if(sourceDrag?.pointerId===event.pointerId){sourceDrag.lastX=event.clientX;endSourceResize();}
+  });
+  sourceDivider.addEventListener('pointercancel',()=>endSourceResize(true));
+  sourceDivider.addEventListener('lostpointercapture',()=>endSourceResize(true));
+  sourceDivider.addEventListener('keydown',event=>{
+    if(event.key==='Escape' && sourceDrag){event.preventDefault();event.stopPropagation();endSourceResize(true);return;}
+    if(event.key==='Enter'){event.preventDefault();returnFromSource();return;}
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+    event.preventDefault();
+    const bounds=sourceWidthBounds(),width=sourceDialog.getBoundingClientRect().width,step=event.shiftKey?64:24;
+    setSourceWidth(event.key==='Home'?bounds.min:event.key==='End'?bounds.max:width+(event.key==='ArrowLeft'?step:-step));
+    rememberSourceWidth();
+  });
   function preserveReportPosition(change) {
     // Keep a visible report element at the same height when the side panel
     // changes the document width. Do not anchor to the inspector's controls.
@@ -297,11 +359,12 @@
     else window.scrollTo(0,scroll);
   }
   function closeSource(restore=true,retainSelection=true) {
+    endSourceResize(true);
     hideWrapTooltip();
     sourceScrollTop=sourceDialog.scrollTop;
     preserveReportPosition(()=>{
       sourceDialog.hidden=true;document.body.classList.remove('has-source');
-      if(!retainSelection){selectedSource=null;sourceExpanded=false;delete sourceDialog.dataset.selectedSource;}
+      if(!retainSelection){selectedSource=null;delete sourceDialog.dataset.selectedSource;}
       syncInspectorMode();
     });
     if (restore && sourceReturnFocus?.isConnected) sourceReturnFocus.focus({preventScroll:true});
@@ -322,11 +385,6 @@
     parentEvidenceDialog?.close();syncSourceBack();
     preserveReportPosition(()=>{sourceDialog.hidden=false;document.body.classList.add('has-source');syncInspectorMode();});
     sourceDialog.scrollTop=sourceScrollTop;sourceDialog.focus({preventScroll:true});
-  }
-  function toggleSourceWidth() {
-    const scroll=sourceDialog.scrollTop;
-    preserveReportPosition(()=>{sourceExpanded=!sourceExpanded;syncInspectorMode();});
-    sourceDialog.scrollTop=scroll;
   }
   function returnFromSource() {
     const parent=parentEvidenceDialog;
@@ -589,7 +647,6 @@
     else if(control.hasAttribute('data-copy-source') && selectedSource) copyExact(sourceText(sources[selectedSource]),'Selected source copied exactly.');
     else if(control.hasAttribute('data-source-close')) returnFromSource();
     else if(control.hasAttribute('data-source-reopen')) reopenSource(control);
-    else if(control.hasAttribute('data-source-expand')) toggleSourceWidth();
     else if (control.hasAttribute('data-ref')) showSource(JSON.parse(control.dataset.ref),control.dataset.sourceContext?JSON.parse(control.dataset.sourceContext):null,control);
     else if (control.dataset.finding) showFinding(control.dataset.finding,control.dataset.findingTurn,control.dataset.findingEpisode);
     else if (control.dataset.failures) showEvidenceDialog('failures-',control.dataset.failures);
@@ -612,11 +669,22 @@
       document.querySelector('[data-turn="'+CSS.escape(control.dataset.turnLink)+'"]')?.focus();
     }
   });
-  mobileInspector.addEventListener('change',syncInspectorMode);
+  let viewportFrame=0;
+  function resizeInspectorViewport() {
+    endSourceResize(true);
+    if(viewportFrame)return;
+    viewportFrame=requestAnimationFrame(()=>{
+      viewportFrame=0;preserveReportPosition(syncInspectorMode);
+      if(!sourceDialog.hidden && mobileInspector.matches && !sourceDialog.contains(document.activeElement))sourceDialog.focus({preventScroll:true});
+    });
+  }
+  mobileInspector.addEventListener('change',resizeInspectorViewport);
+  window.addEventListener('resize',resizeInspectorViewport);
+  window.addEventListener('blur',()=>endSourceResize(true));
   document.addEventListener('keydown',event=>{
     if(sourceDialog.hidden || document.querySelector('dialog[open]'))return;
     if(event.key==='Escape'){event.preventDefault();returnFromSource();}
-    if(event.key==='Tab' && (mobileInspector.matches || sourceExpanded)){
+    if(event.key==='Tab' && mobileInspector.matches){
       const focusable=[...sourceDialog.querySelectorAll('button:not([disabled]),summary,[tabindex="0"]')].filter(el=>el.getClientRects().length);
       const first=focusable[0],last=focusable[focusable.length-1];
       if(event.shiftKey && (document.activeElement===first || document.activeElement===sourceDialog)){event.preventDefault();last?.focus();}

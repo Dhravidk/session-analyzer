@@ -27,5 +27,13 @@
       "word-wrap-off.svg": "6f58e44b0a50a1bdc89e6e0bb517416551c1f7b93ee29ef1d41be798c032d08a",
       "word-wrap-on.svg": "5d94502c414f6c08c0bd06d377ffe4f7eefc577cbde4e31a3652e30a82ec2357"
     }
+  },
+  "local_panel_icons": {
+    "source": "Locally drawn vectors for the user-requested <|> resizing grip and source-panel collapse control, October 15, 2026",
+    "design": "24-pixel canvas, 2-pixel stroke, rounded caps and joins; matched to the existing copy controls.",
+    "files": {
+      "panel-resize.svg": "37fe8f028fe0f6ac9b2c7eb0f1443f3ada79e17cfb1148794f9478b325d72bfa",
+      "panel-right-close.svg": "1df2bbb5116e9626f4489e78b6485bda992facd5e5112d0415bc77313b949034"
+    }
   }
 }
