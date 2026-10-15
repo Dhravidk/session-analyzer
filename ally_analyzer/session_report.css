@@ -214,14 +214,11 @@ body.modal-source-open{overflow:hidden}
 .code-heading{display:flex;align-items:center;gap:10px;min-width:0;margin:0 0 7px}
 .code-heading h4{margin:0;font-size:14px;flex-shrink:0}
 .code-language{color:var(--muted);font-size:11px}
-.code-controls{display:flex;align-items:center;gap:12px;margin-left:auto;font-size:11px;color:var(--blue)}
-.code-controls button{white-space:nowrap}
-.wrap-toggle{width:36px;height:36px;padding:6px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#1c2226}
-.wrap-toggle:hover,.wrap-toggle:focus-visible{background:#0000000a}
-.wrap-symbol{display:block;width:24px;height:24px;flex:none;background-image:var(--wrap-image);background-repeat:no-repeat;filter:contrast(1.2);mix-blend-mode:multiply}
-.word-wrap-off{background-size:68px 56px;background-position:-21px -21px}
-.word-wrap-on{background-size:106px 96px;background-position:-51px -49px}
-.wrap-tooltip{position:fixed;z-index:100;padding:8px 12px;border:1px solid #34383a;border-radius:12px;background:#191d1f;color:#fff;font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;white-space:nowrap;box-shadow:0 6px 18px #0000001a}
+.code-controls{display:flex;align-items:center;gap:4px;margin-left:auto;font-size:11px;color:var(--blue)}
+.code-controls .icon-button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:5px;border-radius:4px;white-space:nowrap}
+.code-controls .icon-button:hover,.code-controls .icon-button:focus-visible{background:#e9e5ed}
+.wrap-toggle[aria-pressed="true"]{background:#e9e2ef}
+.wrap-tooltip{position:fixed;z-index:100;padding:5px 8px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink);font:12px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;white-space:nowrap;box-shadow:0 2px 6px #16213c0d}
 .code-viewport{background:#242c30;color:#e0e6e9;border:1px solid #151e22;border-radius:4px;max-height:360px;overflow:auto;scrollbar-color:#637077 #283237;scrollbar-width:thin}
 pre.code-lines{display:table;min-width:100%;max-width:none;margin:0;padding:13px 0 15px;background:transparent;white-space:pre;overflow-wrap:normal;font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}
 .code-line{display:table-row}

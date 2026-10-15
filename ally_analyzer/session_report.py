@@ -29,8 +29,6 @@ REPORT_CSS = Path(__file__).with_name('session_report.css').read_text()
 REPORT_JS = Path(__file__).with_name('session_report.js').read_text()
 REPORT_ICONS = {p.stem:base64.b64encode(p.read_bytes()).decode()
                 for p in sorted(Path(__file__).with_name('icons').glob('*.svg'))}
-REPORT_WRAP_ICONS = {name:base64.b64encode(Path(__file__).with_name('icons').joinpath(name+'.png').read_bytes()).decode()
-                     for name in ('word-wrap-off','word-wrap-on')}
 REPORT_ICON_LICENSE = Path(__file__).with_name('icons').joinpath('LICENSE').read_text()
 
 
@@ -155,8 +153,6 @@ def prose(value, cls='prose'):
 
 
 def icon(name):
-    if name in REPORT_WRAP_ICONS:
-        return '<span class="wrap-symbol '+name+'" aria-hidden="true" style="--wrap-image:url(data:image/png;base64,'+REPORT_WRAP_ICONS[name]+')"></span>'
     return '<span class="icon" aria-hidden="true" style="--icon:url(data:image/svg+xml;base64,'+REPORT_ICONS[name]+')"></span>'
 
 
@@ -839,7 +835,7 @@ def render_report(data, embedded=False):
                 body += '<p><a data-proposal-link href="#'+esc(p['id'])+'">'+esc(p['recommendation']['title'])+'</a></p>'
         body += detail('Membership and saved review',saved)+'</dialog>'
     body += '<aside id="source-dialog" class="source-inspector" aria-labelledby="source-title" tabindex="-1" hidden><div class="dialog-head"><h2 id="source-title">Source</h2><div class="source-window-controls"><button data-source-expand class="link" aria-controls="source-dialog" aria-label="Expand source" aria-pressed="false" title="Expand source to full width">'+icon('external-link')+'<span>Expand</span></button><button data-source-close class="link" aria-controls="source-dialog" aria-label="Collapse source" title="Collapse source">'+icon('chevron-right')+'Collapse</button></div></div><button class="link" data-source-back hidden>Back to finding</button><div id="source-nav"></div><section id="source-relevance" aria-label="Why this source"></section><div class="source-record-head"><div><h3 id="source-kind"></h3><p id="source-time" class="meta"></p></div><button class="link" data-copy-source aria-label="Copy selected source">'+icon('copy')+'Copy</button></div><div id="source-panels"></div><div id="source-accounting"></div><p id="source-limit" class="limit small"></p><details id="source-context"><summary>Surrounding context</summary><div id="source-context-records"></div><div id="source-related"></div></details><details id="source-raw"><summary>Saved source and citation</summary><p id="source-meta" class="meta"></p><pre id="source-text" tabindex="0"></pre></details><details><summary>Source identity and disclosure</summary><pre id="source-identity"></pre></details></aside><div id="copy-status" role="status" aria-live="polite"></div>'
-    body+=''.join('<template id="icon-'+name+'">'+icon(name)+'</template>' for name in (*REPORT_ICONS,*REPORT_WRAP_ICONS))
+    body+=''.join('<template id="icon-'+name+'">'+icon(name)+'</template>' for name in REPORT_ICONS)
     css, js = REPORT_CSS, REPORT_JS
     payload = json.dumps(data,ensure_ascii=False,separators=(',',':'),allow_nan=False,sort_keys=True).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
     script_hash = base64.b64encode(hashlib.sha256(js.encode()).digest()).decode()

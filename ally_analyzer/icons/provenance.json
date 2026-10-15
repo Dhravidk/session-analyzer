@@ -20,18 +20,12 @@
     "more-horizontal.svg": "4f495cc72013ffdfec677f03b33a150f7b4dd741979283fd6853a09024bca112",
     "arrow-down.svg": "65680a53b4df889a25f8d03880ea709929cb071d8b9c6a85b52152d296345107"
   },
-  "user_supplied_wrap_icons": {
-    "source": "User-supplied icon screenshots, October 15, 2026",
-    "modifications": "Original PNG bytes preserved; the CSS background viewport isolates each supplied glyph.",
+  "local_wrap_icons": {
+    "source": "Locally drawn vectors based on the user-supplied word-wrap glyph concepts, October 15, 2026",
+    "design": "24-pixel canvas, 2-pixel stroke, rounded caps and joins, and currentColor; displayed at the same 18-pixel size as copy.svg. Replaces cropped screenshot assets.",
     "files": {
-      "word-wrap-off.png": {
-        "reference": "Screenshot 2026-10-15 at 11.41.32\u202fAM.png",
-        "sha256": "babee088f44b02d240c4b0ad69bfa8f7ad716cdbbe6faca1883395047c40c5d7"
-      },
-      "word-wrap-on.png": {
-        "reference": "Screenshot 2026-10-15 at 11.41.39\u202fAM.png",
-        "sha256": "cb4afebae44b0e1a3642e963a26be06dee8edcc63106695354e952ec0fa2a25d"
-      }
+      "word-wrap-off.svg": "6f58e44b0a50a1bdc89e6e0bb517416551c1f7b93ee29ef1d41be798c032d08a",
+      "word-wrap-on.svg": "5d94502c414f6c08c0bd06d377ffe4f7eefc577cbde4e31a3652e30a82ec2357"
     }
   }
 }
