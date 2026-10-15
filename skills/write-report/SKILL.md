@@ -2,7 +2,7 @@
 name: write-report
 description: Write or edit Ally Session Analyzer explanations and recommendations in clear, specific prose grounded in the selected session evidence. Use before saving insights or presenting an analysis.
 metadata:
-  version: write-report-v10
+  version: write-report-v11
 ---
 
 Write for a teammate deciding whether anything should change. Make the evidence, optional action and important limit easy to find. Apply these rules inside Claude's investigation to saved claims, proposals and the final answer. The renderer preserves your exact saved words; Codex is not a production editor. This skill does not authorize applying a change or accessing more data.
@@ -23,6 +23,10 @@ Write for a teammate deciding whether anything should change. Make the evidence,
 - State readiness accurately: an uninspected target needs evidence; a planned test has not run; zero checked metrics means zero checked metrics. A passed fixture establishes its tested conditions, not universal correctness or realized benefit. Include a disconfirming outcome in the verification plan.
 
 ## Write plainly
+
+Give each opening field a separate job: the title identifies the task, the synopsis explains intent and observed work, and the outcome states the supported result and unfinished gap. Detailed chronology belongs in the finding. A long compound title, repeated test totals and repeated generic caveats do not become more useful by appearing in several fields.
+
+For a pattern, distinguish its shared characteristic from each same-goal episode. Put the exact unresolved question in that episode's `open_questions`; leave recovered episodes as supporting detail. Evidence links and linked turns are not occurrences. State evidence relationships explicitly rather than expecting a renderer to shorten or interpret a paragraph. A recovery reference and an unknown overall outcome may coexist; explain that distinction without implying that all members were fixed.
 
 For each reader-facing source reference, save `explanation`: one short sentence stating what that specific record shows and why it matters to the linked claim. Name the action or result and preserve any limitation that changes its meaning. Read the cited range first; use exact ranges when the full record is not needed. A tool invocation shows an attempt, not successful execution; a participant's statement shows what was said, not independent verification. Do not repeat a whole finding, use generic “this supports the analysis” wording, or add a recommendation. A source can have different explanations in different claim contexts. The report displays the sentence verbatim beside the evidence, and keeps the complete saved source and exact copying available.
 

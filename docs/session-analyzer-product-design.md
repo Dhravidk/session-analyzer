@@ -2,7 +2,7 @@
 
 The analyzer helps a developer decide what, if anything, should change after one Claude Code session. Recorded measurements establish what happened in the captured trace. Claude investigates the task context before judging whether an action was useful, expected, harmful, or still unexplained.
 
-**Architecture status — October 15, 2026:** this describes the current 0.10.4 checkout and the [single-session specification](single-session-investigation-spec.md). The main flow includes the managed investigation/review workflow and document report. Requirement maps, recovery episodes, fault attribution and resource views are implemented local extensions. The validation record separates mechanical tests from actual Claude development runs. Mechanical checks establish scope, accounting, evidence delivery, and proposal prerequisites, not whether Claude's explanation is correct. Consult [implementation status](implementation-status.md) and [validation](validation.md) for observed results and remaining limits.
+**Architecture status — October 15, 2026:** this describes the current 0.14.0 checkout and the [single-session specification](single-session-investigation-spec.md). The main flow includes the managed investigation/review workflow and document report. Requirement maps, recovery episodes, fault attribution and resource views are implemented local extensions. The validation record separates mechanical tests from actual Claude development runs. Mechanical checks establish scope, accounting, evidence delivery, and proposal prerequisites, not whether Claude's explanation is correct. Consult [implementation status](implementation-status.md) and [validation](validation.md) for observed results and remaining limits.
 
 ## From a session to a defensible decision
 
@@ -24,12 +24,12 @@ flowchart TB
 
     subgraph EVIDENCE["Local evidence extensions"]
         X["Context/cache timeline and tool-output index<br/>Recorded events, sizes, and coverage-qualified measurements"]
-        T["Requirement map with competing intent readings and optional next actions<br/>Recovery attempts, versions, attribution, and associated usage"]
+        T["Requirement map with competing intent readings and optional next actions<br/>Same-goal episodes within patterns; versions, attribution, and union usage"]
     end
 
     V["Check a proposed change and record its readiness<br/>Inspect target and exact edit; operator runs applicable fixtures"]
     C["Check inquiry and review prerequisites<br/>Delivered evidence, exact quotes, and checks for current revisions"]
-    F["Save and render the completed or explicitly partial inquiry<br/>Exact Claude wording; open work, scannable requirements,<br/>recovery comparisons, full chronology, and source inspector"]
+    F["Save and render the completed or explicitly partial inquiry<br/>Exact Claude wording; open work, scannable requirements,<br/>contextual finding links, episode comparisons, and source inspector"]
     H["Developer inspects evidence and decides<br/>Copy saved remaining work or exact proposed text<br/>Test, reject, or take no action"]
 
     B["Local session library: selected directory<br/>One entry per session; latest saved analysis<br/>Grouped paths, search, independent freshness/completion"]

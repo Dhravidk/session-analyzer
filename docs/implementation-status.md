@@ -1,3 +1,13 @@
+# Implementation status — 0.14.0
+
+Turn/finding links now state their evidence relationship and open the canonical finding at the selected turn's retained record. Roles come from explicit saved associations or the recorded outcome of an already-linked tool result; absent roles remain Related evidence. Multiple records have a selector. Full finding, source/context inspection, exact copying and saved review qualifications remain accessible. Filters name the selected finding, counts distinguish findings from linked turns, and the library title compacts while reading with an accessible expansion control.
+
+Future Claude investigations can save distinct same-goal episodes within one evidenced pattern. Nested episodes receive existing verification, revision, chronology and structural-child checks. The report exposes the unfinished episode directly, folds recovered supporting episodes, and counts associated resources over deduplicated identities. Claude still justifies membership and causal claims; shared tool names do not establish either. Writing/review guidance separates the opening fields and targets specific unresolved questions.
+
+The real migration report and labelled synthetic pattern/source-excluded examples passed the browser checks described in [validation](validation.md). Existing F2 and all Claude-authored wording are unchanged. The future pattern workflow has mechanical coverage but no fresh Claude-run validation in this release; historical grouping and repetition need a Claude-authored revision, and independent diagnostic evaluation remains outstanding.
+
+---
+
 # Implementation status — 0.13.4
 
 The turn table uses compact F1/F2 references instead of repeating long finding titles. A shared key above the table shows each unchanged saved title and its linked turns. Selecting linked turns filters the chronology; every reference opens the existing full finding directly. Identical titles keep distinct identities, and findings without attributed turns remain accessible. Requests gain the freed column width. Presentation, identity/payload regressions, packaging and desktop/narrow browser checks passed; see [validation](validation.md).

@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 15 · October 15, 2026 · Governing contract for version 0.13.4 (earlier release sections retained as history)
+Revision 16 · October 15, 2026 · Governing contract for version 0.14.0 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -660,3 +660,17 @@ The turn table allocates 32% of its width to findings, leaving requests the larg
 The turn table uses compact navigation references (F1, F2, …) keyed to saved incident identities. An adjacent finding key displays each full, unchanged saved title once, with its explicitly linked turn numbers. Selecting those numbers uses the existing turn filter; filtering never renumbers findings. Every reference opens the complete existing finding directly and exposes its saved title to assistive technology and on hover. Identical titles do not merge identities, and findings without an attributed main turn remain in the key with that limitation. No findings produces no references.
 
 The Findings navigation targets this key above the table. Requests retain the available text width beside a compact reference column; the table scrolls at narrow widths. These presentation references replace repeated full titles in rows, superseding the 0.13.3 column allocation. Claude-authored text, evidence associations, review qualifications, exports and saved payloads are unchanged.
+
+## 0.14.0 — Contextual finding evidence and episode patterns
+
+A turn/finding link states its relationship using explicit saved citation roles, episode attempts, or an explicitly linked tool result's recorded failure outcome. It must not classify prose, infer recovery from adjacency, infer a failure from an original attempt, or pull an unrelated failure from the same turn. Request context, recovery, verification, correction, counterevidence and related evidence remain distinct. Multiple supported roles remain visible. A recovery association does not establish a recovered outcome; saved resolution and review qualifications remain beside the finding.
+
+The report derives navigation separately from the saved report-data payload. Each turn link opens the canonical finding with that turn's linked record selected. Several records get a labelled selector; exact saved/masked text, copy, wrap, full-result access and the existing source/context inspector are reused. Missing or omitted text stays a limitation, never an empty evidence box. The complete saved finding remains expandable. Canonical finding titles, prose, classifications, qualifications and recommendation links are not rewritten. Expectedness, Recovery and Diagnosis name separate dimensions.
+
+Finding filters name their selection (for example, “Evidence linked to F2 · 6 of 32 turns”) and offer Show all turns. The finding key reports the number of saved top-level findings, independent of linked turns and nested episodes. References never imply repeated occurrences. A long library title compacts during report reading; an accessible expansion control retains its full text without changing the selected session or scroll position.
+
+For new Claude saves, optional `evidence_links` contains a role, inspected references already associated with the finding, and a saved basis. Scope, membership and source exposure are validated; empty text cannot support the relationship. These checks do not establish semantic entailment.
+
+An incident may contain one `episode` or a `pattern` of at least two episodes, never both. A pattern saves an evidenced characteristic, references, membership basis, and individually keyed episodes with saved titles, resolution, the existing same-goal episode contract and open questions. The same tool or read-only behavior does not prove a shared goal, cause or need for improvement. Nested episodes receive the existing verification, scope, revision, structural-child and chronology checks. Unknown or unresolved children prevent a recovered pattern label. Resources use the union of explicit identities across all selected episodes; overlaps and distinct attempts remain visible. One pattern is one top-level finding.
+
+The report opens unknown/unresolved episodes and folds recovered supporting episodes. Remaining work links to the specific saved unfinished episode; it does not invent a next action. Historical mixed findings remain unchanged until Claude saves a reviewed revision. Future writing gives the title, synopsis, outcome and detailed reasoning distinct purposes. The renderer cannot repair repetition or contested grouping in an old analysis.

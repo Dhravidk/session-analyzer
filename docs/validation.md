@@ -1,3 +1,19 @@
+# Validation — 0.14.0 contextual findings and episode patterns
+
+October 15, 2026. The full backend run discovered 259 tests: 257 passed and two optional private-corpus checks were skipped (24.212 s). After the final citation-order and nested-reference changes, 60 focused checks passed (5.690 s), including the new association/pattern cases, existing evidence prerequisites, presentation, semantic consistency and isolated packaging. Both report and library JavaScript passed syntax checks. Logs and screenshots are retained locally under `.analysis/contextual-findings-0.14.0/`.
+
+The new mechanical regressions cover explicit failure/recovery/context roles, unknown-role fallback without prose inference, unrelated failures in the same turn, correct denials, dual roles on one record, and unchanged saved payloads. Pattern checks cover distinct nested keys, nested goal citations, narrower verification that cannot establish recovery, unknown children that prevent a recovered parent, and union accounting for overlapping identities. The synthetic overlap fixture contains two episodes/six declared attempts but three unique tools and 180 associated input tokens; these are fixture values, not measured production performance or model-quality evidence.
+
+In the actual saved migration report, turn 13 shows Failure evidence, turn 19 Failure and recovery, and turn 30 Recovery evidence. Turn 30 opens the exact breakpoint result cited by the saved review. Turn 19's selector switches between its recorded errors and saved recovery result. Full finding expands the unchanged analysis; Expectedness, Recovery and Diagnosis are separate dimensions, with the existing qualified review visible. The filter names F2 and shows six of 32 turns, Show all turns restores the complete chronology, and the canonical count remains two findings.
+
+Browser checks exercised pointer/keyboard opening, record selection, exact result copying, wrapping, source-inspector navigation and return, compact-title expansion, and a 390 × 844 layout. The narrow contextual dialog had equal client/content widths (370 pixels), preserved the selected record on return from the source inspector, and retained the named filter. The labelled pattern fixture opens the unresolved episode directly, folds the recovered episode, compares nested attempts, and exposes union resource counts. A source-excluded fixture shows the exact omission state without an empty code box, Copy or Wrap controls. Clipboard access was denied while the browser was inactive; copying succeeded exactly once the preview was visible.
+
+HTML and JSON were downloaded through the displayed export links. JSON matched the immutable saved bytes, HTML matched the current renderer, and its embedded report payload matched the saved JSON. The migration JSON's SHA-256 remains `f82437e544f65d61917e2ef05413f28103771bf3a45a8a698ffe7a86a7ff54b5`. The export receipt is `exports.json` in the local validation directory. The browser's download-event wait timed out; its supported link-download operation completed both exports.
+
+No new Claude investigation was run for this change. Historical F2 grouping, opening repetition and remaining-work prose remain unedited. The new investigation/review/writing guidance and optional pattern contract are implemented and mechanically tested; their effect on unseen Claude investigations is not established. No superiority claim against `/insights` is made.
+
+---
+
 # Validation — 0.13.4 shared finding references
 
 October 15, 2026. Fifteen report-presentation and clean-package tests pass. The new regressions cover one finding linked across multiple turns, two different finding identities with identical titles, multiple references on one turn, an unattributed finding, no findings, escaped titles and unchanged embedded data. The renderer assigns references by identity and saved order; it does not summarize titles or merge similarly worded findings.
