@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 20 · October 15, 2026 · Governing contract for version 0.15.0 (earlier release sections retained as history)
+Revision 21 · October 15, 2026 · Governing contract for version 0.15.1 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -714,3 +714,11 @@ The renderer shows saved event titles in **What happened**, with finding IDs sec
 Legacy reports without guides show **Related evidence**, preserve the canonical saved name, and explicitly disclose that no local event explanation was saved. Their contextual selection prefers an explained, cited result in saved claim order, retaining explicit counterevidence and all other records. This is a navigation fallback, not a new diagnosis or assertion that the chosen record alone proves the finding. Existing classifications and review disagreements are labelled as applying to the complete finding. The report payload, source hashes, exact-copy behavior, token accounting and exports are unchanged. Managed records without a saved review explicitly say so. If a stopped run has no finalized conclusion but has a pinned Claude draft, expose that draft near the opening under **not finalized**, without promoting its text into the saved conclusion or hiding disagreements with current records.
 
 Validation must distinguish mechanical prerequisites, browser interactions, actual hosted Claude outputs and independent quality evaluation. A failed or incomplete model run is retained, not cosmetically repaired. Renderer-only rerendering of saved JSON is permitted and must preserve that payload exactly. No improvement over `/insights` is established without the separate evaluation protocol.
+
+## 0.15.1 — Markdown export
+
+The library and standalone report Export controls offer Markdown (.md) alongside HTML and JSON. The CLI and scoped export API accept `md`. One deterministic renderer produces all Markdown routes from the saved report data; it performs no model call or additional source retrieval. Escaping and code fences preserve readable saved wording and exact replacement/source text without inventing summaries, recommendations, completion or review status.
+
+The reading export includes the task/outcome, explicitly unfinished drafts, remaining work, requirements, turns, findings and local events, proposed edits with actual checks, failure explanations, child information, every captured token category, timing distinctions and coverage. Source links resolve within a retained-source appendix. Missing text, empty projections, omission metadata and unavailable children remain distinguishable. Large retained sources are not silently truncated. JSON remains the full archival export, including internal revision histories.
+
+Existing disclosure controls govern CLI/MCP source embedding; browser exports contain only text already included in the selected report. Thinking text, when already present in that local export, remains separate from execution evidence and token accounting. Standalone HTML embeds a precomputed Markdown plan that references existing source strings rather than duplicating long results. The library serves Markdown directly without loading that plan into its report iframe. Export does not mutate saved records or add evidence-read receipts.

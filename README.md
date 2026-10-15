@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.15.0
+# Ally Session Analyzer 0.15.1
 
 ## Browse local sessions
 
@@ -103,7 +103,7 @@ Validation warnings sit beside affected claims. For example, a recognized missin
 python3 -m ally_analyzer --data-dir .analysis/ally export-session INVESTIGATION_ID session.html --include-source-text
 ```
 
-Source embedding is explicit and follows the same masking policy as model reads. Exporting for a human does not add model read receipts. Without embedding, evidence identifiers remain visible and the report states that text is absent. The Export control downloads HTML or JSON locally.
+Source embedding is explicit and follows the same masking policy as model reads. Exporting for a human does not add model read receipts. Without embedding, evidence identifiers remain visible and the report states that text is absent. The Export control downloads HTML, Markdown (.md), or JSON locally. Markdown preserves saved prose, measurements, qualifications and linked source text; JSON retains the full archival payload. The CLI also accepts `export-session … --format md`.
 
 For existing skills and CLAUDE.md, readiness requires inspected current targets, declared scope and overlapping instructions, and an exact edit or invocation. New skills require a reusable procedure and a review of existing coverage. Ignored instructions do not justify appending duplicates. Copy replacement copies only Claude's literal replacement, including intentional newlines; no action applies it automatically. Failed and missing checks remain visible.
 
@@ -127,7 +127,7 @@ The writing skill requires specific evidence, plain language and concrete remain
 ```sh
 python3 -m unittest discover -v
 python3 scripts/package_plugin.py
-claude --plugin-dir dist/ally-session-analyzer-0.15.0.zip
+claude --plugin-dir dist/ally-session-analyzer-0.15.1.zip
 ```
 
 The ZIP includes only allowlisted implementation files, skills and documentation. It excludes private logs, stores, reports, tests and legacy variants. The engine and regression tests run without Claude; opt-in live tests use the operator's authenticated Claude host. CLI plugin loading is tested; permanent desktop installation and other operating systems are not certified.

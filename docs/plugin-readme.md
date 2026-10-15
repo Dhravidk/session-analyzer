@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.15.0
+# Ally Session Analyzer 0.15.1
 
 ## Browse local sessions
 
@@ -17,8 +17,10 @@ Discovery is bounded (three levels, 10,000 parent logs, first and last 1 MiB for
 
 Local deterministic accounting and a single-session investigation workflow for an approved Claude host. Requires Python 3.9+ on PATH; no third-party runtime packages or engine model/network client.
 
+The session library and standalone report offer HTML, Markdown (.md), and JSON exports. Markdown uses the saved analysis and included source text without another model call. The CLI and `export_session_investigation` tool accept format `md`; their existing source-disclosure controls still apply.
+
 ```sh
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.15.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.15.1.zip
 ```
 
 Use `/ally-session-analyzer:analyze /absolute/path/session.log` to import and measure, `/ally-session-analyzer:explain ANALYSIS_ID` for accounting, or `/ally-session-analyzer:investigate INVESTIGATION_ID` for the scoped investigation. The investigation skill can also select one root from an analysis. Loading the plugin does not collect logs automatically.

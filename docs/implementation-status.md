@@ -1,3 +1,11 @@
+# Implementation status — 0.15.1
+
+Markdown (.md) is available from the session library, standalone reports, CLI and scoped Claude export tool. It preserves saved analysis wording, exact source/replacement text, all captured token categories, coverage and unfinished/review states. The same deterministic renderer backs every route; existing disclosure and overwrite protections apply. No new model call or analysis revision was made.
+
+The full suite passed 287 tests with two optional private-corpus skips. Actual browser downloads from the real migration library and a standalone completed example matched the standard Markdown output byte-for-byte. Existing diagnostic-quality limitations from 0.15.0 remain unchanged. See [validation](validation.md).
+
+---
+
 # Implementation status — 0.15.0
 
 New managed findings require Claude-authored short names, answer-first explanations and local events tied to decisive source identities. The turn table shows the saved local event; selecting it opens that explanation and its evidence sequence. Pattern episodes retain separate outcomes. Classifications and complete record inventories remain accessible in details. Historical reports disclose missing local explanations and preserve their saved wording and grouping. Missing reviews and unfinalized conclusion drafts are visible rather than presented as complete.

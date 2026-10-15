@@ -139,13 +139,16 @@ A non-executable prompt/skill/workflow change uses its applicable evidence and c
 ```sh
 python3 -m ally_analyzer --data-dir .analysis/ally export-session INVESTIGATION_ID investigation.html --include-source-text
 python3 -m ally_analyzer --data-dir .analysis/ally export-session INVESTIGATION_ID investigation.json --format json
+python3 -m ally_analyzer --data-dir .analysis/ally export-session INVESTIGATION_ID investigation.md --format md --include-source-text
 python3 -m ally_analyzer --data-dir .analysis/ally review-recommendation INVESTIGATION_ID RECOMMENDATION_ID \
   --status needs_evidence --note "Need the relevant target revision before accepting this change."
 ```
 
 Exports include all saved candidates, including failed, superseded and withdrawn revisions. Choose a new filename each time. Reviews are append-only operator reports, independent of readiness; a tested-beneficial note is not independent certification. No review automatically applies a change or trains a model.
 
-The HTML Export menu downloads the saved data as HTML or JSON. Source embedding is optional, disabled by default, and never increments Claude's evidence-access ledger. A text-free export preserves source identities and visibly identifies that limitation.
+The session-library and standalone HTML Export menus offer HTML, Markdown (.md), and JSON. Markdown is a reading export with saved prose, requirements, findings/events, proposals, exact token measurements, review qualifications, coverage and source anchors. Detailed saved structures remain in expandable code blocks. JSON retains the full archival payload and internal histories. Markdown does not call a model or apply a proposed change.
+
+Source embedding is optional for CLI/MCP exports, disabled by default, and never increments Claude's evidence-access ledger. A text-free export preserves source identities and visibly identifies that limitation. Browser exports use only the source text already included in the selected saved report, including any explicitly exported, masked thinking text; they do not retrieve more source material.
 
 ## Explaining counted failures
 

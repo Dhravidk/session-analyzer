@@ -1,3 +1,13 @@
+# Validation — 0.15.1 Markdown export
+
+October 15, 2026. The final suite discovered 289 tests: 287 passed and two optional private-corpus checks skipped (26.286 s). Both renderer/library JavaScript syntax checks passed. Five new regressions cover partial wording and unknown usage, source links and unchanged payloads/read receipts, long records and nested code fences, captured thinking separated from evidence, exact replacement text, absent sources/missing children, disclosure gates, actual CLI output, file permissions, overwrite rejection and unfinalized drafts. Existing library HTTP tests now check Markdown MIME type, attachment filename and exact response bytes; the isolated plugin check verifies that the scoped tool advertises `md`.
+
+The real migration report's library Markdown download matched `render_markdown` byte-for-byte: 14,095,244 bytes, SHA-256 `9c33d4a4c5c9d5fdcf9d9680aacd57b674ff40193f181eceee19104808ef11a2`. Its size includes the already-retained full source text and detailed measurements. The standalone report's actual Markdown button produced a 130,284-byte download matching the same renderer on the completed Claude analysis of synthetic input. The first click did not yield a file through the unobserved download path; the subsequent supported download-event capture returned and verified the file. No browser errors were reported during that check.
+
+The menu screenshot, downloaded examples, byte-comparison receipt and full test log are retained in `.analysis/markdown-export-0.15.1/`, excluded from Git and the plugin. The original migration JSON hash remains `2dde288dabe12551b0ec1618eaca8af8f0f65da8e86990900e22dfb65a52149a`. The preview was restarted on the same local port with the new export route. No Claude investigation was rerun, and the semantic-quality gaps documented for 0.15.0 remain open.
+
+---
+
 # Validation — 0.15.0 local event explanations
 
 October 15, 2026. The final backend suite discovered 284 tests: 282 passed and two optional private-corpus tests skipped (25.785 s). The renderer JavaScript passed the bundled Node syntax check. New regressions cover managed guide requirements, inspected and associated references, main-turn anchors, decisive-source membership, chronology, pattern episode coverage, legacy navigation, unchanged saved payloads, missing review and unfinalized conclusion drafts. These checks validate declared structure and presentation; they do not prove that Claude's explanation follows from the evidence.
