@@ -122,7 +122,7 @@ async function showReport(id){
 }
 async function select(id,{history=true}={}){
   const item=catalog.sessions.find(s=>s.id===id);if(!item)return;
-  rememberPosition();const ticket=++selectTicket;selected=item;localPreview=false;saved.selected=id;persist();
+  rememberPosition();setReadingHeader(0);const ticket=++selectTicket;selected=item;localPreview=false;saved.selected=id;persist();
   if(history&&new URLSearchParams(location.hash.slice(1)).get('session')!==id)location.hash=new URLSearchParams({session:id});
   drawSessions();drawSelection();if(narrow.matches)setList(false);
   if(item.latest_report)await showReport(item.latest_report.id);
@@ -166,11 +166,22 @@ $('open-log').onclick=async()=>{try{if(localPreview&&selected.latest_report?.kin
 $('analyze').onclick=()=>{$('disclosure').checked=false;$('dialog-error').hidden=true;$('investigate-session').textContent=sessionTitle(selected);$('investigate-title').textContent=hasAnalysis(selected.latest_report)?'Update analysis':'Analyze session';$('investigate-dialog').showModal();};
 $('close-dialog').onclick=()=>$('investigate-dialog').close();
 $('investigate-form').onsubmit=async event=>{event.preventDefault();$('start').disabled=true;try{await start('investigate',{allow_content:$('disclosure').checked,budget:Number($('budget').value),timeout:Number($('timeout').value)*60});$('investigate-dialog').close();}catch(error){$('dialog-error').textContent=error.message;$('dialog-error').hidden=false;}finally{$('start').disabled=false;}};
+function setReadingHeader(y){
+  const reading=y>120,selection=$('selection'),toggle=$('toggle-title');
+  selection.classList.toggle('reading',reading);toggle.hidden=!reading;
+  if(!reading){selection.classList.remove('title-expanded');toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','Expand session title');}
+}
+$('toggle-title').onclick=()=>{
+  const expanded=$('selection').classList.toggle('title-expanded');
+  $('toggle-title').setAttribute('aria-expanded',String(expanded));
+  $('toggle-title').setAttribute('aria-label',expanded?'Collapse session title':'Expand session title');
+};
 $('report').onload=()=>{
   const frame=$('report'),id=reportId,session=selected?.id;
   try{
     const position=saved.positions[session];if(position?.report===id)frame.contentWindow.scrollTo(0,position.y);
-    frame.contentWindow.addEventListener('scroll',()=>{saved.positions[session]={report:id,y:frame.contentWindow.scrollY};persist();},{passive:true});
+    setReadingHeader(frame.contentWindow.scrollY);
+    frame.contentWindow.addEventListener('scroll',()=>{saved.positions[session]={report:id,y:frame.contentWindow.scrollY};persist();setReadingHeader(frame.contentWindow.scrollY);},{passive:true});
     frame.contentDocument.addEventListener('click',event=>{
       const control=event.target.closest('[data-export]');if(!control)return;const format=control.dataset.export;if(!['html','json'].includes(format))return;
       event.preventDefault();event.stopImmediatePropagation();$('export-'+format).click();
