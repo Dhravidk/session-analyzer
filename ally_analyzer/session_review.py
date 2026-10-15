@@ -16,7 +16,7 @@ def active_versions(values, field):
     return [v for v in values if v['id'] not in replaced]
 
 
-def update_workflow(store, investigation_id, phase, requirement_mapping=False, semantic_consistency=False):
+def update_workflow(store, investigation_id, phase, requirement_mapping=False, semantic_consistency=False, citation_explanations=False):
     """Operator-only transition; deliberately not exposed as an MCP tool."""
     from .session_investigation import active_run
     run = active_run(store, investigation_id)
@@ -32,6 +32,8 @@ def update_workflow(store, investigation_id, phase, requirement_mapping=False, s
     if phase=='investigate' and semantic_consistency:
         from .session_consistency import VERSION as CONSISTENCY_VERSION
         run['review_workflow']['semantic_consistency_version']=CONSISTENCY_VERSION
+    if phase=='investigate' and citation_explanations:
+        run['review_workflow']['citation_explanations_version']='citation-explanations-v1'
     with store.connect() as db:
         db.execute('UPDATE session_runs SET payload=? WHERE id=?', (canonical(run), investigation_id))
     return run
@@ -135,7 +137,9 @@ def save_review_checks(store, investigation_id, checks):
             validate_semantic_check(check,kinds[check['record_id']],allowed,map_id)
         verified = []
         for item in check['evidence_checks']:
-            ref = item['reference']; validate_refs(store, run, [ref])
+            # The review already supplies supports_or_contradicts beside its
+            # quote; do not require the same sentence twice.
+            ref = item['reference']; validate_refs(store, run, [ref], reader_facing=False)
             text, sha, _, _ = projection(store, run, ref['source_id'], include_metadata=False)
             left, right = ref.get('start_char',0), ref.get('end_char',len(text))
             at = text.find(item['quote'], left, right)

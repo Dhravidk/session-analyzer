@@ -177,14 +177,37 @@ class ReviewWorkflowTests(unittest.TestCase):
             emit('Skill',skill='ally-session-analyzer:write-report')
             self.read_all()
             if stage.name=='investigate':
+                # Synthetic host-authored citations exercise the production
+                # requirement; the runner must never insert these for a model.
+                captions={self.ids['event-'+str(i)]:text for i,text in [
+                    (0,'The request asks for a negative test followed by repair.'),
+                    (1,'The first invocation runs the fixture test.'),
+                    (2,'The initial test reports a failure.'),
+                    (3,'The edit replaces the broken fixture value.'),
+                    (4,'The editor reports the replacement succeeded.'),
+                    (5,'The next invocation repeats the fixture test.'),
+                    (6,'The check passes after the fixture edit.'),
+                    (8,'The user asks for an explanation of the change.'),
+                    (9,'The assistant states that the fixture was repaired.')]}
+                def authored(value):
+                    if isinstance(value,dict):
+                        if 'source_id' in value:value['explanation']=captions[value['source_id']]
+                        for child in list(value.values()):authored(child)
+                    elif isinstance(value,list):
+                        for child in value:authored(child)
+                    return value
                 from ally_analyzer.session_requirements import save_requirement_map
                 mapped={'scope':'Synthetic runner contract fixture; semantic diagnosis is tested separately.','inventory_status':'partial',
                         'requirements':[],'context_only':[],'limitations':['This fake host exercises transport only.'],
                         'provenance':{'model':'synthetic-test','skill_version':'runner-fixture'}}
                 save_requirement_map(self.store,self.iid,mapped);emit('save_requirement_map',investigation_id=self.iid,requirement_map=mapped)
-                q=self.inquiry();save_inquiry(self.store,self.iid,q);emit('save_inquiry',investigation_id=self.iid,inquiry=q)
-                f=self.explanation();save_failure_explanation(self.store,self.iid,f);emit('save_failure_explanation',investigation_id=self.iid,explanation=f)
-                self.finish();candidate=latest_draft(self.store,self.iid)['conclusion'];emit('finish_investigation',investigation_id=self.iid,**candidate)
+                q=authored(self.inquiry());save_inquiry(self.store,self.iid,q);emit('save_inquiry',investigation_id=self.iid,inquiry=q)
+                f=authored(self.explanation());save_failure_explanation(self.store,self.iid,f);emit('save_failure_explanation',investigation_id=self.iid,explanation=f)
+                self.finish(synopsis=authored({'text':'The request asks for a negative test, repair and explanation.',
+                    'references':[{'source_id':self.ids['event-0']}],'limitations':[]}),
+                    observed_outcome=authored({'text':'The final fixture check passed.','evidence_class':'recorded_observation',
+                    'references':[{'source_id':self.ids['event-6']}],'limitations':[]}))
+                candidate=latest_draft(self.store,self.iid)['conclusion'];emit('finish_investigation',investigation_id=self.iid,**candidate)
             else:
                 packet=get_investigation_review(self.store,self.iid)
                 checks=[]

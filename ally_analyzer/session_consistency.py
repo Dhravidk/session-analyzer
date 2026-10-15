@@ -24,7 +24,7 @@ GUIDANCE = {
     'completion_evidence': 'Compare each status and its basis with primary evidence, missing evidence, verification scope and revision. A passed functional test does not prove a requested procedural step was followed.',
     'opening_requirement_consistency': 'Compare title, synopsis and outcome with every material status and intent_interpretation in the CURRENT requirement map. Preserve an unmet explicit obligation even when implementation passes. An unresolved interpretation must not become a confident process failure in the opening. Keep task completion separate from investigation completeness and freshness. Bind related_record_ids to the current map.',
     'distinct_field_purposes': 'Synopsis identifies intent and work; outcome states supported completion and remaining work; detailed reasoning explains why. Remove repeated chronology and checklist-like titles.',
-    'specific_citation_explanations': 'Each reader-facing citation explains what this record establishes about THIS claim. Labels such as Error text and Denial message are not explanations.',
+    'specific_citation_explanations': 'Each reader-facing citation explains what this record establishes about THIS claim. Its explanation is the visible source-link label. Filenames, Error text, Denial message and vague approval are not explanations. Check the actual action/result and any material limit against the inspected range; a command shows an attempt, not success. Repair through a saved revision, never renderer rewriting.',
     'status_qualification_consistency': 'Expectedness, resolution, diagnosis, title and prose must agree. Expected needs evidence of intentional negative checking or correct policy enforcement. Benign, common and recovered do not mean expected. A caveat cannot repair an incorrect confident label; revise it or preserve a needs_revision judgment.',
     'decision_relevant_limits': 'Name the actual missing evidence beside the affected claim. Remove repeated generic cautions; retain uncertainty that changes the decision. Review any next_action against current unmet intent and results; its verification must settle the stated gap. Do not prescribe redoing recovered work or turn an immediate check into a persistent instruction.',
 }
@@ -37,6 +37,8 @@ def generic_explanation(text):
 def citation_flags(value, path=()):
     flags = []
     if isinstance(value, dict):
+        if 'source_id' in value and not value.get('explanation','').strip():
+            flags.append({'code':'missing_source_explanation', 'path':'.'.join(path), 'source_id':value['source_id']})
         if 'source_id' in value and generic_explanation(value.get('explanation', '')):
             flags.append({'code':'generic_source_explanation', 'path':'.'.join(path), 'source_id':value['source_id'], 'saved_text':value['explanation']})
         for key, child in value.items(): flags += citation_flags(child, path+(key,))

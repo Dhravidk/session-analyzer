@@ -15,7 +15,7 @@ IDS = arr(ID, maximum=200)
 REF = obj({"source_id": ID, "text_sha256": ID, "start_char": {"type": "integer", "minimum": 0, "maximum": 100000000},
            "end_char": {"type": "integer", "minimum": 0, "maximum": 100000000},
            "explanation": {"type":"string", "minLength":1, "maxLength":600,
-                           "description":"One plain-language sentence explaining what this exact source shows and why it matters to the linked claim, including a material limitation. Do not restate the whole finding or infer success from an invocation."}}, ["source_id"])
+                           "description":"Required for reader-facing citations in the managed workflow. Save a brief plain-language sentence (at most 240 characters for new managed runs) explaining what this exact source shows about the linked claim. This is the source link's visible label: name the action/result, not just a filename, error type or source number. Preserve a material limitation; do not infer success from an invocation. Historical citations remain readable."}}, ["source_id"])
 REFS = arr(REF, maximum=100)
 PROVENANCE = obj({"model": ID, "skill_version": ID})
 CLAIM = obj({"text": S, "evidence_class": enum("recorded_observation", "calculated", "participant_statement", "interpretation", "proposed_benefit"),

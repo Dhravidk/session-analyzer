@@ -453,8 +453,25 @@ def detail(title, content, raw=False):
     return '<details><summary>'+esc(title)+'</summary>'+(content if raw else '<pre>'+esc(json.dumps(content,ensure_ascii=False,indent=2,sort_keys=True))+'</pre>')+'</details>'
 
 
-def source_caption(ref, data=None):
-    """Literal navigation previews, never new evidence explanations or verdicts."""
+def saved_source_explanation(ref, data, context=None):
+    """Reuse only the citation or its latest same-owner, range-verified review."""
+    if ref.get('explanation'):
+        return ref['explanation'], None
+    owner=(context or {}).get('owner_id')
+    reviews=[r for r in data.get('review_checks',[]) if owner and r['check']['record_id']==owner]
+    if not reviews:return None, None
+    review=reviews[-1];source=data.get('sources',{}).get(ref['source_id'],{})
+    for item,exact in zip(review['check'].get('evidence_checks',[]),review.get('verified_quote_ranges',[])):
+        same=(item['reference']['source_id']==ref['source_id']==exact.get('source_id')
+              and exact.get('text_sha256') and exact['text_sha256']==source.get('text_sha256'))
+        inside=not ref.get('text_sha256') or (ref['text_sha256']==exact.get('text_sha256')
+                and ref['start_char']<=exact['start_char'] and ref['end_char']>=exact['end_char'])
+        if same and inside:return item['supports_or_contradicts'], review['check']['verdict']
+    return None, None
+
+
+def source_caption(ref, data=None, context=None):
+    """Saved Claude explanations for claims; literal previews for raw navigation."""
     data=data or {};sid=ref['source_id'];source=data.get('sources',{}).get(sid,{})
     role=source.get('role');text=source.get('text');kind=(source.get('content_metadata') or {}).get('kind')
     names={'user_statement':'Request','assistant_statement':'Assistant statement','tool_call':'Tool input',
@@ -486,10 +503,14 @@ def source_caption(ref, data=None):
     # Thinking remains in its explicit inspector view, never an evidence preview.
     if not description and kind!='thinking' and role!='assistant_thinking' and isinstance(text,str):
         description=next((line.strip() for line in text.splitlines() if line.strip()),None)
-    title=ref.get('explanation') or description or label
+    explanation,review_verdict=saved_source_explanation(ref,data,context)
+    title=explanation or ('Explanation not saved' if context else description or label)
     compact_title=re.sub(r'\s+',' ',title).strip()
-    preview=compact_title[:79].rstrip()+'…' if len(compact_title)>80 else compact_title
+    # Do not cut a saved explanation before a qualification. New managed runs
+    # save concise sentences; legacy prose stays intact, including its limits.
+    preview=title if explanation else compact_title[:79].rstrip()+'…' if len(compact_title)>80 else compact_title
     meta=[label]
+    if review_verdict:meta.append('Saved review · '+review_verdict.replace('_',' '))
     turns=data.get('main_accounting',data.get('accounting',{})).get('turns',[])
     turn=next((n for n,t in enumerate(turns,1) if sid in t['event_ids']),None)
     if turn:meta.append('Turn '+str(turn))
@@ -515,7 +536,7 @@ def source_button(ref, label='Source', cls='link', context=None, caption=None):
 
 
 def refs_html(refs, context=None, data=None):
-    captions=[source_caption(r,data) for r in refs]
+    captions=[source_caption(r,data,context) for r in refs]
     counts=Counter((c['title'],c['meta']) for c in captions)
     # Equal previews need a stable record/range discriminator, not a new title.
     for caption,ref in zip(captions,refs):

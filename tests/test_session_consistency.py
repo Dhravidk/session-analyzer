@@ -103,6 +103,43 @@ class ConsistencyTests(unittest.TestCase):
         validate_refs(self.store,get_run(self.store,self.iid),[{'source_id':self.ids['event-6'],
             'explanation':'The full fixture check passed after the edit, supporting the recorded recovery.'}])
 
+    def test_managed_citations_require_short_inspected_explanations_without_autofill(self):
+        from ally_analyzer.session_diagnostics import save_inquiry
+        from ally_analyzer.session_investigation import records
+        # Historical workflows retain their original acceptance rules.
+        validate_refs(self.store,get_run(self.store,self.iid),[{'source_id':self.ids['event-6']}])
+        update_workflow(self.store,self.iid,'investigate',citation_explanations=True)
+        inquiry=self.inquiry();before=copy.deepcopy(inquiry)
+        with self.assertRaisesRegex(AnalyzerError,'Save explanation'):
+            save_inquiry(self.store,self.iid,inquiry)
+        self.assertEqual(inquiry,before);self.assertEqual(records(self.store,self.iid,'inquiry'),[])
+        ref={'source_id':self.ids['event-6'],'explanation':'The check passed after the fixture edit.'}
+        with self.assertRaisesRegex(AnalyzerError,'inspected'):
+            validate_refs(self.store,get_run(self.store,self.iid),[ref])
+        self.read_all()
+        for text,pattern in [('Error text.','linked claim'),('x'*241,'240 characters')]:
+            with self.assertRaisesRegex(AnalyzerError,pattern):
+                validate_refs(self.store,get_run(self.store,self.iid),[{**ref,'explanation':text}])
+        inquiry['references']=[ref]
+        self.assertEqual(save_inquiry(self.store,self.iid,inquiry)['inquiry'],inquiry)
+        update_workflow(self.store,self.iid,'review')
+        self.assertEqual(get_run(self.store,self.iid)['review_workflow']['citation_explanations_version'],'citation-explanations-v1')
+
+    def test_review_quote_uses_its_existing_explanation_without_duplicate_field(self):
+        from ally_analyzer.session_diagnostics import save_inquiry
+        update_workflow(self.store,self.iid,'investigate',citation_explanations=True)
+        self.read_all();inquiry=self.inquiry()
+        inquiry['references']=[{'source_id':self.ids['event-6'],'explanation':'The final fixture check passed.'}]
+        saved=save_inquiry(self.store,self.iid,inquiry)
+        update_workflow(self.store,self.iid,'review');self.read_all()
+        checked=save_review_checks(self.store,self.iid,[self.check(saved['id'])])
+        self.assertNotIn('explanation',checked['saved'][0]['check']['evidence_checks'][0]['reference'])
+
+    def test_missing_explanations_are_exposed_as_review_signals(self):
+        value={'references':[{'source_id':'synthetic-source'}]};before=copy.deepcopy(value)
+        signals=writing_signals(value,'inquiry')
+        self.assertEqual(signals[0]['code'],'missing_source_explanation');self.assertEqual(value,before)
+
     def test_expected_requires_basis_but_recovered_unexpected_needs_no_proposal(self):
         update_workflow(self.store,self.iid,'investigate',semantic_consistency=True)
         self.read_all()

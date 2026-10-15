@@ -50,9 +50,15 @@ def record_by_id(store, investigation_id, kind, rid):
     return {"id": rid, **strict_json(row[0])}
 
 
-def validate_refs(store, run, refs, require_text=False):
+def validate_refs(store, run, refs, require_text=False, reader_facing=True):
     for ref in refs:
         source_record(store, run, ref["source_id"])
+        if reader_facing and run.get('review_workflow',{}).get('citation_explanations_version'):
+            explanation=ref.get('explanation','')
+            if not explanation.strip():
+                raise AnalyzerError('Save explanation on each reader-facing citation: a brief sentence saying what this inspected source establishes about the linked claim. A filename or source ID is not an explanation. No report text was changed.')
+            if len(explanation)>240:
+                raise AnalyzerError('Keep each source explanation within 240 characters, preserving any material qualification. Put detailed reasoning in the linked claim; the renderer will not shorten your sentence.')
         if require_text:
             text, _, _, _ = projection(store, run, ref['source_id'])
             if not text[ref.get('start_char',0):ref.get('end_char',len(text))].strip():
@@ -67,7 +73,7 @@ def validate_refs(store, run, refs, require_text=False):
         if 'explanation' in ref:
             from .session_diagnostics import inspected_reference
             from .session_consistency import generic_explanation
-            if run.get('review_workflow',{}).get('semantic_consistency_version') and generic_explanation(ref['explanation']):
+            if (run.get('review_workflow',{}).get('semantic_consistency_version') or run.get('review_workflow',{}).get('citation_explanations_version')) and generic_explanation(ref['explanation']):
                 raise AnalyzerError('Explain what this source establishes about the linked claim; a generic label such as Error text or Denial message is insufficient')
             if '\n' in ref['explanation'] or '\r' in ref['explanation']:
                 raise AnalyzerError('Source explanations must be one short sentence, without line breaks')

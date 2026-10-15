@@ -341,9 +341,9 @@
     const reviews=(data.review_checks || []).filter(r=>context?.owner_id && r.check.record_id===context.owner_id);
     const review=reviews[reviews.length-1];
     if(!explanation && review) {
-      for(const [index,item] of review.check.evidence_checks.entries()) {
+      for(const [index,item] of (review.check.evidence_checks || []).entries()) {
         const exact=review.verified_quote_ranges?.[index];
-        const sameSource=item.reference.source_id===s.id && exact?.source_id===s.id && exact.text_sha256===s.text_sha256;
+        const sameSource=item.reference.source_id===s.id && exact?.source_id===s.id && exact.text_sha256 && exact.text_sha256===s.text_sha256;
         const inside=!ref.text_sha256 || ref.text_sha256===exact?.text_sha256 && ref.start_char<=exact.start_char && ref.end_char>=exact.end_char;
         if(sameSource && inside) {
           explanation=item.supports_or_contradicts;quote=item.quote;range=exact;

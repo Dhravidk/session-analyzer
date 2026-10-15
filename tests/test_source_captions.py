@@ -26,16 +26,62 @@ class SourceCaptionTests(unittest.TestCase):
             self.assertNotIn('passed',label['title'])
         self.assertEqual(data,before)
 
-    def test_explanation_preview_is_bounded_but_exact_reference_is_unchanged(self):
+    def test_saved_explanation_and_qualification_are_not_truncated_or_rewritten(self):
         data=self.fixture();explanation='Saved explanation '+('with exact detail, '*10)
         ref={'source_id':'result','explanation':explanation,'start_char':0,'end_char':4,'text_sha256':'synthetic'}
         output=reference_list([ref],{'text':'Exact saved claim'},data)
-        self.assertLessEqual(len(source_caption(ref,data)['title']),80)
+        self.assertEqual(source_caption(ref,data)['title'],explanation)
         self.assertEqual(source_caption(ref,data)['full'],explanation)
         self.assertIn('Sources · 1',output)
         encoded=re.search(r'data-ref="([^"]+)"',output).group(1)
         self.assertEqual(json.loads(html.unescape(encoded)),ref)
         self.assertNotRegex(output,r'>Source \d+<')
+
+    def review(self, owner='claim', sentence='The saved full-suite result reports two failed suites.'):
+        return {'check':{'record_id':owner,'verdict':'qualified','evidence_checks':[
+            {'reference':{'source_id':'result'},'supports_or_contradicts':sentence}]},
+            'verified_quote_ranges':[{'source_id':'result','text_sha256':'synthetic','start_char':0,'end_char':4}]}
+
+    def test_current_owner_review_supplies_label_without_changing_citation(self):
+        data=self.fixture();data['sources']['result']['text_sha256']='synthetic'
+        data['review_checks']=[self.review()];before=copy.deepcopy(data)
+        ref={'source_id':'result','text_sha256':'synthetic','start_char':0,'end_char':10}
+        context={'owner_id':'claim'}
+        caption=source_caption(ref,data,context)
+        self.assertEqual(caption['title'],'The saved full-suite result reports two failed suites.')
+        self.assertIn('Saved review · qualified',caption['meta'])
+        output=reference_list([ref],context,data)
+        self.assertEqual(json.loads(html.unescape(re.search(r'data-ref="([^"]+)"',output).group(1))),ref)
+        self.assertEqual(data,before)
+        ref['explanation']='The citation-specific sentence takes precedence.'
+        self.assertEqual(source_caption(ref,data,context)['title'],ref['explanation'])
+
+    def test_wrong_owner_changed_source_and_outside_range_never_borrow_review(self):
+        data=self.fixture();data['sources']['result']['text_sha256']='synthetic';data['review_checks']=[self.review()]
+        for ref,owner in [({'source_id':'result'},'different-claim'),
+                          ({'source_id':'result','text_sha256':'old','start_char':0,'end_char':10},'claim'),
+                          ({'source_id':'result','text_sha256':'synthetic','start_char':5,'end_char':10},'claim')]:
+            with self.subTest(ref=ref,owner=owner):
+                self.assertEqual(source_caption(ref,data,{'owner_id':owner})['title'],'Explanation not saved')
+        data['sources']['result']['text_sha256']='changed'
+        self.assertEqual(source_caption({'source_id':'result'},data,{'owner_id':'claim'})['title'],'Explanation not saved')
+
+    def test_latest_review_replaces_prior_notes_and_failed_check_stays_visible(self):
+        data=self.fixture();data['sources']['result']['text_sha256']='synthetic'
+        data['review_checks']=[self.review(),self.review(sentence='This result contradicts the saved completion claim.')]
+        data['review_checks'][-1]['check']['verdict']='needs_revision'
+        caption=source_caption({'source_id':'result'},data,{'owner_id':'claim'})
+        self.assertEqual(caption['title'],'This result contradicts the saved completion claim.')
+        self.assertIn('needs revision',caption['meta'])
+        data['review_checks'][-1]['verified_quote_ranges']=[]
+        self.assertEqual(source_caption({'source_id':'result'},data,{'owner_id':'claim'})['title'],'Explanation not saved')
+        del data['review_checks'][-1]['check']['evidence_checks']
+        self.assertEqual(source_caption({'source_id':'result'},data,{'owner_id':'claim'})['title'],'Explanation not saved')
+
+    def test_filename_is_not_presented_as_explanation_of_a_claim(self):
+        data=self.fixture();data['sources']['input']['text']='Tool Bash\nInput: '+json.dumps({'file_path':'/tmp/tasks/bta8tnsqk.output'})
+        self.assertEqual(source_caption({'source_id':'result'},data,{'owner_id':'claim'})['title'],'Explanation not saved')
+        self.assertEqual(source_caption({'source_id':'result'},data)['title'],'tasks/bta8tnsqk.output')
 
     def test_paths_and_commands_use_literal_fields_without_reading_other_files(self):
         data=self.fixture();data['sources']['input']['text']='Tool Bash\nInput: '+json.dumps({'file_path':'/[USER]/project/theme-items/index.d.ts'})

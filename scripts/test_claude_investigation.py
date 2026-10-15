@@ -21,7 +21,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--claude', default='claude'); p.add_argument('--plugin', default=str(ROOT))
     p.add_argument('--timeout', type=int, default=300); p.add_argument('--reread', action='store_true')
-    p.add_argument('--case', choices=['expected-recovery','false-success'], default='expected-recovery')
+    p.add_argument('--case', choices=['expected-recovery','false-success','opaque-output'], default='expected-recovery')
     args = p.parse_args()
     parent = ROOT / '.analysis' / 'investigation-smoke'; parent.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix='session-v05-', dir=parent))
@@ -42,6 +42,13 @@ def main():
                 'writing_skill_invoked':audit['writing_skill_invoked']}
     if not args.reread and args.case == 'expected-recovery':
         outcomes['expected_negative_test_not_a_pending_fix'] = data['investigation']['conclusion']=='no_action_supported' and not data['recommendations'] and any(i['incident']['expectedness']=='expected' and i['incident']['resolution']=='recovered' for i in data['incidents'])
+    elif not args.reread and args.case=='opaque-output':
+        refs=[r for field in ('synopsis','observed_outcome') for r in data['investigation'].get(field,{}).get('references',[])]
+        outcomes['opening_citations_have_explanations']=bool(refs) and all(r.get('explanation') for r in refs)
+        outcomes['managed_citation_policy_enabled']=data['investigation'].get('review_workflow',{}).get('citation_explanations_version')=='citation-explanations-v1'
+        outcomes['opaque_output_explained']=any('PermissionError' in data['sources'].get(r['source_id'],{}).get('text','') and r.get('explanation') for r in refs)
+        # The words and interpretation still need source-backed inspection;
+        # these checks certify neither brevity nor semantic correctness.
     elif not args.reread:
         outcomes['false_success_identified'] = data['investigation']['conclusion']=='findings' and bool(data['incidents'])
         outcomes['uninspected_code_not_ready'] = all(v['status']!='ready_for_review' for v in data['validation'].values())
