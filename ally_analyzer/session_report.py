@@ -369,7 +369,7 @@ def source_button(ref, label='Source', cls='link', context=None):
 
 
 def refs_html(refs, context=None):
-    return ' '.join(source_button(r, 'Source '+str(i), context=context) for i,r in enumerate(refs,1))
+    return ' '.join(source_button(r, r.get('explanation') or 'Source '+str(i), context=context) for i,r in enumerate(refs,1))
 
 
 def reference_list(refs, context=None):
@@ -595,16 +595,14 @@ def render_report(data, embedded=False):
     body+=prose('Observed spans include idle intervals. Recorded turn durations are shown separately in each turn.','small muted')+metric_details(session)+context_html(data)+'</details>'
     body+=prose('Main-agent metrics. Combined main and captured child totals are in Coverage.' if data.get('delegations') else 'Main-agent metrics.','small muted')+'</section>'
     body += '<section aria-labelledby="turns-heading"><div class="section-heading"><h2 id="turns-heading">Turns</h2>'
-    if len(turns)>8:body+='<button class="link" data-all-turns aria-expanded="false">Show all '+str(len(turns))+' turns '+icon('chevron-right')+'</button>'
+    body+='<span class="small muted">'+str(len(turns))+' turns · complete chronology</span>'
     body+='</div><p class="table-hint">Scroll the table horizontally for findings.</p><div class="table-scroll" tabindex="0" aria-label="Turn table"><table class="turns"><thead><tr><th aria-label="Expand"></th><th>#</th><th>Request</th><th>LLM calls</th><th>Tools</th><th>Findings</th></tr></thead><tbody>'
     for index,turn in enumerate(turns,1):
         sid = turn['request_event_id']; source=sources.get(sid,{})
         parsed = command_request(source)
         preview = request_preview(source, parsed)
-        links = ''.join('<button class="link finding-link" data-finding="'+esc(i['id'])+'" title="'+esc(i['incident']['title'])+'">Finding '+str(data['incidents'].index(i)+1)+'</button>' for i in mapping[turn['id']]) or '—'
-        middle=len(turns)>8 and 5<index<=len(turns)-2
-        if index==6 and middle:body+='<tr class="turn-gap"><td></td><td colspan="5"><button class="link" data-all-turns>Turns 6–'+str(len(turns)-2)+' hidden · show all</button></td></tr>'
-        body += '<tr id="'+esc(turn['id'])+'" class="turn-row"'+(' data-middle-turn hidden' if middle else '')+'><td><button class="turn-toggle" data-turn="'+esc(turn['id'])+'" aria-expanded="false" aria-controls="detail-'+esc(turn['id'])+'" aria-label="Expand turn '+str(index)+'">'+icon('chevron-right')+'</button></td><th scope="row">'+str(index)+'</th><td class="request"><button class="request-control'+(' command-preview' if parsed else '')+'" data-turn="'+esc(turn['id'])+'" aria-expanded="false" aria-controls="detail-'+esc(turn['id'])+'" aria-label="Read turn '+str(index)+'">'+preview+'</button></td><td>'+number(turn['metrics']['llm_calls']['value'])+'</td><td>'+number(turn['metrics']['tool_invocations']['value'])+'</td><td>'+links+'</td></tr>'
+        links = ''.join('<button class="link finding-link" data-finding="'+esc(i['id'])+'" title="'+esc(i['incident']['title'])+'">'+esc(i['incident']['title'])+'</button>' for i in mapping[turn['id']]) or '—'
+        body += '<tr id="'+esc(turn['id'])+'" class="turn-row"><td><button class="turn-toggle" data-turn="'+esc(turn['id'])+'" aria-expanded="false" aria-controls="detail-'+esc(turn['id'])+'" aria-label="Expand turn '+str(index)+'">'+icon('chevron-right')+'</button></td><th scope="row">'+str(index)+'</th><td class="request"><button class="request-control'+(' command-preview' if parsed else '')+'" data-turn="'+esc(turn['id'])+'" aria-expanded="false" aria-controls="detail-'+esc(turn['id'])+'" aria-label="Read turn '+str(index)+'">'+preview+'</button></td><td>'+number(turn['metrics']['llm_calls']['value'])+'</td><td>'+number(turn['metrics']['tool_invocations']['value'])+'</td><td>'+links+'</td></tr>'
         body += '<tr id="detail-'+esc(turn['id'])+'" class="turn-detail" hidden><td colspan="6"><div class="turn-content"><div class="turn-detail-head"><h3>Turn '+str(index)+'</h3>'+(source_button(sid,'Full request and source') if not parsed else '')+'</div>'+request_details({**source,'id':sid},parsed)+token_breakdown(turn['metrics'],'Turn '+str(index)+' tokens')+'<dl class="turn-metrics">'
         for key,label in (('turn_duration_seconds','Recorded duration (s)'),('observed_turn_span_seconds','Observed span (s)')):
             body += metric_cell(key,label,turn['metrics'][key])

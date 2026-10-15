@@ -41,7 +41,7 @@ header .meta{margin:0 0 12px}
 .status-tag.completed{background:#e8eee8;color:#435f4a}
 .status-tag.failed{background:#f1e5e4;color:#8c4a45}
 .synopsis{font-size:15px;line-height:1.48;margin:12px 0 7px}
-.prose{white-space:pre-wrap;overflow-wrap:anywhere}
+.prose{white-space:pre-wrap;overflow-wrap:anywhere;max-width:75ch}
 .outcome{font-size:15px}
 .evidence-line{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;font-size:13px;margin:10px 0;color:var(--muted)}
 .source-list{margin:0;max-width:100%}
@@ -104,7 +104,9 @@ thead th{color:var(--muted);font-size:12px;font-weight:400;vertical-align:bottom
 .command-source{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-top:1px solid var(--line);padding-top:10px;font-size:12px}
 .command-source details{flex:1;min-width:0;margin:0}
 .command-source .source-link{flex-shrink:0}
-.finding-link{display:block;font-size:12px;margin-bottom:3px}
+.finding-link{display:block;font-size:12px;margin-bottom:5px;text-align:left;white-space:normal;overflow-wrap:anywhere}
+.turns .finding-link{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.source-list .source-link{display:block;text-align:left;margin:5px 0;white-space:normal;max-width:75ch}
 .turn-gap{color:var(--muted)}
 .turn-row.source-selected,.turn-row.expanded-turn{background:#efe9f5}
 .turn-detail>td{padding:0}

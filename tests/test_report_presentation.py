@@ -89,7 +89,8 @@ class ReportPresentationTests(unittest.TestCase):
         self.assertIn('component.ts',row)
         self.assertEqual(row.count('/migrate:start'),1)
         self.assertNotIn('command-message',row)
-        self.assertIn('Finding 1',row)
+        self.assertIn(data['incidents'][0]['incident']['title'],row)
+        self.assertNotIn('>Finding 1<',row)
         self.assertIn('<th>Findings</th>',output)
         self.assertIn(argument,output)
         self.assertIn('data-copy-field="request-'+source['id']+'-arguments"',output)
@@ -136,6 +137,19 @@ class ReportPresentationTests(unittest.TestCase):
         payload=json.loads(re.search(r'id="report-data">(.*?)</script>',output,re.S).group(1))
         self.assertEqual(payload,original)
         self.assertEqual(payload['incidents'][0]['incident']['claims'][0]['references'][0]['explanation'],explanation)
+        self.assertIn('>'+explanation+'</button>',output)
+
+    def test_complete_chronology_is_available_without_position_based_hiding(self):
+        data=report_data(self.store,self.iid,True,True)
+        accounting=data.get('main_accounting',data['accounting'])
+        prototype=accounting['turns'][0]
+        accounting['turns']=[{**copy.deepcopy(prototype),'id':'synthetic-turn-'+str(i)} for i in range(12)]
+        output=render_report(data)
+        rows=re.findall(r'<tr id="synthetic-turn-\d+" class="turn-row"[^>]*>',output)
+        self.assertEqual(len(rows),12)
+        self.assertTrue(all('hidden' not in row for row in rows))
+        self.assertNotIn('data-middle-turn',output.split('<script type="application/json"')[0])
+        self.assertIn('12 turns · complete chronology',output)
 
     def test_source_explanation_requires_inspected_reference_and_one_paragraph(self):
         from ally_analyzer.session_investigation import save_incident
