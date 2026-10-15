@@ -1,3 +1,15 @@
+# Validation — 0.13.0 developer reading flow
+
+October 15, 2026. The final suite discovered 247 tests in 23.701 s: 245 passed and two optional private-corpus tests were skipped. New regressions cover all-turn chronology, saved descriptive labels, open-state distinctions, explicit turn identities, unchanged payloads, review scope, ambiguity admission, optional next actions and recovery comparison. Existing token, timing, narrower/stale verification, denial, expected failure and child-evidence checks remain in the suite. Output: `.analysis/developer-flow/backend-final.log`.
+
+Browser checks used the supplied 32-turn migration report, native CSV/TTLCache coding reports and an earlier completed Claude review of a labelled synthetic recovery trace. All turns remain accessible; the migration's focused selection showed six explicitly linked turns. Requirement rows, original review assessments, recovery inputs/results, source collapse/reopen, keyboard copy and narrow-screen layouts were exercised. The final TTLCache handoff copied all 6,254 characters exactly and contained one map-level review. Browser-downloaded JSON matched saved bytes; HTML matched the current renderer and preserved its embedded report payload. Original HTML remains retained. Receipt: `.analysis/developer-flow/export-check-final.json`.
+
+Desktop and 390 × 844 captures are retained under `.analysis/developer-flow/`. The report had no outer horizontal overflow at 390 pixels; recovery columns stacked and source inspection retained its selected identity. Plugin-manifest validation, packaging checks and JavaScript syntax validation passed. These are implementation checks, not an accessibility certification or semantic-quality benchmark.
+
+Two fresh approved Claude investigations on the new investigation/review skills stopped at the host account session limit. Both saved drafts but no final reviewed conclusion. All model output and revisions remain unedited. The native CSV draft still had an unsupported missing-report claim and a bundled completion judgment; the synthetic trace produced a source-backed next-action field, but review did not complete. [Release audit 0.13.0](release-audit-0.13.0.md) records run identities, costs, evidence and outstanding work. No independent `/insights` comparison was run.
+
+---
+
 # Validation — 0.12.1 word-wrap controls
 
 October 15, 2026. Nineteen existing presentation, source-content and packaging tests pass (`.analysis/wrap-control/checks.log`). The final report JavaScript passes Node syntax validation. In the in-app browser, the saved CSV report switches between the supplied off/on icons, with the exact “Enable word wrap” / “Disable word wrap” tooltip messages. Pointer activation, keyboard focus/Enter, Escape dismissal and long-line wrapping were exercised. The long source changes from 5,120 pixels of horizontal content to 311 pixels within a 311-pixel viewport. Full screenshots are retained in `.analysis/wrap-control/`. Claude-authored text and saved source values were not edited; this presentation change requires no new investigation.

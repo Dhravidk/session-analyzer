@@ -1,3 +1,15 @@
+# Implementation status — 0.13.0
+
+The opening now exposes saved not-met/unverified requirements and unresolved/unknown findings, with an optional saved next check. A compact requirement table separates intent, status and result evidence. Finding/source links use saved descriptive wording; every turn stays in the chronology, with explicit evidence-based focus controls. Recovery attempts have a connected sequence and a direct input comparison. Copy remaining work collates inspectable saved text, scope, checks, gaps, review qualifications and source identities without generating a new recommendation.
+
+The investigation contract now accepts competing intent interpretations and optional immediate next actions. Declared ambiguity that changes an active requirement's outcome cannot accompany a confident completed/not-met verdict. Review guidance distinguishes explicit prerequisites from inferred sentence order. These rules cannot discover every ambiguity or establish diagnostic quality by themselves. Historical Claude prose remains unchanged.
+
+Final backend validation discovered 247 tests: 245 passed and two optional private-corpus tests were skipped (23.701 s). Browser checks cover actual saved migration/CSV/TTLCache reports and a labelled synthetic recovery example, including exact copying, current-layout HTML export over unchanged saved data, JSON bytes, complete chronology, requirement navigation and 390-pixel layouts. The spec, diagram and plugin package were updated.
+
+Both fresh Claude checks hit the account session limit before review completed. Their unedited drafts and failures are preserved. One draft still contains unsupported claims, so this is not a passed diagnostic-quality release or a claim of superiority over `/insights`. See [release audit 0.13.0](release-audit-0.13.0.md) for observed behavior and the outstanding review/evaluation work.
+
+---
+
 # Implementation status — 0.12.1
 
 The source inspector now uses the supplied state-specific word-wrap icons. Hover and keyboard focus show the exact next action: “Enable word wrap” or “Disable word wrap.” Each source panel retains its own wrap state, accessible pressed state and exact-copy behavior. Saved report content and investigation behavior are unchanged. The existing presentation, source-content and packaging checks pass; browser validation is recorded in `validation.md`.

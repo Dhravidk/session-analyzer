@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.12.1
+# Ally Session Analyzer 0.13.0
 
 ## Browse local sessions
 
@@ -91,7 +91,9 @@ A recommendation contains its trigger, target, concrete change, tradeoffs and fa
 
 ## Read the session report
 
-The opening contains Claude's saved one-to-three-sentence synopsis of intent, recorded work and outcome. The document then shows compact metrics, a turn table, proposed changes once, and expandable patterns and coverage. Turn rows open source records and link to findings; findings link to their proposals. Literal previews retain complete source text behind them when source embedding is enabled. The renderer has no model or summarization step.
+The opening contains Claude's saved one-to-three-sentence synopsis of intent, recorded work and outcome, followed by open requirements and findings. Requirement rows separate requested work, status and verification evidence. Every turn remains accessible; descriptive finding links and explicit evidence filters help locate relevant work. Saved recovery attempts can be compared directly. Copy remaining work collates saved text, checks, limits and references without inventing an action. The renderer has no model or summarization step.
+
+Full requirement, recovery, token and source details remain behind their controls. Proposed changes appear once. Literal previews retain complete source text when source embedding is enabled. Library HTML exports use the current layout over immutable saved data; original HTML and JSON remain retained.
 
 Nonzero recorded-failure counts open Claude’s saved explanations of what each attempt tried, what failed and what happened next. The original inputs/results and surrounding turn remain accessible. Explanations cite inspected evidence; recovery requires a later successful result and a contextual judgment that it addresses this failure. Unknown causes and missing explanations stay visible. Clicking uses saved analysis and makes no model call. Counts are unchanged by the explanation.
 
@@ -125,7 +127,7 @@ The writing skill requires specific evidence, plain language and concrete remain
 ```sh
 python3 -m unittest discover -v
 python3 scripts/package_plugin.py
-claude --plugin-dir dist/ally-session-analyzer-0.12.1.zip
+claude --plugin-dir dist/ally-session-analyzer-0.13.0.zip
 ```
 
 The ZIP includes only allowlisted implementation files, skills and documentation. It excludes private logs, stores, reports, tests and legacy variants. The engine and regression tests run without Claude; opt-in live tests use the operator's authenticated Claude host. CLI plugin loading is tested; permanent desktop installation and other operating systems are not certified.
@@ -169,7 +171,7 @@ claude --plugin-dir /absolute/path/ally-session-analyzer
 python3 /absolute/path/ally-session-analyzer/scripts/ally-session.py --help
 ```
 
-This follows the [Claude Code plugin layout](https://code.claude.com/docs/en/plugins-reference). No marketplace location is configured or claimed. See the [0.11.0 release audit](docs/release-audit-0.11.0.md) for mechanical checks, observed Claude behavior and the remaining independent evaluation. Earlier outputs and their limitations remain preserved; they are not rewritten by this release.
+This follows the [Claude Code plugin layout](https://code.claude.com/docs/en/plugins-reference). No marketplace location is configured or claimed. See the [0.13.0 release audit](docs/release-audit-0.13.0.md) for mechanical checks, interrupted Claude checks and the remaining independent evaluation. Earlier outputs and their limitations remain preserved; they are not rewritten by this release.
 
 The runner now stops on terminal setup/API failures instead of starting another reviewer. It preserves the host error and marks the stop external. Fix authentication outside the analyzer, then start a new run directory; failed output is never overwritten.
 

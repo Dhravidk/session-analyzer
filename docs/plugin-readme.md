@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.12.1
+# Ally Session Analyzer 0.13.0
 
 ## Browse local sessions
 
@@ -18,7 +18,7 @@ Discovery is bounded (three levels, 10,000 parent logs, first and last 1 MiB for
 Local deterministic accounting and a single-session investigation workflow for an approved Claude host. Requires Python 3.9+ on PATH; no third-party runtime packages or engine model/network client.
 
 ```sh
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.12.1.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.13.0.zip
 ```
 
 Use `/ally-session-analyzer:analyze /absolute/path/session.log` to import and measure, `/ally-session-analyzer:explain ANALYSIS_ID` for accounting, or `/ally-session-analyzer:investigate INVESTIGATION_ID` for the scoped investigation. The investigation skill can also select one root from an analysis. Loading the plugin does not collect logs automatically.
@@ -93,7 +93,7 @@ claude --plugin-dir /absolute/path/ally-session-analyzer
 python3 /absolute/path/ally-session-analyzer/scripts/ally-session.py --help
 ```
 
-This follows the [Claude Code plugin layout](https://code.claude.com/docs/en/plugins-reference). No marketplace location is configured or claimed. See the [0.11.0 release audit](docs/release-audit-0.11.0.md) for mechanical checks, observed Claude behavior and the remaining independent evaluation. Earlier outputs and their limitations remain preserved; they are not rewritten by this release.
+This follows the [Claude Code plugin layout](https://code.claude.com/docs/en/plugins-reference). No marketplace location is configured or claimed. See the [0.13.0 release audit](docs/release-audit-0.13.0.md) for mechanical checks, interrupted Claude checks and the remaining independent evaluation. Earlier outputs and their limitations remain preserved; they are not rewritten by this release.
 
 The source inspector supports **Expand**, **Restore**, and **Collapse**. Use **Source** in the report header to reopen the selected record with its reading state retained.
 
