@@ -18,7 +18,7 @@ flowchart TB
 
     subgraph CLAUDE["Managed Claude workflow — explicit prompts, closed stdin; shared budget"]
         I["Investigation host reads main requests and follows material questions<br/>Explain outcomes, failures, recovery, and relevant instructions"]
-        D["Save versioned findings and an immutable conclusion draft<br/>Recommendations are optional; preserve open questions"]
+        D["Save findings with answers, local events and decisive sources<br/>Immutable conclusion draft; recommendations optional"]
         J["Separate evidence-review host rereads original sources<br/>Check obligation outcomes, opening consistency,<br/>support, recovery, causality, and current revisions"]
     end
 
@@ -29,7 +29,7 @@ flowchart TB
 
     V["Check a proposed change and record its readiness<br/>Inspect target and exact edit; operator runs applicable fixtures"]
     C["Check inquiry and review prerequisites<br/>Delivered evidence, exact quotes, and checks for current revisions"]
-    F["Save and render the completed or explicitly partial inquiry<br/>Exact Claude wording; open work, scannable requirements,<br/>contextual finding links, episode comparisons, and source inspector"]
+    F["Save and render the completed or explicitly partial inquiry<br/>Exact Claude wording; open work, scannable requirements,<br/>local event explanations, episode sequences, and source inspector"]
     H["Developer inspects evidence and decides<br/>Copy saved remaining work or exact proposed text<br/>Test, reject, or take no action"]
 
     B["Local session library: selected directory<br/>One entry per session; latest saved analysis<br/>Grouped paths, search, independent freshness/completion"]

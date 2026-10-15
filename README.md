@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.14.3
+# Ally Session Analyzer 0.15.0
 
 ## Browse local sessions
 
@@ -19,7 +19,7 @@ A local analyzer for Claude Code session archives, with deterministic accounting
 
 The investigation handles **one selected session** and structurally linked, captured children. It preserves the original records, gives Claude compact navigation and measured activity, and lets Claude search, follow evidence links and reread complete visible text. Claude writes the findings and optional recommendations. The renderer preserves that wording; Codex is used for product development and tests only.
 
-Material requirements connect to result evidence, verification scope and known revisions. Recovery episodes retain distinct attempts and deduplicated resource usage. Context/cache and captured-output views help Claude locate evidence without inventing compactions, waste or token attribution. Findings can distinguish adequate instructions that were ignored, an instruction defect, incomplete verification, tool limitations and insufficient evidence. No recommendation is required.
+Material requirements connect to result evidence, verification scope and known revisions. Recovery episodes retain distinct attempts and deduplicated resource usage. Context/cache and captured-output views help Claude locate evidence without inventing compactions, waste or token attribution. Findings can distinguish adequate instructions that were ignored, an instruction defect, incomplete verification, tool limitations and insufficient evidence. No recommendation is required. New findings include Claude-authored local event explanations and decisive sources. Turn links open the local result; the complete finding retains its answer, sequence, qualifications and optional proposals.
 
 - [Single-session usage and operator checks](docs/single-session-usage.md)
 - [Product-manager design and Mermaid diagram](docs/session-analyzer-product-design.md)
@@ -127,7 +127,7 @@ The writing skill requires specific evidence, plain language and concrete remain
 ```sh
 python3 -m unittest discover -v
 python3 scripts/package_plugin.py
-claude --plugin-dir dist/ally-session-analyzer-0.14.3.zip
+claude --plugin-dir dist/ally-session-analyzer-0.15.0.zip
 ```
 
 The ZIP includes only allowlisted implementation files, skills and documentation. It excludes private logs, stores, reports, tests and legacy variants. The engine and regression tests run without Claude; opt-in live tests use the operator's authenticated Claude host. CLI plugin loading is tested; permanent desktop installation and other operating systems are not certified.

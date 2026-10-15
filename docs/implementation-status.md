@@ -1,3 +1,11 @@
+# Implementation status — 0.15.0
+
+New managed findings require Claude-authored short names, answer-first explanations and local events tied to decisive source identities. The turn table shows the saved local event; selecting it opens that explanation and its evidence sequence. Pattern episodes retain separate outcomes. Classifications and complete record inventories remain accessible in details. Historical reports disclose missing local explanations and preserve their saved wording and grouping. Missing reviews and unfinalized conclusion drafts are visible rather than presented as complete.
+
+The final backend suite passed 282 tests with two optional private-corpus skips. Desktop/narrow browser checks, exact copying, source navigation and exports passed. A fresh Claude investigation and review completed on a labelled synthetic input; the real migration rerun remains partial after exhausting its review budget, and the earlier completed run exposed reasoning errors. The implementation does not establish that F2 has been correctly split, that the output is free of AI slop, or that it outperforms `/insights`. See [validation](validation.md) and the [release audit](release-audit-0.15.0.md) for observed behavior and remaining gaps.
+
+---
+
 # Implementation status — 0.14.3
 
 The source inspector uses a draggable `<|>` divider and a compact collapse icon. Width follows the available report area, with minimum reading widths and a proportion remembered for the browser tab. Keyboard arrows, Home/End and Enter provide resizing and collapse. Selected evidence, wrapping and source scroll survive collapse/reopen; narrow screens retain the full-width modal drawer.
