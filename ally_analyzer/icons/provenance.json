@@ -1,0 +1,37 @@
+{
+  "source": "https://github.com/feathericons/feather/tree/v4.29.1",
+  "license": "MIT",
+  "files": {
+    "copy.svg": "9988a6b677ada9a21b94770e0def9a3d4294de9d885c35e57c4c4fd4a385d76c",
+    "download.svg": "9ba87bd951c046ca8fffa3dc517e465c02c27fe8afc37f5cd9b2db46ed806d1d",
+    "chevron-down.svg": "91881cb37873641a6762b9f972a26c2070874032e657129905c4993249c7486f",
+    "chevron-right.svg": "0d9a61eeef7c1dfc502a503dec2e19bf39dd677a55cba22daa78db1d17488914",
+    "chevron-left.svg": "012e15e032fd5b419ec0a458e94af606404a577b3c1739b3cf8f261cf3d7869e",
+    "x.svg": "06f128d935e02f4d143d53b13f1f9d6042e0ed8c21bf8eb6cbd483ebcb4c1116",
+    "link-2.svg": "028895b32cd861856393227796d1441fa96e846972c8bcca770947e4155c593e",
+    "external-link.svg": "9e803d27dcc9a46e4689d101b36c356e8997f3440b2c27180737156288c35a33",
+    "corner-down-left.svg": "695204f335ebe5bd2be0e977d11dede38855005d47a74fe114648352115c9a14",
+    "LICENSE": "308028e93fcf84972523cdf6e616f73168546b4953895f516d01287f16fe7bee",
+    "file.svg": "7ef6c4eeef2a6b5c59e4541e65f5cc85b936bee82316d4e4d06fe0650f63fcb8",
+    "menu.svg": "c5b8fd113a01a3764c89316ee5c83198777066ba6df6266c3743ca0991e8908f",
+    "search.svg": "4f840c9b065591391b2f3eaab5a2deb2b249921fd39dce135a15f3a0a68dad8a",
+    "folder.svg": "72ac0c6ebb95919556eaf1dcc64bc4383ebf1ab13e6b7c95da05fd5e78727a83",
+    "refresh-cw.svg": "ca4747b609a8e674993bbda83313c3bdd352c0b54253b3243f99b7d9c73a044f",
+    "more-horizontal.svg": "4f495cc72013ffdfec677f03b33a150f7b4dd741979283fd6853a09024bca112",
+    "arrow-down.svg": "65680a53b4df889a25f8d03880ea709929cb071d8b9c6a85b52152d296345107"
+  },
+  "user_supplied_wrap_icons": {
+    "source": "User-supplied icon screenshots, October 15, 2026",
+    "modifications": "Original PNG bytes preserved; the CSS background viewport isolates each supplied glyph.",
+    "files": {
+      "word-wrap-off.png": {
+        "reference": "Screenshot 2026-10-15 at 11.41.32\u202fAM.png",
+        "sha256": "babee088f44b02d240c4b0ad69bfa8f7ad716cdbbe6faca1883395047c40c5d7"
+      },
+      "word-wrap-on.png": {
+        "reference": "Screenshot 2026-10-15 at 11.41.39\u202fAM.png",
+        "sha256": "cb4afebae44b0e1a3642e963a26be06dee8edcc63106695354e952ec0fa2a25d"
+      }
+    }
+  }
+}
