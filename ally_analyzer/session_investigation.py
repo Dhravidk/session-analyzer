@@ -311,6 +311,20 @@ def save_incident(store, investigation_id, incident):
     from .session_episodes import validate_episode, validate_attribution
     episode_checks=validate_episode(store,run,incident)
     attribution_checks=validate_attribution(store,run,incident)
+    if incident.get('evidence_links'):
+        from .session_requirements import inspected_refs
+        from .session_finding_links import incident_episodes
+        allowed=set(incident['member_event_ids']) | {r['source_id'] for r in incident['task_references']+incident['recovery_references']+incident['counterevidence']}
+        allowed |= {r['source_id'] for c in claims for r in c['references']}
+        allowed |= {r['source_id'] for r in incident.get('pattern',{}).get('references',[])}
+        for _,episode,_ in incident_episodes(incident):
+            allowed |= {r['source_id'] for r in episode['goal_references']}
+            allowed |= {r['source_id'] for v in episode['verification'] for r in v['references']}
+        for link in incident['evidence_links']:
+            if any(r['source_id'] not in allowed for r in link['references']):
+                raise AnalyzerError('Evidence relationships must reference explicit finding members or citations')
+            validate_refs(store,run,link['references'],require_text=True)
+            inspected_refs(store,run,link['references'])
     # Validate the complete submission before saving any of its components.
     claim_ids = []
     for claim in claims:

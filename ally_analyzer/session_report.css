@@ -77,12 +77,12 @@ header .meta{margin:0 0 12px}
 table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
 th,td{padding:5px 6px;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
 thead th{color:var(--muted);font-size:12px;font-weight:400;vertical-align:bottom}
-.turns{table-layout:fixed;min-width:620px}
+.turns{table-layout:fixed;min-width:720px}
 .turns thead th:nth-child(1){width:22px}
 .turns thead th:nth-child(2){width:48px}
 .turns thead th:nth-child(4){width:66px}
 .turns thead th:nth-child(5){width:46px}
-.turns thead th:nth-child(6){width:112px}
+.turns thead th:nth-child(6){width:220px}
 .turns tbody th{font-weight:400}
 .turns thead th:nth-child(2),.turns thead th:nth-child(4),.turns thead th:nth-child(5){text-align:right}
 .turns .turn-row>th,.turns .turn-row>td:nth-child(4),.turns .turn-row>td:nth-child(5){white-space:nowrap;overflow-wrap:normal;font-variant-numeric:tabular-nums;text-align:right}
@@ -107,8 +107,17 @@ thead th{color:var(--muted);font-size:12px;font-weight:400;vertical-align:bottom
 .command-source details{flex:1;min-width:0;margin:0}
 .command-source .source-link{flex-shrink:0}
 .finding-refs{display:flex;flex-wrap:wrap;gap:5px}
-.finding-ref{color:var(--blue);background:var(--soft);border:1px solid #ded5e5;padding:2px 7px;min-width:32px;font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums;white-space:nowrap}
+.finding-ref{color:var(--blue);background:var(--soft);border:1px solid #ded5e5;padding:2px 7px;min-width:32px;font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums;text-align:left;white-space:normal}
 .finding-ref:hover{border-color:var(--blue)}
+.finding-dimensions{display:flex;flex-wrap:wrap;gap:12px 28px;margin:8px 0;font-size:13px}
+.finding-dimensions dt{color:var(--muted);font-size:12px}.finding-dimensions dd{margin:2px 0}
+.finding-context{border-top:1px solid var(--line);padding-top:12px;margin:16px 0}
+.finding-context label{display:block;font-size:12px;color:var(--muted);margin:8px 0}
+.finding-context select{display:block;max-width:100%;width:100%;margin-top:4px;padding:6px;background:var(--paper);color:var(--ink);border:1px solid var(--line);font:inherit}
+.finding-selected-evidence .code-viewport{max-height:19em}
+.finding-selected-evidence .code-panel{margin:10px 0}
+.finding-selected-evidence>.link{font-size:13px}
+.finding-analysis{border-top:1px solid var(--line);padding-top:10px}
 .source-list .source-link{display:block;text-align:left;margin:5px 0;white-space:normal;max-width:75ch}
 .remaining-work{border-left:2px solid #c8b8d4;padding:0 0 0 14px;margin:18px 0}
 .remaining-work .section-heading{gap:10px;flex-wrap:wrap}

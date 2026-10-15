@@ -136,7 +136,7 @@ class ConsistencyTests(unittest.TestCase):
         before=copy.deepcopy(data);html=render_report(data)
         dialog=html[html.index('id="finding-'+saved['id']):]
         self.assertLess(dialog.index('Claude review · qualified'),dialog.index('class="claim"'))
-        self.assertIn('expected ·',dialog);self.assertIn('expectedness was not established',dialog)
+        self.assertIn('<dt>Expectedness</dt><dd>expected</dd>',dialog);self.assertIn('expectedness was not established',dialog)
         self.assertEqual(data,before)
 
 

@@ -138,9 +138,9 @@ class ReportPresentationTests(unittest.TestCase):
         for index,expected in ((0,[(first['id'],'F1'),(distinct['id'],'F2')]),(1,[(first['id'],'F1')])):
             row=re.search(r'<tr id="'+turns[index]['id']+r'".*?</tr>',output,re.S).group(0)
             refs=re.findall(r'<button class="finding-ref" data-finding="([^"]+)"[^>]*>([^<]+)</button>',row)
-            self.assertEqual(refs,expected)
+            self.assertEqual([(sid,label.split(' · ')[0]) for sid,label in refs],expected)
             self.assertNotIn(first['incident']['title'],html.unescape(re.sub(r'<[^>]+>','',row)))
-            self.assertIn('aria-label="Open F1: '+html.escape(first['incident']['title'],quote=True)+'"',row)
+            self.assertRegex(row,r'aria-label="Open F1[^\"]*: '+re.escape(html.escape(first['incident']['title'],quote=True))+'"')
         for saved in data['incidents']:
             self.assertIn('id="finding-'+saved['id']+'"',output)
         payload=json.loads(re.search(r'id="report-data">(.*?)</script>',output,re.S).group(1))

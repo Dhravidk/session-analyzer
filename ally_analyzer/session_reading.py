@@ -52,6 +52,16 @@ def remaining_items(data):
         result.append(entry)
     for saved in data.get('incidents', []):
         item = saved['incident']
+        if item.get('pattern'):
+            for entry in item['pattern']['episodes']:
+                if entry['resolution'] not in ('unresolved','unknown'):continue
+                ep=entry['episode'];refs=ep['goal_references']+[r for v in ep['verification'] for r in v['references']]
+                refs += [{'source_id':sid} for a in ep['attempts'] for sid in a['event_ids']]
+                result.append({'kind':'finding','id':saved['id'],'owner_id':saved['id'],'episode_key':entry['key'],
+                               'title':entry['title'],'status':'Unresolved' if entry['resolution']=='unresolved' else 'Outcome unknown',
+                               'basis':ep['intended_result'],'limits':entry['open_questions']+ep['limitations'],'references':refs,
+                               'turn_ids':related_turns(data,refs),'review':current_review(data,saved['id'])})
+            continue
         if item['resolution'] not in ('unresolved', 'unknown'):
             continue
         refs = item['task_references'] + item['recovery_references'] + item['counterevidence']

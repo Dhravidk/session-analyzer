@@ -122,6 +122,14 @@ ATTRIBUTION = obj({"category":enum("defective_instruction", "instruction_nonadhe
     "agent_ids":arr(ID,1,50), "basis":S, "alternatives":arr(), "missing_evidence":arr(),
     "immediate_next_action":S, "persistent_change_basis":S})
 INCIDENT['properties'].update(episode=EPISODE, attribution=ATTRIBUTION)
+INCIDENT['properties']['evidence_links'] = arr(obj({
+    'role':enum('failure','recovery','verification','corrective','original','request','counterevidence','related'),
+    'references':arr(REF,1,40), 'basis':S}), maximum=100)
+INCIDENT['properties']['pattern'] = obj({
+    'characteristic':S, 'references':arr(REF,1,40), 'membership_basis':S,
+    'episodes':arr(obj({'key':ID, 'title':S,
+        'resolution':enum('recovered','unresolved','unknown','not_applicable'),
+        'episode':EPISODE, 'open_questions':arr()}),2,50)})
 INCIDENT['properties']['expectedness_basis'] = obj({
     'category':enum('intentional_negative_check','correct_policy_enforcement'),
     'references':arr(REF,1,20), 'explanation':S})
@@ -170,7 +178,7 @@ def tool_specs(spec, page):
               "max_chars": {"type": "integer", "minimum": 1, "maximum": 12000}, "expected_text_sha256": ID}, ["investigation_id", "source_id"]),
         spec("read_investigation_batch", "Read up to eight selected sources together to reduce round trips. Each source returns exact masked text, fingerprint, limits and a continuation. Up to 24000 text characters total. Follow any truncated page with the single-source reader. Operator-enabled disclosure required.",
              {**run, "source_ids":arr(ID,1,8), "max_chars_per_source":{"type":"integer","minimum":1,"maximum":3000}}, ["investigation_id","source_ids"]),
-        spec("save_incident", "Save attributed observations and classifications with scoped references, including expected activity, recovery or insufficient evidence. Recommendations are optional. Text remains exactly caller-authored; mechanical checks do not prove claim support.",
+        spec("save_incident", "Save attributed observations and classifications with scoped references. Optional evidence_links declare citation roles with inspected evidence. Use episode for one goal or pattern for separately justified nested episodes sharing an evidenced characteristic; tool similarity alone establishes neither a shared goal nor cause. Recommendations are optional. Text remains exactly caller-authored; mechanical checks do not prove claim support.",
              {**run, "incident": INCIDENT}, ["investigation_id", "incident"], False),
         spec("measure_selection", "Calculate a registered formula over unique scoped IDs, a turn_id, or all_scoped=true. Unknown coverage yields null with a known subtotal. Never divide response tokens among tools. Associated usage is not avoidable overhead. occurrence_rate requires explicit opportunity tool IDs containing the selected tools. input_change_tokens and cache_read_share_change_pp require two explicit response_ids in before/after order in the same agent trajectory. recorded_compaction_duration_ms requires one recorded boundary event_id. Input changes never imply compaction.",
              {**run, "formula": enum(*FORMULAS), "selection": SELECTION, "opportunity_tool_ids": IDS}, ["investigation_id", "formula", "selection"], False),

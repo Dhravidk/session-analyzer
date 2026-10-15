@@ -6,11 +6,29 @@ from .session_requirements import inspected_refs, verification_checks
 from .session_resources import tool_measure
 from .session_metrics import metric, token_metrics
 from .util import AnalyzerError, timestamp
+from .session_finding_links import incident_episodes
 
-VERSION = 'recovery-episode-v1'
+VERSION = 'recovery-episode-v2'
 
 
 def validate_episode(store, run, incident):
+    pattern=incident.get('pattern')
+    if pattern:
+        from .session_investigation import validate_refs
+        if incident.get('episode'):raise AnalyzerError('Use an episode or a pattern of episodes, not both')
+        validate_refs(store,run,pattern['references'],require_text=True)
+        inspected_refs(store,run,pattern['references'])
+        keys=[e['key'] for e in pattern['episodes']]
+        if len(set(keys))!=len(keys):raise AnalyzerError('Pattern episode keys must be distinct')
+        if incident['resolution']=='recovered' and any(e['resolution'] not in ('recovered','not_applicable') for e in pattern['episodes']):
+            raise AnalyzerError('A recovered pattern cannot contain unresolved or unknown episodes')
+        checks={}
+        for entry in pattern['episodes']:
+            episode_incident={**incident,'episode':entry['episode'],'resolution':entry['resolution']}
+            episode_incident.pop('pattern')
+            checks[entry['key']]=validate_episode(store,run,episode_incident)
+        return {'kind':'pattern','episodes':checks,'policy_version':VERSION,
+                'limitation':'Shared characteristics and same-goal membership are Claude judgments, not inferred from tool names or counts.'}
     episode = incident.get('episode')
     if not episode: return None
     inspected_refs(store,run,episode['goal_references'])
@@ -113,7 +131,7 @@ def validate_attribution(store, run, incident):
 
 
 def episode_resources(store, run, saved_incidents):
-    attempts=[a for v in saved_incidents for a in v['incident']['episode']['attempts']]
+    attempts=[a for v in saved_incidents for _,ep,_ in incident_episodes(v['incident']) for a in ep['attempts']]
     counts={key:Counter(i for a in attempts for i in a[key]) for key in ('response_ids','tool_ids','event_ids')}
     selected={key:set(value) for key,value in counts.items()}
     responses=[r for r in entities(store,run,'response') if r['id'] in selected['response_ids']]
@@ -134,6 +152,7 @@ def episode_resources(store, run, saved_incidents):
                           'endpoint_source_ids':[first[1],last[1]] if first else [], 'known':len(known),'eligible':len(own),
                           'limitation':'First-to-last selected timestamp. Includes idle and unselected intervening work; not active recovery time. Do not add agent intervals.'})
     return {'formula':'recovery_episode_union','formula_version':VERSION,'incident_ids':[v['id'] for v in saved_incidents],
+            'episode_count':sum(len(incident_episodes(v['incident'])) for v in saved_incidents),
             'attempt_count':len(attempts),'selection':{k:sorted(v) for k,v in selected.items()},
             'overlapping_identities_counted_once':{k:sorted(i for i,n in c.items() if n>1) for k,c in counts.items()},
             'metrics':metrics,'observed_intervals':intervals,
@@ -145,7 +164,7 @@ def measure_recovery_episodes(store, investigation_id, incident_ids):
     from .session_investigation import active_run, records, put_record, check_ids
     from .session_review import active_versions
     run=active_run(store,investigation_id)
-    available={v['id']:v for v in active_versions(records(store,investigation_id,'incident'),'incident') if v['incident'].get('episode')}
+    available={v['id']:v for v in active_versions(records(store,investigation_id,'incident'),'incident') if incident_episodes(v['incident'])}
     check_ids(incident_ids,available,'incident_ids')
     if not incident_ids: raise AnalyzerError('Select at least one current episode')
     body=episode_resources(store,run,[available[i] for i in incident_ids])

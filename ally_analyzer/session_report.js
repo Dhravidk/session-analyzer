@@ -1,6 +1,7 @@
 'use strict';
 (() => {
   const data = JSON.parse(document.getElementById('report-data').textContent);
+  const findingNavigation=JSON.parse(document.getElementById('finding-navigation')?.textContent || '{}');
   const sources = data.sources || {};
   const accounting = data.main_accounting || data.accounting;
   const turns = new Map(accounting.turns.map(t => [t.id,t]));
@@ -37,6 +38,7 @@
     const rect=control.getBoundingClientRect();
     if(rect.bottom<=0||rect.top>=innerHeight){hideWrapTooltip();return;}
     hideWrapTooltip();wrapTooltipTarget=control;wrapTooltip.textContent=control.dataset.tooltip;wrapTooltip.hidden=false;control.setAttribute('aria-describedby',wrapTooltip.id);
+    (control.closest('dialog') || document.body).append(wrapTooltip);
     const box=wrapTooltip.getBoundingClientRect();
     wrapTooltip.style.left=Math.max(8,Math.min(innerWidth-box.width-8,rect.left+rect.width/2-box.width/2))+'px';
     wrapTooltip.style.top=(rect.top>box.height+16?rect.top-box.height-8:rect.bottom+8)+'px';
@@ -54,6 +56,38 @@
     if (!dialog) return;
     for (const open of document.querySelectorAll('dialog[open]')) open.close();
     parentEvidenceDialog=null; dialog.showModal();
+  }
+  function showFinding(id,turnId,episodeKey) {
+    const dialog=document.getElementById('finding-'+id),saved=data.incidents.find(i=>i.id===id);
+    if(!dialog || !saved)return;
+    const context=dialog.querySelector('.finding-context'),full=dialog.querySelector('.finding-analysis');
+    const link=findingNavigation[id]?.turns[turnId],turn=turns.get(turnId);
+    context.replaceChildren();context.hidden=!link;full.open=!link;
+    if(link && turn){
+      const number=accounting.turns.findIndex(t=>t.id===turnId)+1;
+      const heading=document.createElement('h3');heading.textContent='Turn '+number+' · '+link.label;context.append(heading);
+      const selector=document.createElement('select');selector.setAttribute('aria-label','Evidence linked to turn '+number);
+      const content=document.createElement('div');content.className='finding-selected-evidence';
+      for(const [index,entry] of link.evidence.entries()){
+        const source=sources[entry.ref.source_id],option=document.createElement('option');option.value=String(index);
+        option.textContent=entry.label+' · '+(source?sourceName(source):entry.ref.source_id)+(source?.timestamp?' · '+source.timestamp:'');selector.append(option);
+      }
+      if(link.evidence.length>1){const label=document.createElement('label');label.textContent=link.evidence.length+' linked records';label.append(selector);context.append(label);}
+      function draw(){
+        const entry=link.evidence[Number(selector.value)||0],source=sources[entry.ref.source_id];content.replaceChildren();
+        const relation=document.createElement('p');relation.className='small muted';relation.textContent=entry.bases.join(' · ') || 'Saved incident membership; no relationship role was recorded.';content.append(relation);
+        if(!source){const note=document.createElement('p');note.className='limit';note.textContent='Source '+entry.ref.source_id+' is not included in this export.';content.append(note);return;}
+        content.dataset.selectedSource=source.id;
+        const meta=document.createElement('p');meta.className='small muted';meta.textContent=sourceName(source)+(source.timestamp?' · '+source.timestamp:'');content.append(meta);
+        const citation={owner_id:id,label:'Saved claim and qualifications',text:entry.context,limitations:[]};
+        const relevance=document.createElement('div');sourceRelevance(entry.ref,source,citation,relevance);content.append(relevance);
+        content.append(codePanel(source.role==='tool_result'?'Result':source.role==='tool_call'?'Input':'Record',sourceText(source),'text',source.id,{available:hasSourceText(source),savedLineNumbers:true}));
+        content.append(iconButton('Inspect source and surrounding context','link-2',trigger=>showSource(entry.ref,citation,trigger)));
+      }
+      selector.addEventListener('change',draw);context.append(content);draw();
+    }
+    showEvidenceDialog('finding-',id);dialog.scrollTop=0;
+    if(episodeKey){const episode=[...dialog.querySelectorAll('[data-pattern-episode]')].find(e=>e.dataset.patternEpisode===episodeKey);if(episode){full.open=true;episode.open=true;episode.scrollIntoView({block:'start'});}}
   }
   function showSubagent(id) {
     showEvidenceDialog('subagent-',id);
@@ -129,7 +163,7 @@
     });
   }
   function compareAttempts(container) {
-    const saved=data.incidents.find(i=>i.id===container.dataset.episode),ep=saved?.incident.episode;
+    const saved=data.incidents.find(i=>i.id===container.dataset.episode),ep=container.dataset.episodeKey?saved?.incident.pattern?.episodes.find(e=>e.key===container.dataset.episodeKey)?.episode:saved?.incident.episode;
     if(!ep)return;
     const chosen=['left','right'].map(side=>ep.attempts[Number(container.querySelector('[data-compare-side='+side+']').value)]);
     const inputs=chosen.map(attemptInputs),columns=container.querySelector('.comparison-columns');columns.replaceChildren();
@@ -299,8 +333,8 @@
     closeSource(!parent);parentEvidenceDialog=null;
     if(parent)parent.showModal();
   }
-  function sourceRelevance(ref,s,context) {
-    const container=document.getElementById('source-relevance');container.replaceChildren();
+  function sourceRelevance(ref,s,context,container=document.getElementById('source-relevance')) {
+    container.replaceChildren();
     let explanation=ref.explanation, quote=null, range=null, origin='Saved citation · Claude';
     // A review note belongs to a specific immutable record, not to every claim
     // that happens to cite the same source. Never borrow a superseded review.
@@ -497,7 +531,7 @@
   function showAllTurns() {
     filterTurns(null);
   }
-  function filterTurns(ids) {
+  function filterTurns(ids,filterLabel) {
     const selected=ids?new Set(ids):null;
     let count=0;
     for(const t of turns.values()){
@@ -505,7 +539,7 @@
       row.hidden=!shown;if(shown)count++;
       document.getElementById('detail-'+t.id).hidden=!shown||!row.classList.contains('expanded-turn');
     }
-    document.getElementById('turn-selection-status').textContent=selected?count+' of '+turns.size+' turns · explicit evidence links':turns.size+' turns · complete chronology';
+    document.getElementById('turn-selection-status').textContent=selected?(filterLabel || 'Evidence-linked turns')+' · '+count+' of '+turns.size+' turns':turns.size+' turns · complete chronology';
     document.querySelector('[data-all-turns]')?.setAttribute('aria-pressed',String(!selected));
   }
   function openRequirement(id,forceOpen=false) {
@@ -535,7 +569,7 @@
     const control=event.target.closest('button,a'); if (!control) return;
     if (control.hasAttribute('data-all-turns')) showAllTurns();
     else if(control.hasAttribute('data-focus-turns')) {
-      control.closest('dialog')?.close();filterTurns(JSON.parse(control.dataset.focusTurns));
+      control.closest('dialog')?.close();filterTurns(JSON.parse(control.dataset.focusTurns),control.dataset.filterLabel);
       document.getElementById('turns-heading').scrollIntoView({block:'start'});
       document.querySelector('[data-all-turns]')?.focus({preventScroll:true});
     }
@@ -557,7 +591,7 @@
     else if(control.hasAttribute('data-source-reopen')) reopenSource(control);
     else if(control.hasAttribute('data-source-expand')) toggleSourceWidth();
     else if (control.hasAttribute('data-ref')) showSource(JSON.parse(control.dataset.ref),control.dataset.sourceContext?JSON.parse(control.dataset.sourceContext):null,control);
-    else if (control.dataset.finding) showEvidenceDialog('finding-',control.dataset.finding);
+    else if (control.dataset.finding) showFinding(control.dataset.finding,control.dataset.findingTurn,control.dataset.findingEpisode);
     else if (control.dataset.failures) showEvidenceDialog('failures-',control.dataset.failures);
     else if (control.dataset.subagent) showSubagent(control.dataset.subagent);
     else if (control.dataset.agentMore) renderAgentEvents(control.dataset.agentMore,control.closest('dialog'));

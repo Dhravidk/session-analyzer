@@ -15,6 +15,7 @@ from .session_failures import active_explanations, failure_coverage
 from .session_review import active_versions
 from .session_investigation import accounting, records
 from .session_patterns import RECORDED_FAILURE_OUTCOMES, turn_patterns
+from .session_finding_links import finding_links, incident_episodes
 from .session_scope import entities, exposure, get_run, get_scope, projection, scope_rows, source_record
 from .session_validation import get_validation_results
 from .trajectory import require_content, trajectory_text
@@ -113,7 +114,7 @@ def report_data(store, investigation_id, include_source_text=False, allow_conten
             'requirement_map':current_map(store,investigation_id),
             'requirement_map_history':records(store,investigation_id,'requirement_map'),
             'resource_views':resources,
-            'episode_resources':{i['id']:episode_resources(store,run,[i]) for i in incidents if i['incident'].get('episode')},
+            'episode_resources':{i['id']:episode_resources(store,run,[i]) for i in incidents if incident_episodes(i['incident'])},
             'incident_history':records(store,investigation_id,'incident'),'claims':records(store,investigation_id,'claim'),
             'measurements':records(store,investigation_id,'measurement'),'recommendations':proposals,
             'inquiries':records(store,investigation_id,'inquiry'),
@@ -309,8 +310,8 @@ def requirements_html(data):
     return '<details id="requirements"><summary>Requirements · '+str(len(items))+' mapped'+(' · '+str(unverified)+' unverified' if unverified else '')+'</summary>'+content+'</details>'
 
 
-def focus_turns_button(turn_ids, label='Related turns'):
-    return '<button class="link" data-focus-turns="'+esc(canonical(turn_ids))+'">'+esc(label)+'</button>'
+def focus_turns_button(turn_ids, label='Related turns', filter_label=None):
+    return '<button class="link" data-focus-turns="'+esc(canonical(turn_ids))+'"'+(' data-filter-label="'+esc(filter_label)+'"' if filter_label else '')+'>'+esc(label)+'</button>'
 
 
 def remaining_work_html(data):
@@ -324,7 +325,7 @@ def remaining_work_html(data):
     for item in items:
         body+='<li><span class="small muted">'+esc(item['status'])+'</span> '
         if item['kind']=='requirement':body+='<button class="link" data-open-requirement="'+esc(item['id'])+'">'+esc(item['title'])+'</button>'
-        else:body+='<button class="link" data-finding="'+esc(item['id'])+'">'+esc(item['title'])+'</button>'
+        else:body+='<button class="link" data-finding="'+esc(item['id'])+'"'+(' data-finding-episode="'+esc(item['episode_key'])+'"' if item.get('episode_key') else '')+'>'+esc(item['title'])+'</button>'
         review=item.get('review')
         if item['kind']=='finding' and review and review['verdict']!='supported':body+='<span class="limit small"> · Claude review '+esc(review['verdict'].replace('_',' '))+'</span>'
         if item.get('next_action'):body+=prose('Next action: '+item['next_action'],'small prose')
@@ -335,8 +336,27 @@ def remaining_work_html(data):
     return body
 
 
-def recovery_html(data, saved):
+def recovery_resources_html(resources):
+    if not resources:return ''
+    metrics=token_breakdown(resources['metrics'],'Resources associated with recovery')
+    metrics+='<dl class="turn-metrics">'+''.join(metric_cell(k,l,resources['metrics'][k]) for k,l in (('llm_calls','Observed calls'),('tool_invocations','Tool invocations'),('recorded_tool_duration_ms','Recorded execution durations (ms)')))+'</dl>'
+    metrics+=prose(resources['limitation'],'small muted')+detail('Selected identities, overlap and elapsed intervals',resources)
+    return detail('Associated resources · union of selected identities',metrics,raw=True)
+
+
+def recovery_html(data, saved, episode_key=None):
     i=saved['incident']; ep=i.get('episode')
+    if i.get('pattern'):
+        pattern=i['pattern'];context=evidence_context(saved['id'],i['title'],pattern['membership_basis'])
+        content='<section class="finding-pattern"><h3>Pattern · '+str(len(pattern['episodes']))+' episodes</h3>'+prose(pattern['characteristic'])+refs_html(pattern['references'],context)
+        content+=detail('Pattern membership',prose(pattern['membership_basis']),raw=True)
+        for entry in pattern['episodes']:
+            nested={**saved,'incident':{**i,'episode':entry['episode'],'resolution':entry['resolution'],'open_questions':entry['open_questions']},
+                    'episode_prerequisites':saved.get('episode_prerequisites',{}).get('episodes',{}).get(entry['key'],{})}
+            nested['incident'].pop('pattern')
+            content+='<details class="pattern-episode" data-pattern-episode="'+esc(entry['key'])+'"'+(' open' if entry['resolution'] in ('unresolved','unknown') else '')+'><summary>'+esc(entry['title'])+' · '+esc(entry['resolution'].replace('_',' '))+'</summary>'
+            content+=recovery_html(data,nested,entry['key'])+'</details>'
+        return content+recovery_resources_html(data.get('episode_resources',{}).get(saved['id']))+'</section>'
     if not ep:return ''
     context=evidence_context(saved['id'],i['title'],ep['intended_result'],ep['limitations'])
     content='<section class="recovery-sequence"><h3>Recovery sequence</h3>'+prose(ep['intended_result'])+reference_list(ep['goal_references'],context)+'<ol>'
@@ -349,7 +369,7 @@ def recovery_html(data, saved):
     content+='<h4>Outcome · '+esc(i['resolution'].replace('_',' '))+'</h4>'
     for limit in list(dict.fromkeys(ep['limitations']+i['open_questions'])):content+=prose(limit,'limit prose')
     if len(ep['attempts'])>1:
-        content+='<details class="attempt-comparison" data-episode="'+esc(saved['id'])+'"><summary>Compare attempts</summary><div class="comparison-controls">'
+        content+='<details class="attempt-comparison" data-episode="'+esc(saved['id'])+'"'+(' data-episode-key="'+esc(episode_key)+'"' if episode_key else '')+'><summary>Compare attempts</summary><div class="comparison-controls">'
         for side,label in (('left','Earlier attempt'),('right','Later attempt')):
             selected=next((n for n,a in enumerate(ep['attempts']) if a['role']=='original'),0) if side=='left' else next((n for n in range(len(ep['attempts'])-1,-1,-1) if ep['attempts'][n]['role']=='verification'),len(ep['attempts'])-1)
             content+='<label>'+label+'<select data-compare-side="'+side+'">'+''.join('<option value="'+str(n)+'"'+(' selected' if n==selected else '')+'>'+esc(a['role'].capitalize()+' · '+a['description'])+'</option>' for n,a in enumerate(ep['attempts']))+'</select></label>'
@@ -357,12 +377,7 @@ def recovery_html(data, saved):
     turn_ids=related_turns(data,event_ids=[s for a in ep['attempts'] for s in a['event_ids']],tool_ids=[t for a in ep['attempts'] for t in a['tool_ids']])
     if turn_ids:content+=focus_turns_button(turn_ids,'Episode turns')
     content+=detail('Membership basis',prose(ep['membership_justification']),raw=True)
-    resources=data.get('episode_resources',{}).get(saved['id'])
-    if resources:
-        metrics=token_breakdown(resources['metrics'],'Resources associated with recovery')
-        metrics+='<dl class="turn-metrics">'+''.join(metric_cell(k,l,resources['metrics'][k]) for k,l in (('llm_calls','Observed calls'),('tool_invocations','Tool invocations'),('recorded_tool_duration_ms','Recorded execution durations (ms)')))+'</dl>'
-        metrics+=prose(resources['limitation'],'small muted')+detail('Selected identities, overlap and elapsed intervals',resources)
-        content+=detail('Associated resources',metrics,raw=True)
+    if not episode_key:content+=recovery_resources_html(data.get('episode_resources',{}).get(saved['id']))
     return content+'</section>'
 
 
@@ -461,27 +476,25 @@ def item_refs(incident):
             + [r for c in incident['claims'] for r in c['references']])
 
 
-def turn_incidents(data):
+def turn_incidents(data, navigation=None):
     result = defaultdict(list)
     for saved in data['incidents']:
-        incident = saved['incident']
-        sources = set(incident['member_event_ids']) | {r['source_id'] for r in item_refs(incident)}
-        for turn in data['accounting']['turns']:
-            if sources.intersection(turn['event_ids']) or set(incident['tool_ids']).intersection(turn['tool_ids']):
-                result[turn['id']].append(saved)
+        links = navigation[saved['id']]['turns'] if navigation is not None else finding_links(data,saved)
+        for tid in links:result[tid].append(saved)
     return result
 
 
-def finding_reference(saved, label):
+def finding_reference(saved, label, turn_id=None, relationship=None):
     """A navigation reference, never a shortened or regenerated finding title."""
     sid, title = saved['id'], saved['incident']['title']
-    return ('<button class="finding-ref" data-finding="'+esc(sid)+'" '
+    visible=label+(' · '+relationship if relationship else '')
+    return ('<button class="finding-ref" data-finding="'+esc(sid)+'" '+('data-finding-turn="'+esc(turn_id)+'" ' if turn_id else '')+
             'aria-haspopup="dialog" aria-controls="finding-'+esc(sid)+'" '
-            'aria-label="Open '+esc(label)+': '+esc(title)+'" title="'+esc(title)+'">'+esc(label)+'</button>')
+            'aria-label="Open '+esc(visible)+': '+esc(title)+'" title="'+esc(title)+'">'+esc(visible)+'</button>')
 
 
 def finding_key(data, turns, mapping, labels):
-    body = '<section aria-labelledby="findings-heading" class="findings-section"><h3 id="findings-heading">Findings</h3>'
+    body = '<section aria-labelledby="findings-heading" class="findings-section"><h3 id="findings-heading">Findings · '+str(len(data['incidents']))+'</h3>'
     for saved in data['incidents']:
         sid = saved['id']
         linked = [(index, turn['id']) for index, turn in enumerate(turns, 1)
@@ -489,7 +502,7 @@ def finding_key(data, turns, mapping, labels):
         body += '<article class="finding-index" id="finding-key-'+esc(sid)+'">'+finding_reference(saved, labels[sid])
         body += '<div><h4><button class="link" data-finding="'+esc(sid)+'">'+esc(saved['incident']['title'])+'</button></h4>'
         if linked:
-            body += focus_turns_button([tid for _, tid in linked], 'Linked '+('turn ' if len(linked)==1 else 'turns ')+', '.join(str(n) for n, _ in linked))
+            body += focus_turns_button([tid for _, tid in linked], 'Linked '+('turn ' if len(linked)==1 else 'turns ')+', '.join(str(n) for n, _ in linked), 'Evidence linked to '+labels[sid])
         else:
             body += '<p class="small muted">No attributed turn</p>'
         body += '</div></article>'
@@ -639,8 +652,9 @@ def render_report(data, embedded=False):
     if not draft or any(draft['conclusion'].get(k)!=run.get(k) for k in ('synopsis','observed_outcome','summary')):
         conclusion_owner=None
     sources, turns = data.get('sources',{}), display_accounting['turns']
-    mapping = turn_incidents(data)
     finding_labels = {saved['id']: 'F'+str(index) for index, saved in enumerate(data['incidents'], 1)}
+    navigation={saved['id']:{'label':finding_labels[saved['id']], 'turns':finding_links(data,saved)} for saved in data['incidents']}
+    mapping = turn_incidents(data,navigation)
     title = run.get('title') or 'Session '+run['root_session_id'][:12]
     dates = sorted(s['timestamp'] for s in sources.values() if s.get('timestamp'))
     try: date = datetime.fromisoformat(dates[0].replace('Z','+00:00')).strftime('%b %d, %Y')+' · UTC'
@@ -698,9 +712,9 @@ def render_report(data, embedded=False):
     body+=prose('Main-agent metrics. Combined main and captured child totals are in Coverage.' if data.get('delegations') else 'Main-agent metrics.','small muted')+'</section>'
     body += '<section aria-labelledby="turns-heading"><div class="section-heading"><h2 id="turns-heading">Turns</h2>'
     body+='<span class="small muted" id="turn-selection-status" role="status">'+str(len(turns))+' turns · complete chronology</span>'
-    body+='</div><div class="turn-filters"><button class="link" data-all-turns aria-pressed="true">All turns</button>'
+    body+='</div><div class="turn-filters"><button class="link" data-all-turns aria-pressed="true">Show all turns</button>'
     pending=list(dict.fromkeys(t for item in remaining_items(data) for t in item['turn_ids']))
-    episodes=[i['incident']['episode'] for i in data['incidents'] if i['incident'].get('episode')]
+    episodes=[ep for i in data['incidents'] for _,ep,_ in incident_episodes(i['incident'])]
     episode_turns=related_turns(data,event_ids=[s for e in episodes for a in e['attempts'] for s in a['event_ids']],tool_ids=[t for e in episodes for a in e['attempts'] for t in a['tool_ids']])
     if pending:body+=focus_turns_button(pending,'Open work and evidence')
     if episode_turns:body+=focus_turns_button(episode_turns,'Recovery episodes')
@@ -710,7 +724,7 @@ def render_report(data, embedded=False):
         sid = turn['request_event_id']; source=sources.get(sid,{})
         parsed = command_request(source)
         preview = request_preview(source, parsed)
-        links = '<div class="finding-refs">'+''.join(finding_reference(i, finding_labels[i['id']]) for i in mapping[turn['id']])+'</div>' if mapping[turn['id']] else '—'
+        links = '<div class="finding-refs">'+''.join(finding_reference(i, finding_labels[i['id']],turn['id'],navigation[i['id']]['turns'][turn['id']]['label']) for i in mapping[turn['id']])+'</div>' if mapping[turn['id']] else '—'
         body += '<tr id="'+esc(turn['id'])+'" class="turn-row"><td><button class="turn-toggle" data-turn="'+esc(turn['id'])+'" aria-expanded="false" aria-controls="detail-'+esc(turn['id'])+'" aria-label="Expand turn '+str(index)+'">'+icon('chevron-right')+'</button></td><th scope="row">'+str(index)+'</th><td class="request"><button class="request-control'+(' command-preview' if parsed else '')+'" data-turn="'+esc(turn['id'])+'" aria-expanded="false" aria-controls="detail-'+esc(turn['id'])+'" aria-label="Read turn '+str(index)+'">'+preview+'</button></td><td>'+number(turn['metrics']['llm_calls']['value'])+'</td><td>'+number(turn['metrics']['tool_invocations']['value'])+'</td><td>'+links+'</td></tr>'
         body += '<tr id="detail-'+esc(turn['id'])+'" class="turn-detail" hidden><td colspan="6"><div class="turn-content"><div class="turn-detail-head"><h3>Turn '+str(index)+'</h3>'+(source_button(sid,'Full request and source') if not parsed else '')+'</div>'+request_details({**source,'id':sid},parsed)+token_breakdown(turn['metrics'],'Turn '+str(index)+' tokens')+'<dl class="turn-metrics">'
         for key,label in (('turn_duration_seconds','Recorded duration (s)'),('observed_turn_span_seconds','Observed span (s)')):
@@ -829,8 +843,9 @@ def render_report(data, embedded=False):
         i = saved['incident']
         body += '<dialog class="finding-dialog" id="finding-'+esc(saved['id'])+'" aria-labelledby="title-'+esc(saved['id'])+'"><div class="dialog-head"><h2 id="title-'+esc(saved['id'])+'">'+esc(i['title'])+'</h2><button data-close aria-label="Close finding">Close</button></div>'
         body += prose(finding_labels[saved['id']], 'finding-id small muted')
-        body += prose(' · '.join(i[k].replace('_',' ') for k in ('expectedness','resolution','diagnosis')),'meta')
+        body += '<dl class="finding-dimensions">'+''.join('<div><dt>'+label+'</dt><dd>'+esc(i[key].replace('_',' '))+'</dd></div>' for key,label in (('expectedness','Expectedness'),('resolution','Recovery'),('diagnosis','Diagnosis')))+'</dl>'
         body += review_qualification(data,saved['id'])
+        body += '<section class="finding-context" aria-label="Selected turn evidence" hidden></section><details class="finding-analysis" open><summary>Full finding</summary>'
         body += recovery_html(data,saved)
         if i.get('expectedness_basis'):
             basis=i['expectedness_basis']
@@ -853,14 +868,15 @@ def render_report(data, embedded=False):
         for p in data['recommendations']:
             if saved['id'] in p['recommendation']['incident_ids']:
                 body += '<p><a data-proposal-link href="#'+esc(p['id'])+'">'+esc(p['recommendation']['title'])+'</a></p>'
-        body += detail('Membership and saved review',saved)+'</dialog>'
+        body += detail('Membership and saved review',saved)+'</details></dialog>'
     body += '<aside id="source-dialog" class="source-inspector" aria-labelledby="source-title" tabindex="-1" hidden><div class="dialog-head"><h2 id="source-title">Source</h2><div class="source-window-controls"><button data-source-expand class="link" aria-controls="source-dialog" aria-label="Expand source" aria-pressed="false" title="Expand source to full width">'+icon('external-link')+'<span>Expand</span></button><button data-source-close class="link" aria-controls="source-dialog" aria-label="Collapse source" title="Collapse source">'+icon('chevron-right')+'Collapse</button></div></div><button class="link" data-source-back hidden>Back to finding</button><div id="source-nav"></div><section id="source-relevance" aria-label="Why this source"></section><div class="source-record-head"><div><h3 id="source-kind"></h3><p id="source-time" class="meta"></p></div><button class="link" data-copy-source aria-label="Copy selected source">'+icon('copy')+'Copy</button></div><div id="source-panels"></div><div id="source-accounting"></div><p id="source-limit" class="limit small"></p><details id="source-context"><summary>Surrounding context</summary><div id="source-context-records"></div><div id="source-related"></div></details><details id="source-raw"><summary>Saved source and citation</summary><p id="source-meta" class="meta"></p><pre id="source-text" tabindex="0"></pre></details><details><summary>Source identity and disclosure</summary><pre id="source-identity"></pre></details></aside><div id="copy-status" role="status" aria-live="polite"></div>'
     body+=''.join('<template id="icon-'+name+'">'+icon(name)+'</template>' for name in REPORT_ICONS)
     css, js = REPORT_CSS, REPORT_JS
     payload = json.dumps(data,ensure_ascii=False,separators=(',',':'),allow_nan=False,sort_keys=True).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
+    nav_payload = canonical(navigation).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
     script_hash = base64.b64encode(hashlib.sha256(js.encode()).digest()).decode()
     csp = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'sha256-"+script_hash+"'; base-uri 'none'; form-action 'none'"
-    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><title>Ally · '+esc(title)+'</title><style>'+css+'</style></head><body'+(' class="library-embedded"' if embedded else '')+'>'+body+'<noscript>Enable JavaScript to open evidence and export. The saved findings and proposals remain in this document.</noscript><script type="application/json" id="report-data">'+payload+'</script><script>'+js+'</script><!-- Feather icons v4.29.1\n'+REPORT_ICON_LICENSE+'--></body></html>'
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><title>Ally · '+esc(title)+'</title><style>'+css+'</style></head><body'+(' class="library-embedded"' if embedded else '')+'>'+body+'<noscript>Enable JavaScript to open evidence and export. The saved findings and proposals remain in this document.</noscript><script type="application/json" id="report-data">'+payload+'</script><script type="application/json" id="finding-navigation">'+nav_payload+'</script><script>'+js+'</script><!-- Feather icons v4.29.1\n'+REPORT_ICON_LICENSE+'--></body></html>'
 
 
 def export_session_investigation(store, investigation_id, destination, format='html', include_source_text=False, allow_content=False):
