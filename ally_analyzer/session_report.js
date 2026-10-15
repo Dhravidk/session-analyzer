@@ -541,6 +541,12 @@
     }
     else if(control.dataset.requirement)openRequirement(control.dataset.requirement);
     else if(control.dataset.openRequirement)openRequirement(control.dataset.openRequirement,true);
+    else if(control.hasAttribute('data-map-review')){
+      const map=document.getElementById('requirements');map.open=true;
+      const assessment=map.querySelector('.review-qualification');
+      assessment?.querySelector('details')?.setAttribute('open','');
+      if(assessment){assessment.setAttribute('tabindex','-1');assessment.scrollIntoView({block:'start'});assessment.focus({preventScroll:true});}
+    }
     else if(control.hasAttribute('data-resource-more')) resourcePage(control.closest('.resource-page'));
     else if(control.hasAttribute('data-copy-field')) {
       const field=document.getElementById(control.dataset.copyField);

@@ -87,6 +87,7 @@ def remaining_work_text(data):
         lines += ['Requirement inventory: '+mapped['inventory_status'], *mapped['limitations']]
     else:
         lines += ['No requirement inventory saved.']
+    reviewed=set()
     for item in items:
         lines += ['', item['status']+': '+item['title']]
         if item.get('scope'): lines += ['Scope: '+item['scope']]
@@ -104,8 +105,9 @@ def remaining_work_text(data):
             lines += ['Possible reading: '+s for s in interpretation['alternatives']]
         lines += ['Missing evidence: '+s for s in item['limits']]
         review = item.get('review')
-        if review and review['verdict']!='supported':
-            lines += ['Claude review: '+review['verdict'], review['assessment'], *review['remaining_uncertainty']]
+        if review and review['verdict']!='supported' and item['owner_id'] not in reviewed:
+            reviewed.add(item['owner_id'])
+            lines += ['Claude review of '+('requirement map' if item['kind']=='requirement' else 'finding')+' '+item['owner_id']+': '+review['verdict'], review['assessment'], *review['remaining_uncertainty']]
             lines += [c['assessment'] for c in review.get('semantic_checks', []) if c['verdict']=='needs_revision']
         seen = set()
         for ref in item['references']:

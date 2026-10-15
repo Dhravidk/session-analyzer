@@ -320,13 +320,17 @@ def focus_turns_button(turn_ids, label='Related turns'):
 def remaining_work_html(data):
     items=remaining_items(data)
     if not items:return ''
-    body='<section class="remaining-work" aria-labelledby="remaining-heading"><div class="section-heading"><h3 id="remaining-heading">Remaining work and evidence</h3><button class="link" data-copy-field="remaining-work-text">'+icon('copy')+'Copy remaining work</button></div><ul>'
+    body='<section class="remaining-work" aria-labelledby="remaining-heading"><div class="section-heading"><h3 id="remaining-heading">Remaining work and evidence</h3><button class="link" data-copy-field="remaining-work-text">'+icon('copy')+'Copy remaining work</button></div>'
+    mapped=next((item for item in items if item['kind']=='requirement' and item.get('review') and item['review']['verdict']!='supported'),None)
+    if mapped:
+        body+='<p class="limit small">Requirement map review · '+esc(mapped['review']['verdict'].replace('_',' '))+' · <button class="link" data-map-review>View assessment</button></p>'
+    body+='<ul>'
     for item in items:
         body+='<li><span class="small muted">'+esc(item['status'])+'</span> '
         if item['kind']=='requirement':body+='<button class="link" data-open-requirement="'+esc(item['id'])+'">'+esc(item['title'])+'</button>'
         else:body+='<button class="link" data-finding="'+esc(item['id'])+'">'+esc(item['title'])+'</button>'
         review=item.get('review')
-        if review and review['verdict']!='supported':body+='<span class="limit small"> · Claude review '+esc(review['verdict'].replace('_',' '))+'; see saved assessment</span>'
+        if item['kind']=='finding' and review and review['verdict']!='supported':body+='<span class="limit small"> · Claude review '+esc(review['verdict'].replace('_',' '))+'</span>'
         if item.get('next_action'):body+=prose('Next action: '+item['next_action'],'small prose')
         for limit in item.get('action_limits',[]):body+=prose(limit,'limit small')
         if item['turn_ids']:body+=focus_turns_button(item['turn_ids'])

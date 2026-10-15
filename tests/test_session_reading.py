@@ -66,7 +66,7 @@ class SessionReadingTests(unittest.TestCase):
         self.assertIn('Outcome unknown:',text)
         self.assertIn('Saved next action: '+self.attribution()['immediate_next_action'],text)
         self.assertIn('Both readings remain possible.',text)
-        self.assertIn('Claude review qualified; see saved assessment',render_report(data))
+        self.assertIn('Claude review qualified</span>',render_report(data))
 
     def test_turn_focus_uses_explicit_identity_not_adjacent_or_similar_work(self):
         data={'accounting':{'turns':[
@@ -143,6 +143,20 @@ class SessionReadingTests(unittest.TestCase):
         self.assertIn('Associated resources',html)
         self.assertIn('Recorded execution durations (ms)',html)
         self.assertEqual(data,before)
+
+    def test_map_review_keeps_its_scope_and_is_not_repeated_as_per_item_judgment(self):
+        self.read_all()
+        items=[self.requirement(status='unverified',missing_evidence=['Final revision unknown.']),
+               self.requirement(key='process',description='Run the explicit prerequisite.',status='contradicted')]
+        saved=save_requirement_map(self.store,self.iid,self.mapped(items))
+        data=report_data(self.store,self.iid,True,True)
+        assessment='This review applies to the saved requirement map as a whole.'
+        data['review_checks']=[{'check':{'record_id':saved['id'],'verdict':'qualified',
+            'assessment':assessment,'remaining_uncertainty':['Synthetic inventory remains partial.']}}]
+        self.assertEqual(remaining_work_text(data).count(assessment),1)
+        opening=render_report(data).split('<section class="remaining-work"')[1].split('</section>')[0]
+        self.assertEqual(opening.count('Requirement map review · qualified'),1)
+        self.assertNotIn('Claude review qualified</span>',opening)
 
 
 if __name__=='__main__':unittest.main()
