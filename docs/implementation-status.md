@@ -1,3 +1,9 @@
+# Implementation status — 0.13.2
+
+Turn numbers and call counts stay on one line and align consistently. The turn-number column has sufficient space for multi-digit ordinals; narrow layouts preserve table scrolling. Saved values and source data are unchanged. The affected migration report and existing presentation/package checks passed; see [validation](validation.md).
+
+---
+
 # Implementation status — 0.13.1
 
 Source-panel wrapping and copying now share vector icon sizing, stroke weight, color and button dimensions. A compact tooltip uses the report palette, and a restrained tint identifies enabled wrapping. The action labels, keyboard accessibility, per-panel wrap state and exact copying are preserved. This presentation-only patch leaves saved source data and Claude-authored analysis unchanged. See the latest [validation entry](validation.md).

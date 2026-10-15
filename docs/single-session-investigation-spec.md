@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 12 · October 15, 2026 · Governing contract for version 0.13.1 (earlier release sections retained as history)
+Revision 13 · October 15, 2026 · Governing contract for version 0.13.2 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -645,3 +645,8 @@ Acceptance includes differing plausible instruction readings, explicit prerequis
 ## 0.13.1 — Source-control refinement
 
 Word-wrap states use local vector glyphs with the same canvas, stroke, displayed size and color as the copy control. Both controls have consistent button dimensions and hover treatment. The active wrap state has a restrained tint; its tooltip names the next action, using the report palette and compact typography. Keyboard focus, Escape dismissal, per-panel state and exact copying remain unchanged. No captured source or Claude-authored output is modified.
+
+
+## 0.13.2 — Turn-table number layout
+
+Turn ordinals and call counts stay on one line, use tabular digits and align with their column headings. The ordinal column reserves sufficient room for multi-digit numbers. On narrow screens, the table retains its horizontal scrolling instead of breaking numbers across lines. Values, identities and the complete chronology remain unchanged.

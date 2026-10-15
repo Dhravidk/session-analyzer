@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.13.1
+# Ally Session Analyzer 0.13.2
 
 ## Browse local sessions
 
@@ -127,7 +127,7 @@ The writing skill requires specific evidence, plain language and concrete remain
 ```sh
 python3 -m unittest discover -v
 python3 scripts/package_plugin.py
-claude --plugin-dir dist/ally-session-analyzer-0.13.1.zip
+claude --plugin-dir dist/ally-session-analyzer-0.13.2.zip
 ```
 
 The ZIP includes only allowlisted implementation files, skills and documentation. It excludes private logs, stores, reports, tests and legacy variants. The engine and regression tests run without Claude; opt-in live tests use the operator's authenticated Claude host. CLI plugin loading is tested; permanent desktop installation and other operating systems are not certified.

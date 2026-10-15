@@ -79,11 +79,13 @@ th,td{padding:5px 6px;vertical-align:top;border-bottom:1px solid var(--line);ove
 thead th{color:var(--muted);font-size:12px;font-weight:400;vertical-align:bottom}
 .turns{table-layout:fixed}
 .turns thead th:nth-child(1){width:22px}
-.turns thead th:nth-child(2){width:28px}
+.turns thead th:nth-child(2){width:48px}
 .turns thead th:nth-child(4){width:66px}
 .turns thead th:nth-child(5){width:46px}
 .turns thead th:nth-child(6){width:83px}
 .turns tbody th{font-weight:400}
+.turns thead th:nth-child(2),.turns thead th:nth-child(4),.turns thead th:nth-child(5){text-align:right}
+.turns .turn-row>th,.turns .turn-row>td:nth-child(4),.turns .turn-row>td:nth-child(5){white-space:nowrap;overflow-wrap:normal;font-variant-numeric:tabular-nums;text-align:right}
 .turn-toggle{border:0;padding:0;line-height:1;min-width:18px;color:var(--ink)}
 .turn-toggle .icon{margin:0;width:13px;height:13px}
 .turn-toggle[aria-expanded="true"] .icon{transform:rotate(90deg)}

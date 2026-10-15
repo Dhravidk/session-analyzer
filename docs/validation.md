@@ -1,3 +1,11 @@
+# Validation — 0.13.2 turn numbers
+
+October 15, 2026. Thirteen existing report-presentation and clean-package checks passed in 0.958 s. The turn ordinal column now has 48 pixels of space; ordinals and call counts use single-line, right-aligned tabular digits instead of inheriting arbitrary text wrapping. This is a CSS-only behavior change and does not alter saved values.
+
+The supplied migration report's affected turns (13, 19, 28, 29, 30, 32) each occupied one text line. All 32 turn ordinals and both count columns also occupied one line with the source inspector open and at a 390 × 844 viewport. The narrow table retained horizontal scrolling (560-pixel table in a 354-pixel viewport). Verified screenshots: `.analysis/turn-numbers-0.13.2/desktop-final.png` and `narrow.png`.
+
+---
+
 # Validation — 0.13.1 source controls
 
 October 15, 2026. Twenty existing presentation, source-content and clean-package tests passed in 1.188 s. The wrap glyphs now use locally drawn SVGs through the same offline icon pipeline as Copy; the cropped PNG assets were removed. No new model run or authored-output revision was needed.
