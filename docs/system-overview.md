@@ -4,7 +4,7 @@ The analyzer investigates one selected Claude Code session. It should help a dev
 
 ## 1. Select and preserve the evidence
 
-The operator can open `ally-session browse <directory>` to search parent logs, switch sessions and reopen saved report versions. Folder labels show the last two path components with the full path on expansion. Browsing and local previews do not call Claude; starting an investigation requires explicit controlled-excerpt approval. The operator can also select a log, native session file, directory or ZIP directly. The importer copies the source into a local store and records its identity. For a native parent session it also looks in that session's adjacent subagent directory. Only structurally linked children join the investigation. Missing children and unrelated captured files remain visible as coverage limits.
+The operator can open `ally-session browse <directory>` to search parent logs, switch sessions and reopen each session’s latest saved analysis. Folder labels show the last two path components with the full path on expansion. Browsing and local previews do not call Claude; starting an investigation requires explicit controlled-excerpt approval. The operator can also select a log, native session file, directory or ZIP directly. The importer copies the source into a local store and records its identity. For a native parent session it also looks in that session's adjacent subagent directory. Only structurally linked children join the investigation. Missing children and unrelated captured files remain visible as coverage limits.
 
 Instructions, code, test results or plugin versions from outside the trace enter only as explicitly admitted local snapshots. The snapshot records whether it is historical, contemporaneous or current. Today's skill file cannot prove which instructions ran in an old session. There is no speculative Jira, CI or Ally connector.
 
@@ -20,7 +20,7 @@ Context/cache views expose recorded compactions and before/after values. Large-r
 
 The approved Claude host loads the investigation and writing skills. Managed processes close inherited stdin and receive only the explicit stage prompt. It first reads the main requests and follows material questions through scoped MCP tools. It can search and reread retained text in pages rather than receiving only a fixed summary. Common sensitive patterns are masked and excluded categories are disclosed. The system records the exact ranges delivered to the model; delivery is not proof of comprehension.
 
-Claude authors the synopsis, outcome, requirement map, incidents, failure explanations and optional proposals. A requirement map connects material intent, corrections and scope changes to implementation, result, verification and revision evidence. Reading a request does not mark it complete. Claude must keep narrower retries, stale checks and unsupported completion claims qualified.
+Claude authors the synopsis, outcome, requirement map, incidents, failure explanations and optional proposals. A requirement map connects material intent, corrections and scope changes to implementation, result, verification and revision evidence. Reading a request does not mark it complete. Claude must keep narrower retries, stale checks and unsupported completion claims qualified. Optional intent interpretations preserve competing readings; an ambiguous reading that changes the verdict stays unverified. A scoped next action can identify the check that would close a current gap without becoming a persistent recommendation.
 
 Recovery episodes connect explicit attempts to the same intended result. Claude explains why an attempt belongs; the engine computes counts and associated usage from the selected identities. Expected test failures, correct denials, legitimate repetition and already resolved problems may need no fix.
 
@@ -42,7 +42,7 @@ Exact edits are checked against admitted targets. Applicable fixture checks are 
 
 ## 6. Render the saved report
 
-The offline HTML report formats the saved data. It does not run a model, rewrite Claude's recommendations or improve its prose. Commands use literal command/argument fields while preserving the original masked record. Findings link to proposals rather than duplicating them.
+The offline HTML report formats the saved data. It does not run a model, rewrite Claude's recommendations or improve its prose. Commands use literal command/argument fields while preserving the original masked record. Finding links use the saved descriptive titles; proposals remain in one place. The opening links to not-met and unverified requirements and unresolved findings. Compact requirement rows expand into full evidence. Every turn remains accessible; focused views use explicit evidence identities. Saved recovery sequences support direct input comparison, with scope and revision qualifications visible. A copyable handoff collates saved fields and references without another model pass.
 
 A source click shows Claude's saved citation explanation or a matching saved review note, then separate input/result panes, cited text and surrounding context. If no explanation exists, the report says so. Copies use the exact retained masked text, even when the display wraps lines, adds gutters or shows only an excerpt. Main, child, combined and analyzer usage remain separate.
 

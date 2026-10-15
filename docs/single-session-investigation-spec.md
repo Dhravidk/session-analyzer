@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 10 · October 15, 2026 · Governing contract for version 0.11.2 (earlier release sections retained as history)
+Revision 11 · October 15, 2026 · Governing contract for version 0.13.0 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -615,3 +615,28 @@ Search, folder and full-path disclosure state, selected identity, list scroll an
 Selecting a session creates the session history entry; loading its embedded report replaces the iframe location instead of adding an independent history entry. Hidden drawers and initial state restoration must not overwrite the stored list position with a zero-size layout's scroll offset.
 
 Regressions cover native identities/titles, identical short folders and titles, duplicate exports, latest partial versus later-imported older output, harmless file timestamp changes, same-size source edits, linked-child changes, unknown inputs, duplicate jobs, failed updates, invalid report admission and embedded payload equality. Labelled fixtures exercise successful/failed update presentation without provider calls. At least one actual approved-Claude update validates the normal workflow separately. Browser verification covers search/disclosure/back state, source inspection/copy, export bytes, desktop and drawer layouts. These are implementation checks, not a quality benchmark or a superiority claim over `/insights`.
+
+
+## 0.13.0 — Reading, recovery and resuming work
+
+The report has three reading levels: understand the task and outcome; assess a requirement or finding; inspect exact evidence and accounting. The renderer formats saved judgments and may shorten a literal preview. It does not diagnose, summarize with a new model call, rewrite prose or infer a next action.
+
+- Show saved not-met requirements, unverified requirements, unresolved incidents and unknown recovery outcomes near the opening. Keep those states distinct. `contradicted` is labelled **Not met**; it is not automatically repairable remaining work. Recovered and not-applicable incidents create no handoff task. An absent item or map is not proof of completion.
+- Render the current requirement map as compact request/status/result rows. Full scope, basis, intent changes, artifact revision, checks and missing evidence remain in its expanded row. Preserve inventory limits and the distinction between reading and fulfillment.
+- Use the saved incident title for a finding link and saved citation explanation for its source link. Use a neutral source identifier when an explanation is absent. Do not invent concise labels for historical outputs.
+- Keep every main-session turn in the chronology. Optional focus controls select explicit reference/event/tool identities from requirements and episodes, preserving original turn numbering and an **All turns** control. Intervening work is not episode membership. Opening evidence outside a focus restores the complete chronology.
+- Render saved recovery attempts as a connected sequence, followed by verification scope, revision relationship and unresolved outcome. Do not synthesize episodes for historical incidents that did not save them. Direct comparison shows retained tool inputs and linked results. Changed input fields are a literal comparison only; they do not establish same-goal verification. Multi-tool or unavailable inputs remain explicit rather than being automatically aligned.
+- Keep all associated resource categories in the episode disclosure. Counts remain deduplicated identities; elapsed intervals remain separate from recorded durations and are not wasted work.
+- **Copy remaining work** collates exact saved requirement/finding text, scopes, checks, revisions, optional next actions, relevant review disagreements, limits and source identities. It includes the investigation/scope identity and known capture gaps. The text is inspectable before copying. It is not a newly generated prompt and applies no change.
+- Collapse lengthy supporting review assessments when appropriate; retain the actual verdict and decision-changing uncertainty beside the claim. A `needs_revision` assessment remains visible. Source collapse/reopen must preserve the selected record, inspector state and report position.
+- Library HTML downloads use the running renderer over the immutable saved JSON, preserving the original archived HTML. JSON downloads preserve saved bytes. Renderer updates may change layout but never saved judgments or evidence.
+
+### Optional authored intent interpretation and next action
+
+Requirement policy `requirement-evidence-v3` permits `intent_interpretation`: `status` (`explicit`, `inferred`, `ambiguous`), `basis`, inspected `references`, `alternatives`, and `outcome_depends_on_interpretation`. An ambiguous interpretation needs at least two plausible readings. If those readings change an active requirement's outcome, a confident completed or contradicted status is rejected; retain `unverified`. This enforces the model's declared ambiguity, not automatic detection of ambiguous language. Inactive superseded/withdrawn intent retains its historical uncertainty.
+
+An optional requirement `next_action` contains the exact `action`, a falsifiable `verification` that would settle the gap, inspected `references`, and material `limitations`. It is admitted only for a not-met or unverified requirement. It is distinct from a persistent recommendation and is not mandatory. Historical procedural omissions need no invented remedial task.
+
+Managed semantic review policy `semantic-consistency-v2` first checks whether an instruction actually establishes a mandatory prerequisite. Sentence order alone is insufficient. The opening must agree with the current map's competing readings. The reviewer checks whether a next action follows from the actual unresolved goal and would resolve the gap. Existing records and earlier policy versions remain immutable; re-rendering cannot fix an overconfident historical judgment.
+
+Acceptance includes differing plausible instruction readings, explicit prerequisites, stale and narrowed verification, no action after genuine recovery, missing child evidence, verbatim output/export equality, exact handoff copies, descriptive links, all-turn/focused navigation, source return and narrow-screen reading. Development fixtures are not held-out quality evaluation.

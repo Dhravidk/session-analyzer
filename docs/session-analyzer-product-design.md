@@ -24,13 +24,13 @@ flowchart TB
 
     subgraph EVIDENCE["Local evidence extensions"]
         X["Context/cache timeline and tool-output index<br/>Recorded events, sizes, and coverage-qualified measurements"]
-        T["Requirement-to-result map, recovery episodes, and fault attribution<br/>Explicit evidence, attempts, versions, and associated usage"]
+        T["Requirement map with competing intent readings and optional next actions<br/>Recovery attempts, versions, attribution, and associated usage"]
     end
 
     V["Check a proposed change and record its readiness<br/>Inspect target and exact edit; operator runs applicable fixtures"]
     C["Check inquiry and review prerequisites<br/>Delivered evidence, exact quotes, and checks for current revisions"]
-    F["Save and render the completed or explicitly partial inquiry<br/>Exact Claude wording, readable command fields,<br/>citation reasons, metrics, and source inspector"]
-    H["Developer inspects evidence and decides<br/>Copy exact proposed text, test, reject, or take no action"]
+    F["Save and render the completed or explicitly partial inquiry<br/>Exact Claude wording; open work, scannable requirements,<br/>recovery comparisons, full chronology, and source inspector"]
+    H["Developer inspects evidence and decides<br/>Copy saved remaining work or exact proposed text<br/>Test, reject, or take no action"]
 
     B["Local session library: selected directory<br/>One entry per session; latest saved analysis<br/>Grouped paths, search, independent freshness/completion"]
     B -->|"Open log locally"| S
@@ -58,7 +58,6 @@ flowchart TB
     X --> I
     I --> T
     T --> D
-
 ```
 
 The diagram shows the managed `ally-session investigate` runner. Its first host saves a draft, then a separate Claude process reviews the evidence within the same overall time and money budget. One bounded review continuation is available when work remains and the budget permits. The interactive investigation skill alone does not automatically start an independent review host. A host limit or stop can leave a partial report before review finishes.
