@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ally-session-analyzer-jev"
+version = "0.1.0"
+description = "Parallel Jev interpretation variant of the Ally Session Analyzer"
+requires-python = ">=3.9"
+dependencies = ["ally-session-analyzer==0.1.0"]
+
+[project.scripts]
+ally-session-jev = "ally_analyzer_jev.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["ally_analyzer_jev*"]
+
+[tool.setuptools.package-data]
+ally_analyzer_jev = ["panel.html"]

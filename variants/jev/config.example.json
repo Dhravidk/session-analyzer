@@ -1,0 +1,14 @@
+{
+  "model": "jev-1.13.0",
+  "content_mode": "excerpts",
+  "max_findings": 200,
+  "max_prompts": 200,
+  "context_events": 8,
+  "excerpt_chars": 1400,
+  "workers": 4,
+  "timeout_seconds": 30,
+  "max_attempts": 3,
+  "min_confidence": 0.6,
+  "min_probability": 0.7,
+  "redact_patterns": []
+}

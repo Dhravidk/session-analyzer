@@ -1,0 +1,6 @@
+{
+  "name": "ally-session-analyzer-jev",
+  "version": "0.1.0",
+  "description": "The Ally Session Analyzer with optional Jev prompt classifications and finding priorities for A/B evaluation.",
+  "author": {"name": "Ally Session Analyzer project"}
+}

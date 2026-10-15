@@ -1,0 +1,60 @@
+<script type="application/json" id="jev-data">__JEV_JSON__</script>
+<script>
+(() => {
+  'use strict';
+  const run = JSON.parse(document.getElementById('jev-data').textContent);
+  const node = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
+  const section = node('section', undefined, 'panel'); section.id = 'jev-review';
+  const head = node('div', undefined, 'row');
+  head.append(node('h2', 'Jev review'), node('span', run.status.replaceAll('_', ' '), 'badge'));
+  section.append(head, node('p', 'Optional model interpretations. Counts, rule severities, and baseline findings above remain the same.', 'muted'));
+  const op = run.operational || {}, cov = run.coverage || {};
+  section.append(node('p', `Selected ${cov.finding_selected || 0} of ${cov.finding_candidates || 0} findings and ${cov.prompt_selected || 0} of ${cov.prompt_candidates || 0} prompt messages. Model: ${run.configuration.model}.`, 'count'));
+  if (run.status !== 'complete') section.append(node('p', run.status === 'not_run' ? 'Prepared locally only. No Jev judgments have been made. Configure the API key and run the live comparison to evaluate this feature.' : run.status === 'no_candidates' ? 'No eligible requests were selected under this configuration. No Jev judgments were made.' : 'Some or all Jev requests were unavailable. Missing judgments are not negative findings. See request details below.', 'notice'));
+  if (!cov.prompt_classification_available) section.append(node('p', 'Metadata mode: prompt classification requires excerpt mode configured by the operator.', 'muted'));
+  if (op.elapsed_seconds !== undefined) section.append(node('p', `Jev stage: ${op.elapsed_seconds.toFixed(2)} s · ${op.http_attempts} HTTP attempts · ${op.cache_hits} cached results · Successful-request cost estimate: ${op.estimated_successful_request_cost_usd === null ? 'unpriced' : '$' + op.estimated_successful_request_cost_usd}. Failed/retried charges may be unreported.`, 'count'));
+  const toolbar = node('div', undefined, 'toolbar');
+  const selector = (label, entries) => { const s = node('select'); s.setAttribute('aria-label', label); entries.forEach(([value,text]) => { const o = node('option', text); o.value = value; s.append(o); }); return s; };
+  const kind = selector('Jev category', [['','All interpretations'],['finding','Finding priorities'],['prompt','Prompt classifications']]);
+  const state = selector('Jev review state', [['','All review states'],['suggested','Suggestions'],['review','Uncertain — review'],['failed','Failed or not attempted']]);
+  const sessions = [...new Set(run.annotations.flatMap(a => a.session_ids))].sort();
+  const session = selector('Jev session', [['','All sessions'], ...sessions.map(s => [s,s])]);
+  toolbar.append(kind, state, session); section.append(toolbar);
+  const body = node('div'), count = node('p', '', 'count'), more = node('button', 'Show more interpretations', 'button');
+  let limit = 30;
+  function render() {
+    body.replaceChildren();
+    const rows = run.annotations.filter(a => (!kind.value || a.kind === kind.value) && (!session.value || a.session_ids.includes(session.value)) && (!state.value || (state.value === 'failed' ? a.status !== 'complete' : a.disposition === state.value))).sort((a,b) => ((b.answers?.review_priority?.score ?? -1) - (a.answers?.review_priority?.score ?? -1)) || a.target_id.localeCompare(b.target_id));
+    for (const a of rows.slice(0, limit)) {
+      const box = node('article', undefined, 'finding'), title = node('div', undefined, 'row');
+      let label = 'Unavailable';
+      if (a.answers?.prompt_kind) label = a.answers.prompt_kind.choice.replaceAll('_',' ');
+      if (a.answers?.review_priority) label = 'Review priority ' + a.answers.review_priority.score.toFixed(2) + ' / 3';
+      title.append(node('strong', label), node('span', a.disposition === 'review' ? 'Uncertain — review' : (a.disposition || a.status).replaceAll('_',' '), 'badge'));
+      box.append(title, node('p', `${a.kind === 'prompt' ? 'Prompt message · sender origin: ' + a.sender_origin : 'Finding'} · ${a.target_id}`, 'count'));
+      if (a.answers?.prompt_kind) { const p = a.answers.prompt_kind; box.append(node('p', `Selected-label probability ${(p.probabilities[p.choice]*100).toFixed(1)}% · distribution confidence ${(p.confidence*100).toFixed(1)}%. These are different measures.`, 'count')); }
+      if (a.answers?.evidence_sufficiency) box.append(node('p', 'Context assessment: ' + a.answers.evidence_sufficiency.choice.replaceAll('_',' '), 'count'));
+      if (a.error) box.append(node('p', a.error.message, 'notice'));
+      const details = node('details'); details.append(node('summary', 'Evidence references and complete decision'), node('pre', JSON.stringify(a,null,2)));
+      for (const id of a.evidence.slice(0,12)) {
+        const b = node('button', id.slice(0,16), 'evidence-button'); b.title = id;
+        b.onclick = () => { if (typeof showEvidence === 'function') { showEvidence(id); if (run.evidence?.[id]) document.getElementById('evidenceBody').textContent = JSON.stringify(run.evidence[id],null,2); } }; details.append(b);
+      }
+      box.append(details); body.append(box);
+    }
+    if (!rows.length) body.append(node('p', 'No Jev interpretations match this view.', 'empty'));
+    count.textContent = `Showing ${Math.min(rows.length,limit)} of ${rows.length} interpretations`;
+    more.hidden = rows.length <= limit;
+  }
+  [kind,state,session].forEach(s => s.onchange = () => { limit = 30; render(); });
+  more.onclick = () => { limit += 30; render(); };
+  section.append(body,count,more);
+  const download = node('button','Download Jev results JSON','button'); download.style.marginLeft = '10px';
+  download.onclick = () => { const url = URL.createObjectURL(new Blob([JSON.stringify(run)],{type:'application/json'})); const a = node('a'); a.href=url; a.download=(run.run_id || 'jev-not-run')+'.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000); }; section.append(download);
+  const notes = node('details'); notes.append(node('summary','Configuration and limitations'),node('pre',JSON.stringify({configuration:run.configuration,coverage:run.coverage,operational:run.operational,limitations:run.limitations},null,2))); section.append(notes);
+  const footer = document.querySelector('main .footer');
+  if (footer) footer.before(section); else document.querySelector('main').append(section);
+  const jump = node('a','Jev review ↓','button'); jump.href='#jev-review'; document.querySelector('.intro').append(jump);
+  render();
+})();
+</script>

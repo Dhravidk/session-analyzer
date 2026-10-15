@@ -1,0 +1,7 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ally-session-analyzer-jev",
+  "version": "0.1.0",
+  "description": "The same Ally session analysis engine with optional Jev interpretations.",
+  "author": {"name": "Ally Session Analyzer project"}
+}
