@@ -1,3 +1,9 @@
+# Implementation status — 0.13.1
+
+Source-panel wrapping and copying now share vector icon sizing, stroke weight, color and button dimensions. A compact tooltip uses the report palette, and a restrained tint identifies enabled wrapping. The action labels, keyboard accessibility, per-panel wrap state and exact copying are preserved. This presentation-only patch leaves saved source data and Claude-authored analysis unchanged. See the latest [validation entry](validation.md).
+
+---
+
 # Implementation status — 0.13.0
 
 The opening now exposes saved not-met/unverified requirements and unresolved/unknown findings, with an optional saved next check. A compact requirement table separates intent, status and result evidence. Finding/source links use saved descriptive wording; every turn stays in the chronology, with explicit evidence-based focus controls. Recovery attempts have a connected sequence and a direct input comparison. Copy remaining work collates inspectable saved text, scope, checks, gaps, review qualifications and source identities without generating a new recommendation.

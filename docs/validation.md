@@ -1,3 +1,11 @@
+# Validation — 0.13.1 source controls
+
+October 15, 2026. Twenty existing presentation, source-content and clean-package tests passed in 1.188 s. The wrap glyphs now use locally drawn SVGs through the same offline icon pipeline as Copy; the cropped PNG assets were removed. No new model run or authored-output revision was needed.
+
+In the native TTLCache report, both buttons measured 28 × 28 pixels with 18-pixel icons and identical plum color. Both action labels, pointer/keyboard activation, Escape dismissal and retained wrapping after inspector collapse/reopen were checked. Wrapping reduced the 759-character record from 5,996 pixels of horizontal content to its 312-pixel viewport without changing its text. After the copy completion feedback, the browser clipboard matched all 759 characters exactly. At 390 × 844 the inspector had no horizontal overflow and the tooltip stayed within the viewport. The tooltip uses 12-pixel text, a 4-pixel radius, warm-white surface and the report's border/text colors. Screenshots are retained in `.analysis/wrap-refinement-0.13.1/`.
+
+---
+
 # Validation — 0.13.0 developer reading flow
 
 October 15, 2026. The final suite discovered 247 tests in 23.701 s: 245 passed and two optional private-corpus tests were skipped. New regressions cover all-turn chronology, saved descriptive labels, open-state distinctions, explicit turn identities, unchanged payloads, review scope, ambiguity admission, optional next actions and recovery comparison. Existing token, timing, narrower/stale verification, denial, expected failure and child-evidence checks remain in the suite. Output: `.analysis/developer-flow/backend-final.log`.

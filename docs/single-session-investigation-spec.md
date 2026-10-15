@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 11 · October 15, 2026 · Governing contract for version 0.13.0 (earlier release sections retained as history)
+Revision 12 · October 15, 2026 · Governing contract for version 0.13.1 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -640,3 +640,8 @@ An optional requirement `next_action` contains the exact `action`, a falsifiable
 Managed semantic review policy `semantic-consistency-v2` first checks whether an instruction actually establishes a mandatory prerequisite. Sentence order alone is insufficient. The opening must agree with the current map's competing readings. The reviewer checks whether a next action follows from the actual unresolved goal and would resolve the gap. Existing records and earlier policy versions remain immutable; re-rendering cannot fix an overconfident historical judgment.
 
 Acceptance includes differing plausible instruction readings, explicit prerequisites, stale and narrowed verification, no action after genuine recovery, missing child evidence, verbatim output/export equality, exact handoff copies, descriptive links, all-turn/focused navigation, source return and narrow-screen reading. Development fixtures are not held-out quality evaluation.
+
+
+## 0.13.1 — Source-control refinement
+
+Word-wrap states use local vector glyphs with the same canvas, stroke, displayed size and color as the copy control. Both controls have consistent button dimensions and hover treatment. The active wrap state has a restrained tint; its tooltip names the next action, using the report palette and compact typography. Keyboard focus, Escape dismissal, per-panel state and exact copying remain unchanged. No captured source or Claude-authored output is modified.

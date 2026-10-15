@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ally-session-analyzer"
-version = "0.13.0"
+version = "0.13.1"
 description = "Offline deterministic Claude Code session analysis and MCP plugin"
 requires-python = ">=3.9"
 dependencies = []
