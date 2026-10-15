@@ -122,6 +122,45 @@
     const raw=source.text.slice(prefix.length);
     try { return {raw,values:JSON.parse(raw)}; } catch (_) { return null; }
   }
+  function attemptInputs(attempt) {
+    return attempt.tool_ids.map(id=>{
+      const tool=tools.get(id),source=sources[tool?.evidence_id];
+      return {id,tool,source,fields:inputFields(source,tool)};
+    });
+  }
+  function compareAttempts(container) {
+    const saved=data.incidents.find(i=>i.id===container.dataset.episode),ep=saved?.incident.episode;
+    if(!ep)return;
+    const chosen=['left','right'].map(side=>ep.attempts[Number(container.querySelector('[data-compare-side='+side+']').value)]);
+    const inputs=chosen.map(attemptInputs),columns=container.querySelector('.comparison-columns');columns.replaceChildren();
+    const difference=container.querySelector('.comparison-difference');difference.replaceChildren();
+    let changed=[];
+    if(inputs.every(group=>group.length===1&&group[0].fields?.values&&typeof group[0].fields.values==='object'&&!Array.isArray(group[0].fields.values)) && inputs[0][0].tool.name===inputs[1][0].tool.name){
+      const [a,b]=inputs.map(group=>group[0].fields.values);
+      changed=[...new Set([...Object.keys(a),...Object.keys(b)])].filter(key=>Object.hasOwn(a,key)!==Object.hasOwn(b,key)||JSON.stringify(a[key])!==JSON.stringify(b[key]));
+      const p=document.createElement('p');p.className='small';p.textContent=changed.length?'Changed input fields: '+changed.join(', ')+'.':'Tool inputs are identical. Results and verification scope may differ.';difference.append(p);
+    }else{
+      const p=document.createElement('p');p.className='small muted';p.textContent='These attempts do not contain a single comparable tool input each. Their explicitly linked records are shown separately.';difference.append(p);
+    }
+    chosen.forEach((attempt,index)=>{
+      const column=document.createElement('div'),heading=document.createElement('h4');column.className='comparison-column';heading.textContent=label(attempt.role)+' · '+attempt.description;column.append(heading);
+      if(!inputs[index].length){const p=document.createElement('p');p.className='limit small';p.textContent='No tool identities were saved for this attempt.';column.append(p);}
+      for(const item of inputs[index]){
+        const h=document.createElement('h4');h.textContent=(item.tool?.name||item.id)+' · '+label(item.tool?.outcome);column.append(h);
+        if(item.source){
+          const fields=item.fields?.values,command=fields?.command;
+          column.append(codePanel(typeof command==='string'?'Command':'Input',typeof command==='string'?command:item.fields?.raw||sourceText(item.source),typeof command==='string'?'shell':item.fields?'json':'text',item.source.id,{available:hasSourceText(item.source),selectable:true}));
+          if(changed.length && fields){const p=document.createElement('p');p.className='small muted';p.textContent='Changed fields shown above or in the exact input source: '+changed.join(', ');column.append(p);}
+        }else{const p=document.createElement('p');p.className='limit small';p.textContent='Input source unavailable in this export.';column.append(p);}
+        for(const sid of item.tool?.evidence||[]){
+          if(sid===item.tool.evidence_id)continue;
+          const source=sources[sid];
+          if(source)column.append(iconButton(source.role==='tool_result'?'Inspect result':'Inspect linked record','link-2',trigger=>showSource({source_id:sid}, {owner_id:saved.id,label:attempt.description,text:attempt.same_goal_basis,limitations:ep.limitations},trigger)));
+        }
+      }
+      columns.append(column);
+    });
+  }
   function languageForResult(tool,fields) {
     if (!['Read','read_file'].includes(tool?.name)) return 'text';
     const path=fields?.values?.file_path || fields?.values?.path || '';
@@ -546,6 +585,11 @@
     document.querySelectorAll('.report-nav a').forEach(a=>a.removeAttribute('aria-current'));link.setAttribute('aria-current','location');
     const target=document.querySelector(link.getAttribute('href'));if(target?.tagName==='DETAILS')target.open=true;
   });
+  for(const container of document.querySelectorAll('[data-episode]')){
+    container.addEventListener('toggle',()=>{if(container.open)compareAttempts(container);});
+    container.addEventListener('change',()=>compareAttempts(container));
+    if(container.open)compareAttempts(container);
+  }
   // Exported HTML may retain expanded rows; discard transient rendering, then rebuild once.
   for (const t of turns.values()) {
     const detail=document.getElementById('detail-'+t.id);

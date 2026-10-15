@@ -13,7 +13,9 @@ def requirement_anchor(map_id, key):
 
 def requirement_refs(item):
     return (item['intent_references'] + item['result_references'] + item['artifact_revision']['references']
-            + [r for c in item['verification'] + item['intent_changes'] for r in c['references']])
+            + [r for c in item['verification'] + item['intent_changes'] for r in c['references']]
+            + item.get('intent_interpretation',{}).get('references',[])
+            + item.get('next_action',{}).get('references',[]))
 
 
 def related_turns(data, refs=(), event_ids=(), tool_ids=()):
@@ -37,12 +39,17 @@ def remaining_items(data):
         if item['status'] not in ('contradicted', 'unverified'):
             continue
         refs = requirement_refs(item)
-        result.append({'kind':'requirement', 'id':requirement_anchor(saved['id'], item['key']),
+        entry={'kind':'requirement', 'id':requirement_anchor(saved['id'], item['key']),
                        'owner_id':saved['id'], 'title':item['description'], 'scope':item['scope'],
                        'status':REQUIREMENT_STATUS[item['status']], 'basis':item['status_basis'],
                        'limits':item['missing_evidence'], 'references':refs,
                        'checks':item['verification'], 'revision':item['artifact_revision'],
-                       'turn_ids':related_turns(data, refs), 'review':current_review(data, saved['id'])})
+                       'interpretation':item.get('intent_interpretation'),
+                       'turn_ids':related_turns(data, refs), 'review':current_review(data, saved['id'])}
+        if item.get('next_action'):
+            entry.update(next_action=item['next_action']['action'], next_action_check=item['next_action']['verification'],
+                         action_limits=item['next_action']['limitations'])
+        result.append(entry)
     for saved in data.get('incidents', []):
         item = saved['incident']
         if item['resolution'] not in ('unresolved', 'unknown'):
@@ -84,6 +91,11 @@ def remaining_work_text(data):
         for check in item.get('checks', []):
             lines += ['Check: '+check['description'], ' / '.join([check['outcome'], 'scope '+check['scope_relation'], 'revision '+check['revision_relation']]), check['basis']]
         if item.get('next_action'): lines += ['Saved next action: '+item['next_action']]
+        if item.get('next_action_check'): lines += ['Action verification: '+item['next_action_check'], *item['action_limits']]
+        interpretation=item.get('interpretation')
+        if interpretation:
+            lines += ['Intent: '+interpretation['status'], interpretation['basis']]
+            lines += ['Possible reading: '+s for s in interpretation['alternatives']]
         lines += ['Missing evidence: '+s for s in item['limits']]
         review = item.get('review')
         if review and review['verdict']!='supported':

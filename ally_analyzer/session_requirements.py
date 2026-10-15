@@ -2,7 +2,7 @@
 from .session_scope import exposure, get_run, scope_rows
 from .util import AnalyzerError
 
-VERSION = 'requirement-evidence-v2'
+VERSION = 'requirement-evidence-v3'
 
 
 def delivered_response_check(store, run, item):
@@ -112,6 +112,19 @@ def save_requirement_map(store, investigation_id, requirement_map):
         for refs in (item['intent_references'], item['result_references'], item['artifact_revision']['references']):
             inspected_refs(store, run, refs)
         for change in item['intent_changes']: inspected_refs(store, run, change['references'])
+        interpretation = item.get('intent_interpretation')
+        if interpretation:
+            inspected_refs(store, run, interpretation['references'])
+            if interpretation['status']=='ambiguous':
+                if len(interpretation['alternatives'])<2:
+                    raise AnalyzerError('Ambiguous intent needs at least two plausible readings of the cited instruction')
+                if interpretation['outcome_depends_on_interpretation'] and item['status'] not in ('unverified','superseded','withdrawn'):
+                    raise AnalyzerError('When plausible intent readings change the outcome, preserve unverified status instead of a confident completion or process-failure claim')
+        action = item.get('next_action')
+        if action:
+            inspected_refs(store, run, action['references'])
+            if item['status'] not in ('contradicted','unverified'):
+                raise AnalyzerError('A remaining-work action must belong to a not-met or unverified requirement, not completed or inactive intent')
         merged = set(item['merged_from'])
         if merged - old_keys or merged & set(keys) or merged & consumed:
             raise AnalyzerError('Merged keys must name distinct historical requirements removed from this map')

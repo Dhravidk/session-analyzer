@@ -100,6 +100,12 @@ REQUIREMENT = obj({"key":ID, "description":S, "scope":S, "intent_references":arr
 # Optional for backward compatibility. This is a declared interpretation of a
 # response as the requested deliverable, never a substitute for execution proof.
 REQUIREMENT['properties']['delivered_response_evidence'] = obj({"references":arr(REF,1,20), "basis":S})
+REQUIREMENT['properties']['intent_interpretation'] = obj({
+    "status":enum("explicit", "inferred", "ambiguous"), "basis":S,
+    "references":arr(REF,1,20), "alternatives":arr(S,maximum=8),
+    "outcome_depends_on_interpretation":{"type":"boolean"}})
+REQUIREMENT['properties']['next_action'] = obj({
+    "action":S, "verification":S, "references":arr(REF,1,20), "limitations":arr()})
 REQUIREMENT_MAP = obj({"scope":S, "inventory_status":enum("partial", "complete_for_declared_scope"),
     "requirements":arr(REQUIREMENT,maximum=100), "context_only":arr(obj({"references":arr(REF,1,30), "reason":S}),maximum=100),
     "limitations":arr(), "provenance":PROVENANCE, "revision_of":ID},
@@ -124,7 +130,7 @@ INCIDENT['properties']['expectedness_basis'] = obj({
 def tool_specs(spec, page):
     run = {"investigation_id": ID}
     return [
-        spec("save_requirement_map", "Save an immutable, Claude-authored map of material requirements and intent changes to results and verification. Merge duplicates; context-only messages need no new requirement. Reading a request does not establish completion or inventory completeness. A completed item needs inspected primary evidence and, when required, a same-goal check of the relevant revision. For an explanation or other requested response content, delivered_response_evidence can cite that actual assistant text (also in result_references) with a basis for why it is the deliverable. This does not prove the text's assertions about execution or correctness, and user acceptance is not universally required. Preserve narrowed retries, stale checks, missing evidence and previous versions. Revisions submit the full current map.",
+        spec("save_requirement_map", "Save an immutable, Claude-authored map of material requirements and intent changes to results and verification. Merge duplicates; context-only messages need no new requirement. Reading a request does not establish completion or inventory completeness. A completed item needs inspected primary evidence and, when required, a same-goal check of the relevant revision. For an explanation or other requested response content, delivered_response_evidence can cite that actual assistant text (also in result_references) with a basis for why it is the deliverable. This does not prove the text's assertions about execution or correctness, and user acceptance is not universally required. Preserve narrowed retries, stale checks, missing evidence and previous versions. Save intent_interpretation when the instruction admits competing readings; a judgment that changes between plausible readings stays unverified. An optional next_action on unmet or unverified intent needs inspected sources and a gap-closing verification, not a generic prompt or persistent rule. Revisions submit the full current map.",
              {**run, "requirement_map":REQUIREMENT_MAP}, ["investigation_id", "requirement_map"], False),
         spec("get_context_timeline", "Page one captured agent's response accounting, actual turn boundaries, recorded compactions and model changes. Returns all input/cache/output components, matched-population cache shares, peak input and pre/post recorded-compaction measurements with coverage and source IDs. Input drops are not inferred compactions; elapsed gaps are not execution duration. Read before/after sources before making a causal claim.",
              {**run, "agent_id":ID, "turn_id":ID, **page}, ["investigation_id"]),

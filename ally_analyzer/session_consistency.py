@@ -6,7 +6,7 @@ revision dependencies, and reports literal writing signals without rewriting.
 import re
 from .util import AnalyzerError
 
-VERSION = 'semantic-consistency-v1'
+VERSION = 'semantic-consistency-v2'
 GENERIC_EXPLANATIONS = {'error text', 'denial message', 'tool result', 'error message',
                         'source evidence', 'supporting evidence', 'this supports the analysis',
                         'this supports the claim', 'this is relevant evidence'}
@@ -20,13 +20,13 @@ ASPECTS = {
     'recommendation': ('status_qualification_consistency', *COMMON),
 }
 GUIDANCE = {
-    'obligation_separation': 'Can any material obligation have a different outcome? Separate it when outcomes differ; do not approve a completed bundle that acknowledges a missed instruction. Do not split duplicate or immaterial intent into checklist filler.',
+    'obligation_separation': 'First establish what the instruction requires. Do not turn sentence order or a preferred workflow into a mandatory prerequisite. Preserve plausible competing readings in intent_interpretation; if they change the outcome, leave it unverified. Then separate material obligations whose outcomes differ; do not approve a completed bundle acknowledging a missed explicit instruction. Do not split duplicate or immaterial intent into checklist filler.',
     'completion_evidence': 'Compare each status and its basis with primary evidence, missing evidence, verification scope and revision. A passed functional test does not prove a requested procedural step was followed.',
-    'opening_requirement_consistency': 'Compare title, synopsis and outcome with every material status in the CURRENT requirement map. Preserve an unmet obligation even when implementation passes. Bind related_record_ids to the current map.',
+    'opening_requirement_consistency': 'Compare title, synopsis and outcome with every material status and intent_interpretation in the CURRENT requirement map. Preserve an unmet explicit obligation even when implementation passes. An unresolved interpretation must not become a confident process failure in the opening. Keep task completion separate from investigation completeness and freshness. Bind related_record_ids to the current map.',
     'distinct_field_purposes': 'Synopsis identifies intent and work; outcome states supported completion and remaining work; detailed reasoning explains why. Remove repeated chronology and checklist-like titles.',
     'specific_citation_explanations': 'Each reader-facing citation explains what this record establishes about THIS claim. Labels such as Error text and Denial message are not explanations.',
     'status_qualification_consistency': 'Expectedness, resolution, diagnosis, title and prose must agree. Expected needs evidence of intentional negative checking or correct policy enforcement. Benign, common and recovered do not mean expected. A caveat cannot repair an incorrect confident label; revise it or preserve a needs_revision judgment.',
-    'decision_relevant_limits': 'Name the actual missing evidence beside the affected claim. Remove repeated generic cautions; retain uncertainty that changes the decision.',
+    'decision_relevant_limits': 'Name the actual missing evidence beside the affected claim. Remove repeated generic cautions; retain uncertainty that changes the decision. Review any next_action against current unmet intent and results; its verification must settle the stated gap. Do not prescribe redoing recovered work or turn an immediate check into a persistent instruction.',
 }
 
 

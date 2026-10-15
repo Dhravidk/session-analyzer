@@ -7,6 +7,7 @@ from ally_analyzer.session_investigation import save_incident
 from ally_analyzer.session_requirements import save_requirement_map
 from ally_analyzer.session_reading import remaining_items, remaining_work_text, requirement_anchor, related_turns
 from ally_analyzer.session_report import render_report, report_data
+from ally_analyzer.util import AnalyzerError
 from tests import test_session_evidence as fixture
 
 
@@ -83,6 +84,65 @@ class SessionReadingTests(unittest.TestCase):
         self.assertEqual(remaining_items(data)[0]['status'],'Not met')
         self.assertIn(item['status_basis'],render_report(data))
         self.assertIn('Requirement inventory: partial',remaining_work_text(data))
+
+    def ambiguous_intent(self):
+        return {'status':'ambiguous','basis':'The cited instruction does not explicitly order reading relative to editing.',
+                'references':self.refs('event-0'), 'alternatives':[
+                    'Read the tests before editing.', 'Read the tests during the task; only the baseline command must precede editing.'],
+                'outcome_depends_on_interpretation':True}
+
+    def test_ambiguous_intent_cannot_support_confident_process_failure_or_completion(self):
+        self.read_all()
+        for status in ('contradicted','supported_completed'):
+            item=self.requirement(status=status,intent_interpretation=self.ambiguous_intent())
+            with self.subTest(status=status), self.assertRaisesRegex(AnalyzerError,'plausible intent readings'):
+                save_requirement_map(self.store,self.iid,self.mapped([item]))
+        item=self.requirement(status='unverified',intent_interpretation=self.ambiguous_intent(),missing_evidence=['Intended reading order is not explicit.'])
+        saved=save_requirement_map(self.store,self.iid,self.mapped([item]))
+        self.assertEqual(saved['requirement_map']['requirements'][0],item)
+        data=report_data(self.store,self.iid,True,True)
+        for text in item['intent_interpretation']['alternatives']:
+            self.assertIn(text,render_report(data));self.assertIn(text,remaining_work_text(data))
+
+    def test_ambiguity_and_next_action_require_inspected_evidence(self):
+        intent=self.ambiguous_intent()
+        item=self.requirement(status='unverified',intent_interpretation=intent,missing_evidence=['Reading order is ambiguous.'])
+        with self.assertRaisesRegex(AnalyzerError,'Read each cited source'):
+            save_requirement_map(self.store,self.iid,self.mapped([item]))
+        self.read_all();intent['alternatives']=intent['alternatives'][:1]
+        with self.assertRaisesRegex(AnalyzerError,'at least two'):
+            save_requirement_map(self.store,self.iid,self.mapped([item]))
+
+    def test_next_check_is_optional_authored_and_not_attached_to_completed_work(self):
+        self.read_all()
+        action={'action':'Run the full suite against fixture.py at the final revision.',
+                'verification':'A result after the final edit covers the originally requested cases.',
+                'references':self.refs('event-4'), 'limitations':['The final revision identifier is unknown.']}
+        item=self.requirement(next_action=action)
+        with self.assertRaisesRegex(AnalyzerError,'remaining-work action'):
+            save_requirement_map(self.store,self.iid,self.mapped([item]))
+        item.update(status='unverified',missing_evidence=['Final-revision check unavailable.'])
+        save_requirement_map(self.store,self.iid,self.mapped([item]))
+        data=report_data(self.store,self.iid,True,True)
+        self.assertIn(action['action'],remaining_work_text(data))
+        self.assertIn(action['verification'],remaining_work_text(data))
+        self.assertIn(action['limitations'][0],remaining_work_text(data))
+
+    def test_episode_keeps_attempts_scope_gap_and_all_resource_categories(self):
+        self.read_all();incident=self.episode(resolution='unknown')
+        incident['episode']['verification'][0].update(scope_relation='narrower',basis='The retry checked fewer cases.')
+        incident['episode']['limitations']=['The original full check remains unverified.']
+        save_incident(self.store,self.iid,incident)
+        data=report_data(self.store,self.iid,True,True);before=copy.deepcopy(data)
+        html=render_report(data)
+        self.assertIn('Recovery sequence',html)
+        self.assertIn('Compare attempts',html)
+        self.assertIn('passed · scope narrower · revision current',html)
+        self.assertIn('The original full check remains unverified.',html)
+        for attempt in incident['episode']['attempts']:self.assertIn(attempt['description'],html)
+        self.assertIn('Associated resources',html)
+        self.assertIn('Recorded execution durations (ms)',html)
+        self.assertEqual(data,before)
 
 
 if __name__=='__main__':unittest.main()

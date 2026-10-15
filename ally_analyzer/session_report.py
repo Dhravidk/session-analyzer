@@ -286,6 +286,15 @@ def requirements_html(data):
             delivered=item['delivered_response_evidence']
             content+=prose('Requested response content','small muted')+prose(delivered['basis'])+refs_html(delivered['references'],{**context,'text':delivered['basis']})
         content+=prose(item['scope'],'small muted')+prose(item['status_basis'])
+        interpretation=item.get('intent_interpretation')
+        if interpretation:
+            content+='<div class="intent-interpretation"><h4>Intent · '+esc(interpretation['status'])+'</h4>'+prose(interpretation['basis'])
+            for alternative in interpretation['alternatives']:content+=prose(alternative,'small')
+            content+=refs_html(interpretation['references'],{**context,'text':interpretation['basis']})+'</div>'
+        if item.get('next_action'):
+            action=item['next_action']
+            content+='<h4>Next action</h4>'+prose(action['action'])+prose(action['verification'],'small')+refs_html(action['references'],{**context,'text':action['action'],'limitations':action['limitations']})
+            for limit in action['limitations']:content+=prose(limit,'limit small')
         content+='<p class="small">Intent '+refs_html(item['intent_references'],context)+'</p>'
         if item['result_references']:content+='<p class="small">Result '+refs_html(item['result_references'],context)+'</p>'
         revision=item['artifact_revision']
@@ -318,10 +327,42 @@ def remaining_work_html(data):
         review=item.get('review')
         if review and review['verdict']!='supported':body+='<span class="limit small"> · Claude review '+esc(review['verdict'].replace('_',' '))+'; see saved assessment</span>'
         if item.get('next_action'):body+=prose('Next action: '+item['next_action'],'small prose')
+        for limit in item.get('action_limits',[]):body+=prose(limit,'limit small')
         if item['turn_ids']:body+=focus_turns_button(item['turn_ids'])
         body+='</li>'
     body+='</ul>'+detail('Handoff text', '<pre id="remaining-work-text">'+esc(remaining_work_text(data))+'</pre>',raw=True)+'</section>'
     return body
+
+
+def recovery_html(data, saved):
+    i=saved['incident']; ep=i.get('episode')
+    if not ep:return ''
+    context=evidence_context(saved['id'],i['title'],ep['intended_result'],ep['limitations'])
+    content='<section class="recovery-sequence"><h3>Recovery sequence</h3>'+prose(ep['intended_result'])+reference_list(ep['goal_references'],context)+'<ol>'
+    for attempt in ep['attempts']:
+        content+='<li><span class="attempt-role">'+esc(attempt['role'].capitalize())+'</span>'+prose(attempt['description'])
+        content+=prose(attempt['same_goal_basis'],'small muted')+reference_list([{'source_id':s} for s in attempt['event_ids']],{**context,'label':attempt['description'],'text':attempt['same_goal_basis']})+'</li>'
+    content+='</ol>'
+    if ep['verification']:
+        content+='<h4>Verification scope</h4>'+verification_html(ep['verification'],saved.get('episode_prerequisites',{}).get('verification'),context)
+    content+='<h4>Outcome · '+esc(i['resolution'].replace('_',' '))+'</h4>'
+    for limit in list(dict.fromkeys(ep['limitations']+i['open_questions'])):content+=prose(limit,'limit prose')
+    if len(ep['attempts'])>1:
+        content+='<details class="attempt-comparison" data-episode="'+esc(saved['id'])+'"><summary>Compare attempts</summary><div class="comparison-controls">'
+        for side,label in (('left','Earlier attempt'),('right','Later attempt')):
+            selected=next((n for n,a in enumerate(ep['attempts']) if a['role']=='original'),0) if side=='left' else next((n for n in range(len(ep['attempts'])-1,-1,-1) if ep['attempts'][n]['role']=='verification'),len(ep['attempts'])-1)
+            content+='<label>'+label+'<select data-compare-side="'+side+'">'+''.join('<option value="'+str(n)+'"'+(' selected' if n==selected else '')+'>'+esc(a['role'].capitalize()+' · '+a['description'])+'</option>' for n,a in enumerate(ep['attempts']))+'</select></label>'
+        content+='</div><div class="comparison-difference" role="status"></div><div class="comparison-columns"></div></details>'
+    turn_ids=related_turns(data,event_ids=[s for a in ep['attempts'] for s in a['event_ids']],tool_ids=[t for a in ep['attempts'] for t in a['tool_ids']])
+    if turn_ids:content+=focus_turns_button(turn_ids,'Episode turns')
+    content+=detail('Membership basis',prose(ep['membership_justification']),raw=True)
+    resources=data.get('episode_resources',{}).get(saved['id'])
+    if resources:
+        metrics=token_breakdown(resources['metrics'],'Resources associated with recovery')
+        metrics+='<dl class="turn-metrics">'+''.join(metric_cell(k,l,resources['metrics'][k]) for k,l in (('llm_calls','Observed calls'),('tool_invocations','Tool invocations'),('recorded_tool_duration_ms','Recorded execution durations (ms)')))+'</dl>'
+        metrics+=prose(resources['limitation'],'small muted')+detail('Selected identities, overlap and elapsed intervals',resources)
+        content+=detail('Associated resources',metrics,raw=True)
+    return content+'</section>'
 
 
 def context_html(data, agent_id='main', turn=None):
@@ -769,6 +810,7 @@ def render_report(data, embedded=False):
         body += '<dialog class="finding-dialog" id="finding-'+esc(saved['id'])+'" aria-labelledby="title-'+esc(saved['id'])+'"><div class="dialog-head"><h2 id="title-'+esc(saved['id'])+'">'+esc(i['title'])+'</h2><button data-close aria-label="Close finding">Close</button></div>'
         body += prose(' · '.join(i[k].replace('_',' ') for k in ('expectedness','resolution','diagnosis')),'meta')
         body += review_qualification(data,saved['id'])
+        body += recovery_html(data,saved)
         if i.get('expectedness_basis'):
             basis=i['expectedness_basis']
             body+=prose(basis['explanation'],'small')+refs_html(basis['references'],evidence_context(saved['id'],'Expectedness',basis['explanation']))
@@ -779,19 +821,6 @@ def render_report(data, embedded=False):
         if i['alternatives']: body += '<h3>Alternatives</h3>'+''.join(prose(x) for x in i['alternatives'])
         if i['open_questions']: body += '<h3>Missing evidence</h3>'+''.join(prose(x,'limit prose') for x in i['open_questions'])
         body += '<h3>Context and recovery</h3>'+refs_html(i['task_references']+i['recovery_references']+i['counterevidence'],evidence_context(saved['id'],i['title'],i['membership_basis'],i['open_questions']))
-        if i.get('episode'):
-            ep=i['episode']; context=evidence_context(saved['id'],i['title'],ep['intended_result'],ep['limitations'])
-            content=prose(ep['intended_result'])+refs_html(ep['goal_references'],context)+prose(ep['membership_justification'])
-            for attempt in ep['attempts']:
-                content+='<h4>'+esc(attempt['role'].capitalize())+' · '+esc(attempt['key'])+'</h4>'+prose(attempt['description'])+prose(attempt['same_goal_basis'],'small')+refs_html([{'source_id':s} for s in attempt['event_ids']],{**context,'label':attempt['description'],'text':attempt['same_goal_basis']})
-            content+=verification_html(ep['verification'],saved.get('episode_prerequisites',{}).get('verification'),context)
-            for limit in ep['limitations']:content+=prose(limit,'limit small')
-            resources=data.get('episode_resources',{}).get(saved['id'])
-            if resources:
-                content+=token_breakdown(resources['metrics'],'Resources associated with recovery')
-                content+='<dl class="turn-metrics">'+''.join(metric_cell(k,l,resources['metrics'][k]) for k,l in (('llm_calls','Observed calls'),('tool_invocations','Tool invocations'),('recorded_tool_duration_ms','Recorded execution durations (ms)')))+'</dl>'
-                content+=prose(resources['limitation'],'small muted')+detail('Selected identities, overlap and elapsed intervals',resources)
-            body+=detail('Recovery episode',content,raw=True)
         if i.get('attribution'):
             a=i['attribution']; content=prose(a['category'].replace('_',' ')+' · '+a['support'].replace('_',' '),'meta')
             content+=prose(a['component']+' · '+a['version']+' · '+a['version_basis'].replace('_',' '),'small')+prose(a['basis'])

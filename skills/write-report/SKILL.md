@@ -2,7 +2,7 @@
 name: write-report
 description: Write or edit Ally Session Analyzer explanations and recommendations in clear, specific prose grounded in the selected session evidence. Use before saving insights or presenting an analysis.
 metadata:
-  version: write-report-v9
+  version: write-report-v10
 ---
 
 Write for a teammate deciding whether anything should change. Make the evidence, optional action and important limit easy to find. Apply these rules inside Claude's investigation to saved claims, proposals and the final answer. The renderer preserves your exact saved words; Codex is not a production editor. This skill does not authorize applying a change or accessing more data.
@@ -49,6 +49,8 @@ A style pass is not a factual verifier or a guarantee that a report is free of l
 Give the opening fields different jobs. `synopsis.text` is one to three sentences identifying the developer's intent and what work was done. `observed_outcome.text` states what is supported as complete, what remains unfinished, and any decision-changing evidence gap. `summary` explains the reasoning behind the conclusion; it is supporting detail, not another chronological recap. Do not paste the same chronology or caution into all three. Keep the title short enough to identify the task, without listing every failure and qualification. Read the requests, current requirement map and relevant results before writing. Do not convert a completion claim into a verified result. Supply source references and keep each missing-evidence statement beside the affected claim, once. The renderer has no summarization step and will not improve your wording.
 
 An explanation such as “Error text” or “Denial message” tells the reader what kind of source it is, not why it matters. Write what the record establishes about this claim: for example, “The editor rejected this replacement because the anchor occurs twice, so this attempt made no change.” Use that sentence only when the selected record actually establishes it. Do not infer a result from a call.
+
+Use a short requirement description that identifies the obligation; put its scope and reasoning in their dedicated fields. Keep an ambiguous instruction's competing readings visible, rather than writing a confident procedural failure and qualifying it later. Where a current gap supports an immediate next check, save the requirement's optional `next_action` with the specific action, verification, sources and limits. Do not invent a next check to fill the opening. The copyable handoff is assembled from saved fields, not generated or polished by the renderer.
 
 For proposed instruction changes, give the exact target, scope and literal edit or invocation only after inspecting the relevant snapshots and overlapping instructions. An existing requirement that was ignored calls for diagnosis, not another copy of the same rule. Reuse instructions where appropriate; do not turn a one-off request into a persistent instruction. Show remaining evidence and validation limits without repeating the recommendation across turns.
 
