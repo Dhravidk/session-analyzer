@@ -1,0 +1,51 @@
+flowchart TB
+    U["Developer selects one session<br/>and approved local evidence"]
+
+    subgraph LOCAL["Local analyzer — preserved evidence and deterministic measurements"]
+        S["Fix scope and preserve source versions<br/>Collect linked child traces; expose capture gaps"]
+        M["Calculate metrics and index evidence links<br/>Session, turns, agents, calls, and results"]
+        R["Search, follow links, and reread retained text in pages<br/>Record delivered ranges, masking, and omissions"]
+    end
+
+    subgraph CLAUDE["Managed Claude workflow — explicit prompts, closed stdin; shared budget"]
+        I["Investigation host reads main requests and follows material questions<br/>Explain outcomes, failures, recovery, and relevant instructions"]
+        D["Save versioned findings and an immutable conclusion draft<br/>Recommendations are optional; preserve open questions"]
+        J["Separate evidence-review host rereads original sources<br/>Check obligation outcomes, opening consistency,<br/>support, recovery, causality, and current revisions"]
+    end
+
+    subgraph EVIDENCE["Local evidence extensions"]
+        X["Context/cache timeline and tool-output index<br/>Recorded events, sizes, and coverage-qualified measurements"]
+        T["Requirement-to-result map, recovery episodes, and fault attribution<br/>Explicit evidence, attempts, versions, and associated usage"]
+    end
+
+    V["Check a proposed change and record its readiness<br/>Inspect target and exact edit; operator runs applicable fixtures"]
+    C["Check inquiry and review prerequisites<br/>Delivered evidence, exact quotes, and checks for current revisions"]
+    F["Save and render the completed or explicitly partial inquiry<br/>Exact Claude wording, readable command fields,<br/>citation reasons, metrics, and source inspector"]
+    H["Developer inspects evidence and decides<br/>Copy exact proposed text, test, reject, or take no action"]
+
+    B["Local session library: selected directory<br/>One entry per session; latest saved analysis<br/>Grouped paths, search, independent freshness/completion"]
+    B -->|"Open log locally"| S
+    B -->|"Open latest saved analysis; no model call"| F
+    B -->|"Approve controlled excerpts for selected session"| U
+    U --> S
+    S --> M
+    S --> R
+    M --> I
+    R -->|"Controlled excerpts"| I
+    I -->|"Request more context when needed"| R
+    I --> D
+    I -->|"Only when a change is justified"| V
+    V --> D
+    D --> J
+    J -->|"Read more evidence"| R
+    J -->|"Revise records and draft; keep earlier versions"| D
+    J --> C
+    C -->|"Available evidence or current checks still needed"| J
+    C -->|"Record outcome and actual stop reason"| F
+    D -->|"Host limit or stop: preserve partial state"| F
+    I -->|"Host setup or API error: save failure; no review retry"| F
+    F --> H
+    M --> X
+    X --> I
+    I --> T
+    T --> D
