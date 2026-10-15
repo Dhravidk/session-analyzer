@@ -420,6 +420,7 @@
   }
   function toggleTurn(id,forceOpen=false) {
     const t=turns.get(id); if (!t) return;
+    if(document.getElementById(id).hidden)showAllTurns();
     const detail=document.getElementById('detail-'+id);
     const control=document.querySelector('.turn-toggle[data-turn="'+CSS.escape(id)+'"]');
     const open=forceOpen || detail.hidden; detail.hidden=!open;
@@ -453,9 +454,27 @@
     return copyExact(edit.operation==='invoke'?edit.invocation:edit.replacement_text,edit.operation==='invoke'?'Invocation copied.':'Exact proposed text copied.');
   }
   function showAllTurns() {
-    for(const row of document.querySelectorAll('[data-middle-turn]'))row.hidden=false;
-    for(const gap of document.querySelectorAll('.turn-gap'))gap.hidden=true;
-    for(const control of document.querySelectorAll('[data-all-turns]')){control.hidden=true;control.setAttribute('aria-expanded','true');}
+    filterTurns(null);
+  }
+  function filterTurns(ids) {
+    const selected=ids?new Set(ids):null;
+    let count=0;
+    for(const t of turns.values()){
+      const row=document.getElementById(t.id),shown=!selected||selected.has(t.id);
+      row.hidden=!shown;if(shown)count++;
+      document.getElementById('detail-'+t.id).hidden=!shown||!row.classList.contains('expanded-turn');
+    }
+    document.getElementById('turn-selection-status').textContent=selected?count+' of '+turns.size+' turns · explicit evidence links':turns.size+' turns · complete chronology';
+    document.querySelector('[data-all-turns]')?.setAttribute('aria-pressed',String(!selected));
+  }
+  function openRequirement(id,forceOpen=false) {
+    const row=document.getElementById(id),detail=document.getElementById('detail-'+id);
+    if(!row||!detail)return;
+    document.getElementById('requirements').open=true;
+    const open=forceOpen||detail.hidden;detail.hidden=!open;
+    row.classList.toggle('expanded-requirement',open);
+    row.querySelector('[data-requirement]').setAttribute('aria-expanded',String(open));
+    if(forceOpen){row.scrollIntoView({block:'start'});row.querySelector('button').focus({preventScroll:true});}
   }
   function exportReport(format) {
     const content=format==='json'?JSON.stringify(data,null,2)+'\n':'<!doctype html>\n'+document.documentElement.outerHTML;
@@ -474,6 +493,13 @@
   document.addEventListener('click',event=>{
     const control=event.target.closest('button,a'); if (!control) return;
     if (control.hasAttribute('data-all-turns')) showAllTurns();
+    else if(control.hasAttribute('data-focus-turns')) {
+      control.closest('dialog')?.close();filterTurns(JSON.parse(control.dataset.focusTurns));
+      document.getElementById('turns-heading').scrollIntoView({block:'start'});
+      document.querySelector('[data-all-turns]')?.focus({preventScroll:true});
+    }
+    else if(control.dataset.requirement)openRequirement(control.dataset.requirement);
+    else if(control.dataset.openRequirement)openRequirement(control.dataset.openRequirement,true);
     else if(control.hasAttribute('data-resource-more')) resourcePage(control.closest('.resource-page'));
     else if(control.hasAttribute('data-copy-field')) {
       const field=document.getElementById(control.dataset.copyField);

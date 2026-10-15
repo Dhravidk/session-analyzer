@@ -19,6 +19,8 @@ from .session_scope import entities, exposure, get_run, get_scope, projection, s
 from .session_validation import get_validation_results
 from .trajectory import require_content, trajectory_text
 from .source_content import source_content
+from .session_reading import (REQUIREMENT_STATUS, requirement_anchor, requirement_refs,
+                              related_turns, remaining_items, remaining_work_text)
 from .util import AnalyzerError, canonical, digest, strict_json
 
 # A long-lived host must render one immutable asset version. Reading assets on
@@ -271,9 +273,15 @@ def requirements_html(data):
     unverified=sum(i['status']=='unverified' for i in items)
     content=prose(mapped['scope'])+prose(mapped['inventory_status'].replace('_',' '),'small muted')+review_qualification(data,saved['id'])
     for limit in mapped['limitations']:content+=prose(limit,'limit small')
+    content+='<div class="table-scroll"><table class="requirements-table"><thead><tr><th>Requested</th><th>Status</th><th>Result and verification</th></tr></thead><tbody>'
     for item in items:
         context=evidence_context(saved['id'],item['description'],item['status_basis'],item['missing_evidence'])
-        content+='<article class="requirement"><h3>'+esc(item['description'])+'</h3>'+prose(item['status'].replace('_',' '),'meta')
+        anchor=requirement_anchor(saved['id'],item['key'])
+        content+='<tr id="'+anchor+'" class="requirement-row"><th scope="row"><button class="link requirement-toggle" data-requirement="'+anchor+'" aria-expanded="false" aria-controls="detail-'+anchor+'">'+icon('chevron-right')+'<span>'+esc(item['description'])+'</span></button></th><td><span class="requirement-status '+esc(item['status'])+'">'+REQUIREMENT_STATUS[item['status']]+'</span></td><td>'
+        # Literal saved basis; CSS shortens the preview, not the underlying text.
+        content+='<p class="requirement-preview" title="'+esc(item['status_basis'])+'">'+esc(item['status_basis'])+'</p>'
+        content+=reference_list(item['result_references']+[r for c in item['verification'] for r in c['references']],context)+'</td></tr>'
+        content+='<tr id="detail-'+anchor+'" class="requirement-detail" hidden><td colspan="3"><article class="requirement"><h3>'+esc(item['description'])+'</h3>'+prose(REQUIREMENT_STATUS[item['status']],'meta')
         if item.get('delivered_response_evidence'):
             delivered=item['delivered_response_evidence']
             content+=prose('Requested response content','small muted')+prose(delivered['basis'])+refs_html(delivered['references'],{**context,'text':delivered['basis']})
@@ -287,9 +295,33 @@ def requirements_html(data):
         for gap in item['missing_evidence']:content+=prose(gap,'limit small')
         if item['merged_from']:content+=prose('Merged historical requirements: '+', '.join(item['merged_from']),'small muted')
         if item['superseded_by']:content+=prose('Superseded by: '+', '.join(item['superseded_by']),'small muted')
-        content+='</article>'
+        turn_ids=related_turns(data,requirement_refs(item))
+        if turn_ids:content+=focus_turns_button(turn_ids,'Related turns')
+        content+='</article></td></tr>'
+    content+='</tbody></table></div>'
     content+=detail('Inventory coverage and saved versions',{'coverage':saved['request_coverage'],'history':data.get('requirement_map_history',[])})
-    return detail('Requirements · '+str(len(items))+' mapped'+(' · '+str(unverified)+' unverified' if unverified else ''),content,raw=True)
+    return '<details id="requirements"><summary>Requirements · '+str(len(items))+' mapped'+(' · '+str(unverified)+' unverified' if unverified else '')+'</summary>'+content+'</details>'
+
+
+def focus_turns_button(turn_ids, label='Related turns'):
+    return '<button class="link" data-focus-turns="'+esc(canonical(turn_ids))+'">'+esc(label)+'</button>'
+
+
+def remaining_work_html(data):
+    items=remaining_items(data)
+    if not items:return ''
+    body='<section class="remaining-work" aria-labelledby="remaining-heading"><div class="section-heading"><h3 id="remaining-heading">Remaining work and evidence</h3><button class="link" data-copy-field="remaining-work-text">'+icon('copy')+'Copy remaining work</button></div><ul>'
+    for item in items:
+        body+='<li><span class="small muted">'+esc(item['status'])+'</span> '
+        if item['kind']=='requirement':body+='<button class="link" data-open-requirement="'+esc(item['id'])+'">'+esc(item['title'])+'</button>'
+        else:body+='<button class="link" data-finding="'+esc(item['id'])+'">'+esc(item['title'])+'</button>'
+        review=item.get('review')
+        if review and review['verdict']!='supported':body+='<span class="limit small"> · Claude review '+esc(review['verdict'].replace('_',' '))+'; see saved assessment</span>'
+        if item.get('next_action'):body+=prose('Next action: '+item['next_action'],'small prose')
+        if item['turn_ids']:body+=focus_turns_button(item['turn_ids'])
+        body+='</li>'
+    body+='</ul>'+detail('Handoff text', '<pre id="remaining-work-text">'+esc(remaining_work_text(data))+'</pre>',raw=True)+'</section>'
+    return body
 
 
 def context_html(data, agent_id='main', turn=None):
@@ -581,6 +613,7 @@ def render_report(data, embedded=False):
     if material: body += prose(' · '.join(material),'coverage-note')
     if run['run_status'] in ('partial','failed'):
         body += prose(run.get('stop_reason','No stop reason saved.'),'limit prose')
+    body += remaining_work_html(data)
     body += requirements_html(data)
     body += '</section><section class="metrics" aria-label="Main session metrics"><div class="metric-counts">'
     request_key='task_requests' if 'task_requests' in session else 'user_turns'
@@ -595,7 +628,13 @@ def render_report(data, embedded=False):
     body+=prose('Observed spans include idle intervals. Recorded turn durations are shown separately in each turn.','small muted')+metric_details(session)+context_html(data)+'</details>'
     body+=prose('Main-agent metrics. Combined main and captured child totals are in Coverage.' if data.get('delegations') else 'Main-agent metrics.','small muted')+'</section>'
     body += '<section aria-labelledby="turns-heading"><div class="section-heading"><h2 id="turns-heading">Turns</h2>'
-    body+='<span class="small muted">'+str(len(turns))+' turns · complete chronology</span>'
+    body+='<span class="small muted" id="turn-selection-status" role="status">'+str(len(turns))+' turns · complete chronology</span>'
+    body+='</div><div class="turn-filters"><button class="link" data-all-turns aria-pressed="true">All turns</button>'
+    pending=list(dict.fromkeys(t for item in remaining_items(data) for t in item['turn_ids']))
+    episodes=[i['incident']['episode'] for i in data['incidents'] if i['incident'].get('episode')]
+    episode_turns=related_turns(data,event_ids=[s for e in episodes for a in e['attempts'] for s in a['event_ids']],tool_ids=[t for e in episodes for a in e['attempts'] for t in a['tool_ids']])
+    if pending:body+=focus_turns_button(pending,'Open work and evidence')
+    if episode_turns:body+=focus_turns_button(episode_turns,'Recovery episodes')
     body+='</div><p class="table-hint">Scroll the table horizontally for findings.</p><div class="table-scroll" tabindex="0" aria-label="Turn table"><table class="turns"><thead><tr><th aria-label="Expand"></th><th>#</th><th>Request</th><th>LLM calls</th><th>Tools</th><th>Findings</th></tr></thead><tbody>'
     for index,turn in enumerate(turns,1):
         sid = turn['request_event_id']; source=sources.get(sid,{})
