@@ -246,6 +246,13 @@ class LibraryTests(unittest.TestCase):
         with get('downloads/'+report['id']+'.json') as response:
             self.assertIn('attachment;',response.headers['Content-Disposition'])
             self.assertEqual(response.read(),Path(report['json_path']).read_bytes())
+        historical_html=Path(report['html_path'])
+        historical_html.write_text('<!doctype html><title>Synthetic historical rendering</title>')
+        with get('downloads/'+report['id']+'.html') as response:
+            downloaded=response.read()
+            self.assertEqual(downloaded,render_report(json.loads(Path(report['json_path']).read_text())).encode())
+            self.assertNotIn(b'library-embedded',downloaded.split(b'<body')[1].split(b'>')[0])
+        self.assertEqual(historical_html.read_text(),'<!doctype html><title>Synthetic historical rendering</title>')
         for path in ('../library.json','reports/../../library.json','api/report/unknown'):
             with self.assertRaises(urllib.error.HTTPError):get(path)
         with self.assertRaises(urllib.error.HTTPError):get('api/catalog',Host='example.com')

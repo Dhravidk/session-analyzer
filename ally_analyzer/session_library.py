@@ -446,7 +446,12 @@ def make_server(library, port=0):
                     rid, ext = name.rsplit('.', 1)
                     with library.lock: record = next((r for r in library.state['reports'] if r['id'] == rid), None)
                     if record and ext in ('html', 'json'):
-                        body = library.embedded_report(record) if route.startswith('reports/') and ext == 'html' else Path(record[ext+'_path']).read_bytes()
+                        if ext=='html':
+                            # Export the current presentation of the same immutable
+                            # data; never replace the historically saved HTML file.
+                            body=(library.embedded_report(record) if route.startswith('reports/') else
+                                  render_report(json.loads(Path(record['json_path']).read_text())).encode())
+                        else:body=Path(record['json_path']).read_bytes()
                         return self.respond(200, body, 'text/html; charset=utf-8' if ext == 'html' else 'application/json',
                                             'ally-'+rid+'.'+ext if route.startswith('downloads/') else None)
                 assets = {'': ('session_library.html', 'text/html; charset=utf-8'),
