@@ -109,7 +109,7 @@ function drawSelection(){
   }
 }
 function setExport(id){
-  for(const format of ['html','json']){const a=$('export-'+format);a.hidden=!id;if(id){a.href=base+'downloads/'+id+'.'+format;a.download='ally-session.'+format;}else a.removeAttribute('href');}
+  for(const format of ['html','md','json']){const a=$('export-'+format);a.hidden=!id;if(id){a.href=base+'downloads/'+id+'.'+format;a.download='ally-session.'+format;}else a.removeAttribute('href');}
   $('export-empty').hidden=!!id;
 }
 async function showReport(id){
@@ -183,7 +183,7 @@ $('report').onload=()=>{
     setReadingHeader(frame.contentWindow.scrollY);
     frame.contentWindow.addEventListener('scroll',()=>{saved.positions[session]={report:id,y:frame.contentWindow.scrollY};persist();setReadingHeader(frame.contentWindow.scrollY);},{passive:true});
     frame.contentDocument.addEventListener('click',event=>{
-      const control=event.target.closest('[data-export]');if(!control)return;const format=control.dataset.export;if(!['html','json'].includes(format))return;
+      const control=event.target.closest('[data-export]');if(!control)return;const format=control.dataset.export;if(!['html','md','json'].includes(format))return;
       event.preventDefault();event.stopImmediatePropagation();$('export-'+format).click();
     },true);
   }catch{}

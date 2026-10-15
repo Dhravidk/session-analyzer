@@ -208,6 +208,6 @@ def tool_specs(spec, page):
               "summary": S, "coverage_explanation": S, "unresolved_questions": arr(), "stop_reason": S,
               "title":S,"synopsis":SYNOPSIS,"observed_outcome":OUTCOME,"stop_basis":enum("inquiry_answered", "evidence_unavailable", "external_limit", "operator_stop", "investigator_choice")},
              ["investigation_id", "run_status", "conclusion", "summary", "coverage_explanation", "unresolved_questions", "stop_reason"], False),
-        spec("export_session_investigation", "Export one investigation as HTML or JSON, including exact saved Claude text, revisions, metrics and actual check states. Refuses overwrite. An exported partial/empty run does not imply completed analysis.",
-             {**run, "destination": S, "format": enum("html", "json"), "include_source_text":{"type":"boolean"}}, ["investigation_id", "destination"], False, False),
+        spec("export_session_investigation", "Export one investigation as HTML, Markdown (md) or JSON, including saved Claude text, metrics and actual check states. Refuses overwrite. An exported partial/empty run does not imply completed analysis. JSON retains the complete archival payload.",
+             {**run, "destination": S, "format": enum("html", "md", "json"), "include_source_text":{"type":"boolean"}}, ["investigation_id", "destination"], False, False),
     ]

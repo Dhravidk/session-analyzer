@@ -45,6 +45,8 @@ class PackagingTests(unittest.TestCase):
             responses=[json.loads(line) for line in result.stdout.splitlines()]
             self.assertEqual([r['id'] for r in responses],[1,2,3])
             names={t['name'] for t in responses[1]['result']['tools']}
+            export=next(t for t in responses[1]['result']['tools'] if t['name']=='export_session_investigation')
+            self.assertIn('md',export['inputSchema']['properties']['format']['enum'])
             self.assertTrue({'start_session_investigation','read_investigation_evidence','save_incident',
                 'save_requirement_map','export_session_investigation'} <= names,names)
             self.assertFalse(responses[2]['result']['structuredContent']['content_disclosure_enabled'])

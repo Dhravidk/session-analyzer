@@ -674,8 +674,15 @@
     if(forceOpen){row.scrollIntoView({block:'start'});row.querySelector('button').focus({preventScroll:true});}
   }
   function exportReport(format) {
-    const content=format==='json'?JSON.stringify(data,null,2)+'\n':'<!doctype html>\n'+document.documentElement.outerHTML;
-    const blob=new Blob([content],{type:format==='json'?'application/json':'text/html'});
+    if(!['html','json','md'].includes(format))return;
+    const plan=format==='md'?JSON.parse(document.getElementById('markdown-export').textContent):null;
+    if(format==='md' && !plan){announce('Use the session library Export menu.');return;}
+    const content=format==='md'?plan.map(part=>{
+      if(typeof part==='string')return part;
+      const source=sources[part.source_id];
+      return Object.hasOwn(part,'thinking_index')?source.content_metadata.thinking_text[part.thinking_index].text:source.text;
+    }).join(''):format==='json'?JSON.stringify(data,null,2)+'\n':'<!doctype html>\n'+document.documentElement.outerHTML;
+    const blob=new Blob([content],{type:{md:'text/markdown;charset=utf-8',json:'application/json',html:'text/html'}[format]});
     const url=URL.createObjectURL(blob); const a=document.createElement('a');
     a.href=url; a.download='ally-'+data.investigation.id+'.'+format; document.body.append(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1000); document.querySelector('.export').open=false;

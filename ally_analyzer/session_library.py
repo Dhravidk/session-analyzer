@@ -23,6 +23,7 @@ from . import __version__
 from .engine import analyze_dataset
 from .ingest import import_bundle
 from .session_report import export_session_investigation, render_report
+from .session_markdown import render_markdown
 from .session_scope import start_session_investigation
 from .session_navigation import session_key, report_revision, read_revision, compare_revision, navigation_status
 from .store import Store
@@ -445,14 +446,16 @@ def make_server(library, port=0):
                     name = route.split('/',1)[1]
                     rid, ext = name.rsplit('.', 1)
                     with library.lock: record = next((r for r in library.state['reports'] if r['id'] == rid), None)
-                    if record and ext in ('html', 'json'):
+                    if record and ext in ('html', 'json', 'md'):
                         if ext=='html':
                             # Export the current presentation of the same immutable
                             # data; never replace the historically saved HTML file.
                             body=(library.embedded_report(record) if route.startswith('reports/') else
                                   render_report(json.loads(Path(record['json_path']).read_text())).encode())
+                        elif ext=='md':body=render_markdown(json.loads(Path(record['json_path']).read_text())).encode()
                         else:body=Path(record['json_path']).read_bytes()
-                        return self.respond(200, body, 'text/html; charset=utf-8' if ext == 'html' else 'application/json',
+                        mime={'html':'text/html; charset=utf-8','md':'text/markdown; charset=utf-8','json':'application/json'}[ext]
+                        return self.respond(200, body, mime,
                                             'ally-'+rid+'.'+ext if route.startswith('downloads/') else None)
                 assets = {'': ('session_library.html', 'text/html; charset=utf-8'),
                           'app.js': ('session_library.js', 'text/javascript'), 'style.css': ('session_library.css', 'text/css')}

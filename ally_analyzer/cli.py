@@ -96,7 +96,7 @@ def parser():
     a.add_argument("--allow-content", action="store_true")
     a = sub.add_parser("session-overview"); a.add_argument("investigation_id")
     a = sub.add_parser("export-session"); a.add_argument("investigation_id"); a.add_argument("destination")
-    a.add_argument("--format", choices=["html", "json"], default="html")
+    a.add_argument("--format", choices=["html", "md", "json"], default="html")
     a.add_argument("--include-source-text", action="store_true", help="Embed full retained masked source text for offline evidence navigation")
     a = sub.add_parser("admit-artifact", help="Operator only: snapshot a selected instruction, target or candidate")
     a.add_argument("path"); a.add_argument("--label", required=True)

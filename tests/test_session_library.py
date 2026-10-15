@@ -14,6 +14,7 @@ from unittest.mock import patch
 from ally_analyzer.session_library import SessionLibrary, folder_label, make_server
 from ally_analyzer.session_navigation import navigation_status
 from ally_analyzer.session_report import render_report
+from ally_analyzer.session_markdown import render_markdown
 from ally_analyzer.util import AnalyzerError
 from tests.helpers import write_log
 from tests.test_session_workflow import session_rows
@@ -246,6 +247,10 @@ class LibraryTests(unittest.TestCase):
         with get('downloads/'+report['id']+'.json') as response:
             self.assertIn('attachment;',response.headers['Content-Disposition'])
             self.assertEqual(response.read(),Path(report['json_path']).read_bytes())
+        with get('downloads/'+report['id']+'.md') as response:
+            self.assertEqual(response.headers['Content-Type'],'text/markdown; charset=utf-8')
+            self.assertIn('.md"',response.headers['Content-Disposition'])
+            self.assertEqual(response.read(),render_markdown(json.loads(Path(report['json_path']).read_text())).encode())
         historical_html=Path(report['html_path'])
         historical_html.write_text('<!doctype html><title>Synthetic historical rendering</title>')
         with get('downloads/'+report['id']+'.html') as response:

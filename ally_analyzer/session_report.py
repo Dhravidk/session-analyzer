@@ -18,6 +18,7 @@ from .session_investigation import accounting, records
 from .session_patterns import RECORDED_FAILURE_OUTCOMES, turn_patterns
 from .session_finding_links import finding_links, incident_episodes
 from .session_story import saved_source_explanation
+from .session_markdown import markdown_parts, render_markdown
 from .session_scope import entities, exposure, get_run, get_scope, projection, scope_rows, source_record
 from .session_validation import get_validation_results
 from .trajectory import require_content, trajectory_text
@@ -747,7 +748,7 @@ def render_report(data, embedded=False):
               'partial':'Incomplete investigation','failed':'Investigation failed'}.get(run['run_status'],run['run_status'])
     if run['run_status']=='running' and not data['incidents'] and not data.get('inquiries') and not data['exposure'].get('requests'):
         status = 'Investigation not run'
-    body = '<div class="product"><div><b>Ally</b><span> / Session report</span></div><div class="product-actions"><button class="link source-reopen" data-source-reopen aria-controls="source-dialog" aria-expanded="false" aria-label="Reopen selected source" hidden>'+icon('chevron-left')+'Source</button><span class="product-date">'+esc(date)+'</span><details class="export"><summary>'+icon('download')+'Export</summary><div><button data-export="html">HTML report</button><button data-export="json">JSON report</button></div></details></div></div>'
+    body = '<div class="product"><div><b>Ally</b><span> / Session report</span></div><div class="product-actions"><button class="link source-reopen" data-source-reopen aria-controls="source-dialog" aria-expanded="false" aria-label="Reopen selected source" hidden>'+icon('chevron-left')+'Source</button><span class="product-date">'+esc(date)+'</span><details class="export"><summary>'+icon('download')+'Export</summary><div><button data-export="html">HTML report</button><button data-export="md">Markdown (.md)</button><button data-export="json">JSON report</button></div></details></div></div>'
     body += '<nav class="report-nav" aria-label="Report sections">'+''.join('<a href="#'+key+'"'+(' aria-current="location"' if key=='overview' else '')+'>'+label+'</a>' for key,label in (('overview','Overview'),('outcome','Outcome'),('turns-heading','Turns'),('findings-heading','Findings'),('proposals-heading','Proposed changes'),('coverage','Coverage')))+'</nav><main id="report-column"><header id="overview"><h1>'+esc(title)+'</h1><p class="meta">'+esc(date)+' · <span class="status-tag '+esc(run['run_status'])+'">'+esc(status)+'</span></p>'
     if run.get('synopsis'):
         synopsis = run['synopsis']
@@ -984,15 +985,19 @@ def render_report(data, embedded=False):
     css, js = REPORT_CSS, REPORT_JS
     payload = json.dumps(data,ensure_ascii=False,separators=(',',':'),allow_nan=False,sort_keys=True).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
     nav_payload = canonical(navigation).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
+    # The library serves Markdown directly. Only standalone HTML needs the
+    # offline plan; keeping it out of the iframe avoids needless report bloat.
+    md_payload = canonical(None if embedded else markdown_parts(data)).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
     script_hash = base64.b64encode(hashlib.sha256(js.encode()).digest()).decode()
     csp = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'sha256-"+script_hash+"'; base-uri 'none'; form-action 'none'"
-    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><title>Ally · '+esc(title)+'</title><style>'+css+'</style></head><body'+(' class="library-embedded"' if embedded else '')+'>'+body+'<noscript>Enable JavaScript to open evidence and export. The saved findings and proposals remain in this document.</noscript><script type="application/json" id="report-data">'+payload+'</script><script type="application/json" id="finding-navigation">'+nav_payload+'</script><script>'+js+'</script><!-- Feather icons v4.29.1\n'+REPORT_ICON_LICENSE+'--></body></html>'
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><title>Ally · '+esc(title)+'</title><style>'+css+'</style></head><body'+(' class="library-embedded"' if embedded else '')+'>'+body+'<noscript>Enable JavaScript to open evidence and export. The saved findings and proposals remain in this document.</noscript><script type="application/json" id="report-data">'+payload+'</script><script type="application/json" id="finding-navigation">'+nav_payload+'</script><script type="application/json" id="markdown-export">'+md_payload+'</script><script>'+js+'</script><!-- Feather icons v4.29.1\n'+REPORT_ICON_LICENSE+'--></body></html>'
 
 
 def export_session_investigation(store, investigation_id, destination, format='html', include_source_text=False, allow_content=False):
-    if format not in ('html','json'): raise AnalyzerError('Format must be html or json')
+    if format not in ('html','json','md'): raise AnalyzerError('Format must be html, json or md')
     data = report_data(store,investigation_id,include_source_text,allow_content)
-    content = render_report(data) if format=='html' else json.dumps(data,ensure_ascii=False,indent=2,allow_nan=False)+'\n'
+    content = (render_report(data) if format=='html' else render_markdown(data) if format=='md'
+               else json.dumps(data,ensure_ascii=False,indent=2,allow_nan=False)+'\n')
     path = Path(destination).expanduser().resolve(); path.parent.mkdir(parents=True,exist_ok=True)
     try:
         with path.open('x',encoding='utf-8') as out: out.write(content)
