@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 17 · October 15, 2026 · Governing contract for version 0.14.1 (earlier release sections retained as history)
+Revision 18 · October 15, 2026 · Governing contract for version 0.14.2 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -680,3 +680,14 @@ The report opens unknown/unresolved episodes and folds recovered supporting epis
 Keep the source icon and reference count. Expanded citation lists use a compact literal caption rather than Source 1/2/3. Prefer the saved citation explanation; otherwise use a uniquely linked tool's saved description, path, command or query, a recorded task-notification summary, an admitted artifact label, or a literal text preview. A description of an attempted action is not an execution verdict. Ambiguous tool associations cannot borrow a description from one arbitrarily selected call. Thinking text is not used as an evidence-link preview.
 
 Captions show at most 80 characters with an explicit ellipsis when shortened. The original explanation remains in the citation and source inspector; full caption text is available on hover. Secondary text identifies input versus result, the applicable main turn or child identity, and recorded time. Equal captions receive a record/range discriminator. Missing source text and missing exported records remain explicit. Source identities, citation ranges, disclosure, copied text, saved Claude prose and exports are unchanged. This is deterministic presentation without another model call.
+
+
+## 0.14.2 — Claude-authored source explanations
+
+This supersedes the 0.14.1 filename fallback for citations attached to analysis. Keep the source icon/count. Use the citation's saved `explanation` as its link label, verbatim, without truncating a qualification. If absent, reuse only the latest saved review of the same immutable owner record, with a verified quote from the same source fingerprint inside the cited range. Identify that review and its verdict beside the label, including a failed review. Do not borrow another finding's explanation or an earlier review displaced by a newer check. A historical review without quote metadata supplies no label. If neither eligible explanation exists, show “Explanation not saved” with record kind, turn and time; retain exact-source access. Literal descriptions remain acceptable for raw chronology and measurement navigation without a linked analytical claim.
+
+New managed investigations pin `citation-explanations-v1` in their operator-owned workflow. Every reader-facing saved citation requires an inspected explanation of at most 240 characters. Missing, overlong, multiline or recognized generic explanations are rejected with a correction request to Claude; code never inserts or rewrites the words. The writing skill asks for a brief action/result statement, normally about 6–18 words, with decision-changing uncertainty retained. This is the existing `explanation` field, not a second summary generation step. The independent review judges specificity and support against the exact source and claim. Length and presence checks do not prove meaning or accuracy.
+
+Review quote references already have `supports_or_contradicts`; do not require a duplicate explanation on those inner references. Historical investigations keep their pinned rules and immutable records. The older interactive workflow receives the updated writing guidance but is not retroactively enrolled in managed-run enforcement. Source IDs, hashes, ranges, masked text, input/result distinction, exact copying and exports are unchanged. A better explanation of old evidence requires a Claude-authored revision; renderer code cannot improve a weak saved sentence.
+
+Acceptance includes wrong-owner reviews, changed fingerprints, out-of-range quotes, later negative checks, missing review metadata, preserved long historical qualifications, rejected unexplained saves without partial insertion, and a fresh managed Claude run over explicitly synthetic opaque-file evidence. Report mechanical validation and observed Claude behavior separately; neither establishes general diagnostic quality or superiority over `/insights`.

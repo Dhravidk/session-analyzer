@@ -1,3 +1,11 @@
+# Implementation status — 0.14.2
+
+Source citation labels now use Claude's saved explanation or an exact, same-owner saved review note. Missing explanations remain explicit; filenames no longer stand in for an explanation of a claim. Authored wording, qualifications, record identity and source content remain unchanged. New managed runs reject missing or overlong citation explanations and require Claude to supply them; the existing writing/review skills explain their purpose as link labels.
+
+A fresh approved Claude investigation and independent review completed on the labelled opaque-output fixture. Claude generated short source labels, distinguished the narrower CSV retry from the unresolved filesystem check, and saved no recommendation. The standard report and all saved records match the actual Claude tool submissions. The real migration report reuses its historical review wording and retains its gaps. Full regression: 273 passed, two optional private-data checks skipped. Desktop/narrow browser inspection and export checks are recorded in [validation](validation.md). This narrow observed run is not an unseen-session quality evaluation.
+
+---
+
 # Implementation status — 0.14.1
 
 Expanded source lists retain their icon/count and replace numbered placeholders with short literal captions. Saved explanations, tool descriptions, file/command fields and task-notification summaries identify the record; quieter metadata distinguishes input/result, turn or child, and time. Long captions are bounded with full wording on hover and in the source inspector. Unknown or ambiguous metadata does not generate a description or a judgment. Exact citations, source copies and Claude-authored report data remain unchanged.
