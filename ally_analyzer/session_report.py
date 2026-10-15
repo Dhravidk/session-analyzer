@@ -259,7 +259,8 @@ def review_qualification(data, record_id):
     reviews=[r['check'] for r in data.get('review_checks',[]) if r['check']['record_id']==record_id]
     if not reviews or reviews[-1]['verdict']=='supported': return ''
     review=reviews[-1]
-    body='<aside class="review-qualification"><p class="small"><strong>Claude review · '+esc(review['verdict'].replace('_',' '))+'</strong></p>'+prose(review['assessment'])
+    body='<aside class="review-qualification"><p class="small"><strong>Claude review · '+esc(review['verdict'].replace('_',' '))+'</strong></p>'
+    body+=prose(review['assessment']) if review['verdict']=='needs_revision' else detail('Review assessment',prose(review['assessment']),raw=True)
     for uncertainty in review['remaining_uncertainty']: body+=prose(uncertainty,'limit small')
     for check in review.get('semantic_checks',[]):
         if check['verdict']=='needs_revision': body+=prose(check['assessment'],'limit small')

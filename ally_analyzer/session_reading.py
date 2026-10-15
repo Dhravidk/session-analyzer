@@ -76,6 +76,12 @@ def remaining_work_text(data):
     lines = [run.get('title') or 'Session '+run['root_session_id'],
              'Saved analysis: '+run['id'], 'Investigation: '+run['run_status'],
              'Not met and unverified are different states. This handoff copies saved judgments; it does not prescribe new work.']
+    scope=data.get('scope',{})
+    lines += ['Captured scope: '+str(scope.get('id') or run.get('scope_id') or 'Unavailable')]
+    missing={g['child_agent_id'] for g in scope.get('capture_gaps',{}).get('missing_child_traces',[])}
+    if missing: lines += ['Unavailable child traces: '+str(len(missing))]
+    if run['run_status'] in ('partial','failed'):lines += [run.get('stop_reason') or 'No stop reason saved.']
+    lines += ['Unresolved investigation question: '+s for s in run.get('unresolved_questions',[])]
     mapped = data.get('requirement_map', {}).get('requirement_map') if data.get('requirement_map') else None
     if mapped:
         lines += ['Requirement inventory: '+mapped['inventory_status'], *mapped['limitations']]

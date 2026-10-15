@@ -143,14 +143,16 @@
       const p=document.createElement('p');p.className='small muted';p.textContent='These attempts do not contain a single comparable tool input each. Their explicitly linked records are shown separately.';difference.append(p);
     }
     chosen.forEach((attempt,index)=>{
-      const column=document.createElement('div'),heading=document.createElement('h4');column.className='comparison-column';heading.textContent=label(attempt.role)+' · '+attempt.description;column.append(heading);
+      const column=document.createElement('div'),heading=document.createElement('h4');column.className='comparison-column';heading.textContent=label(attempt.role).replace(/^./,c=>c.toUpperCase())+' attempt';column.append(heading);
       if(!inputs[index].length){const p=document.createElement('p');p.className='limit small';p.textContent='No tool identities were saved for this attempt.';column.append(p);}
       for(const item of inputs[index]){
         const h=document.createElement('h4');h.textContent=(item.tool?.name||item.id)+' · '+label(item.tool?.outcome);column.append(h);
         if(item.source){
           const fields=item.fields?.values,command=fields?.command;
           column.append(codePanel(typeof command==='string'?'Command':'Input',typeof command==='string'?command:item.fields?.raw||sourceText(item.source),typeof command==='string'?'shell':item.fields?'json':'text',item.source.id,{available:hasSourceText(item.source),selectable:true}));
-          if(changed.length && fields){const p=document.createElement('p');p.className='small muted';p.textContent='Changed fields shown above or in the exact input source: '+changed.join(', ');column.append(p);}
+          if(fields && typeof command==='string')for(const key of changed.filter(k=>k!=='command')){
+            const p=document.createElement('p');p.className='small prose';p.textContent=key+': '+(Object.hasOwn(fields,key)?JSON.stringify(fields[key]):'Absent');column.append(p);
+          }
         }else{const p=document.createElement('p');p.className='limit small';p.textContent='Input source unavailable in this export.';column.append(p);}
         for(const sid of item.tool?.evidence||[]){
           if(sid===item.tool.evidence_id)continue;
