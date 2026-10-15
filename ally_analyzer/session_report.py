@@ -1,11 +1,12 @@
 """Offline document renderer. Authored text is escaped, never rewritten or ranked."""
 import base64
-from collections import defaultdict
-from datetime import datetime
+from collections import Counter, defaultdict
+from datetime import datetime, timezone
 import hashlib
 import html
 import json
 import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from .session_diagnostics import record_role, coverage_assertions
@@ -239,12 +240,12 @@ def span_label(value):
     return (str(hours)+'h ' if hours else '')+str(minutes)+'m '+str(seconds)+'s'
 
 
-def verification_html(checks, prerequisites=None, context=None):
+def verification_html(checks, prerequisites=None, context=None, data=None):
     content=''
     for index,check in enumerate(checks):
         content+='<div class="evidence-check">'+prose(check['description'])+prose(check['outcome'].replace('_',' ')+' · scope '+check['scope_relation']+' · revision '+check['revision_relation'].replace('_',' '),'small muted')
         check_context={**context,'label':check['description'],'text':check['basis']} if context else None
-        content+=prose(check['basis'],'small')+refs_html(check['references'],check_context)
+        content+=prose(check['basis'],'small')+refs_html(check['references'],check_context, data=data)
         flags=(prerequisites or [])[index].get('qualifications',[]) if index<len(prerequisites or []) else []
         if flags:content+=prose(' · '.join(f.replace('_',' ') for f in flags),'limit small')
         content+='</div>'
@@ -278,27 +279,27 @@ def requirements_html(data):
         content+='<tr id="'+anchor+'" class="requirement-row"><th scope="row"><button class="link requirement-toggle" data-requirement="'+anchor+'" aria-expanded="false" aria-controls="detail-'+anchor+'">'+icon('chevron-right')+'<span>'+esc(item['description'])+'</span></button></th><td><span class="requirement-status '+esc(item['status'])+'">'+REQUIREMENT_STATUS[item['status']]+'</span></td><td>'
         # Literal saved basis; CSS shortens the preview, not the underlying text.
         content+='<p class="requirement-preview" title="'+esc(item['status_basis'])+'">'+esc(item['status_basis'])+'</p>'
-        content+=reference_list(item['result_references']+[r for c in item['verification'] for r in c['references']],context)+'</td></tr>'
+        content+=reference_list(item['result_references']+[r for c in item['verification'] for r in c['references']],context, data=data)+'</td></tr>'
         content+='<tr id="detail-'+anchor+'" class="requirement-detail" hidden><td colspan="3"><article class="requirement"><h3>'+esc(item['description'])+'</h3>'+prose(REQUIREMENT_STATUS[item['status']],'meta')
         if item.get('delivered_response_evidence'):
             delivered=item['delivered_response_evidence']
-            content+=prose('Requested response content','small muted')+prose(delivered['basis'])+refs_html(delivered['references'],{**context,'text':delivered['basis']})
+            content+=prose('Requested response content','small muted')+prose(delivered['basis'])+refs_html(delivered['references'],{**context,'text':delivered['basis']}, data=data)
         content+=prose(item['scope'],'small muted')+prose(item['status_basis'])
         interpretation=item.get('intent_interpretation')
         if interpretation:
             content+='<div class="intent-interpretation"><h4>Intent · '+esc(interpretation['status'])+'</h4>'+prose(interpretation['basis'])
             for alternative in interpretation['alternatives']:content+=prose(alternative,'small')
-            content+=refs_html(interpretation['references'],{**context,'text':interpretation['basis']})+'</div>'
+            content+=refs_html(interpretation['references'],{**context,'text':interpretation['basis']}, data=data)+'</div>'
         if item.get('next_action'):
             action=item['next_action']
-            content+='<h4>Next action</h4>'+prose(action['action'])+prose(action['verification'],'small')+refs_html(action['references'],{**context,'text':action['action'],'limitations':action['limitations']})
+            content+='<h4>Next action</h4>'+prose(action['action'])+prose(action['verification'],'small')+refs_html(action['references'],{**context,'text':action['action'],'limitations':action['limitations']}, data=data)
             for limit in action['limitations']:content+=prose(limit,'limit small')
-        content+='<p class="small">Intent '+refs_html(item['intent_references'],context)+'</p>'
-        if item['result_references']:content+='<p class="small">Result '+refs_html(item['result_references'],context)+'</p>'
+        content+='<p class="small">Intent '+refs_html(item['intent_references'],context, data=data)+'</p>'
+        if item['result_references']:content+='<p class="small">Result '+refs_html(item['result_references'],context, data=data)+'</p>'
         revision=item['artifact_revision']
-        content+=prose('Artifact revision: '+(revision.get('value') if revision['state']=='known' else revision['state'].replace('_',' ')),'small muted')+refs_html(revision['references'],context)
-        content+=verification_html(item['verification'],saved['verification_prerequisites'].get(item['key']),context)
-        for change in item['intent_changes']:content+=prose(change['description'],'small')+refs_html(change['references'],{**context,'text':change['description']})
+        content+=prose('Artifact revision: '+(revision.get('value') if revision['state']=='known' else revision['state'].replace('_',' ')),'small muted')+refs_html(revision['references'],context, data=data)
+        content+=verification_html(item['verification'],saved['verification_prerequisites'].get(item['key']),context, data=data)
+        for change in item['intent_changes']:content+=prose(change['description'],'small')+refs_html(change['references'],{**context,'text':change['description']}, data=data)
         for gap in item['missing_evidence']:content+=prose(gap,'limit small')
         if item['merged_from']:content+=prose('Merged historical requirements: '+', '.join(item['merged_from']),'small muted')
         if item['superseded_by']:content+=prose('Superseded by: '+', '.join(item['superseded_by']),'small muted')
@@ -348,7 +349,7 @@ def recovery_html(data, saved, episode_key=None):
     i=saved['incident']; ep=i.get('episode')
     if i.get('pattern'):
         pattern=i['pattern'];context=evidence_context(saved['id'],i['title'],pattern['membership_basis'])
-        content='<section class="finding-pattern"><h3>Pattern · '+str(len(pattern['episodes']))+' episodes</h3>'+prose(pattern['characteristic'])+refs_html(pattern['references'],context)
+        content='<section class="finding-pattern"><h3>Pattern · '+str(len(pattern['episodes']))+' episodes</h3>'+prose(pattern['characteristic'])+refs_html(pattern['references'],context, data=data)
         content+=detail('Pattern membership',prose(pattern['membership_basis']),raw=True)
         for entry in pattern['episodes']:
             nested={**saved,'incident':{**i,'episode':entry['episode'],'resolution':entry['resolution'],'open_questions':entry['open_questions']},
@@ -359,13 +360,13 @@ def recovery_html(data, saved, episode_key=None):
         return content+recovery_resources_html(data.get('episode_resources',{}).get(saved['id']))+'</section>'
     if not ep:return ''
     context=evidence_context(saved['id'],i['title'],ep['intended_result'],ep['limitations'])
-    content='<section class="recovery-sequence"><h3>Recovery sequence</h3>'+prose(ep['intended_result'])+reference_list(ep['goal_references'],context)+'<ol>'
+    content='<section class="recovery-sequence"><h3>Recovery sequence</h3>'+prose(ep['intended_result'])+reference_list(ep['goal_references'],context, data=data)+'<ol>'
     for attempt in ep['attempts']:
         content+='<li><span class="attempt-role">'+esc(attempt['role'].capitalize())+'</span>'+prose(attempt['description'])
-        content+=prose(attempt['same_goal_basis'],'small muted')+reference_list([{'source_id':s} for s in attempt['event_ids']],{**context,'label':attempt['description'],'text':attempt['same_goal_basis']})+'</li>'
+        content+=prose(attempt['same_goal_basis'],'small muted')+reference_list([{'source_id':s} for s in attempt['event_ids']],{**context,'label':attempt['description'],'text':attempt['same_goal_basis']}, data=data)+'</li>'
     content+='</ol>'
     if ep['verification']:
-        content+='<h4>Verification scope</h4>'+verification_html(ep['verification'],saved.get('episode_prerequisites',{}).get('verification'),context)
+        content+='<h4>Verification scope</h4>'+verification_html(ep['verification'],saved.get('episode_prerequisites',{}).get('verification'),context, data=data)
     content+='<h4>Outcome · '+esc(i['resolution'].replace('_',' '))+'</h4>'
     for limit in list(dict.fromkeys(ep['limitations']+i['open_questions'])):content+=prose(limit,'limit prose')
     if len(ep['attempts'])>1:
@@ -398,7 +399,7 @@ def context_html(data, agent_id='main', turn=None):
             t=p['tokens']; share=p['cache_read_share']['value']
             content+='<tr><td>'+source_button(p['source_ids'][0],p.get('timestamp') or 'Response')+'</td>'+''.join('<td>'+number(t.get(k))+'</td>' for k in ('total_input_tokens','input_tokens','cache_creation_input_tokens','cache_read_input_tokens','output_tokens'))+'<td>'+(number(share*100)+'%' if share is not None else 'Unknown')+'</td></tr>'
         else:
-            content+='<tr class="timeline-boundary"><td colspan="7">'+esc(p['kind'].replace('_',' ').capitalize())+' '+refs_html(refs)
+            content+='<tr class="timeline-boundary"><td colspan="7">'+esc(p['kind'].replace('_',' ').capitalize())+' '+refs_html(refs, data=data)
             if p['kind']=='model_change':content+=prose(', '.join(p['from'])+' → '+', '.join(p['to']),'small')
             if p['kind']=='recorded_compaction':
                 pre,post=p['before'],p['after']
@@ -419,8 +420,8 @@ def output_html(data, agent_id='main', turn=None):
     if not items:return ''
     content=prose(view['limitation'],'small muted')+'<div class="resource-page"><div class="table-scroll" tabindex="0" aria-label="Captured tool outputs"><table><thead><tr><th>Tool and source</th><th>Captured bytes</th><th>Same input / result · agent</th><th>Truncation marker</th></tr></thead><tbody>'
     for item in items:
-        content+='<tr><td>'+esc(item['name'])+' '+refs_html([{'source_id':s} for s in item['source_ids']])+'</td><td>'+number(item['captured_result_bytes'])+'</td><td>'+str(item.get('same_input_count',len(item.get('same_input_tool_ids',[]))))+' / '+str(item.get('same_result_count',len(item.get('same_result_tool_ids',[]))))+'</td><td>'
-        content+=('Candidate · '+refs_html([{'source_id':s} for s in item['truncation_marker_source_ids']])) if item['truncation_marker_source_ids'] else ('Not inspected' if item['truncation_detection']=='not_run' else 'Not found')
+        content+='<tr><td>'+esc(item['name'])+' '+refs_html([{'source_id':s} for s in item['source_ids']], data=data)+'</td><td>'+number(item['captured_result_bytes'])+'</td><td>'+str(item.get('same_input_count',len(item.get('same_input_tool_ids',[]))))+' / '+str(item.get('same_result_count',len(item.get('same_result_tool_ids',[]))))+'</td><td>'
+        content+=('Candidate · '+refs_html([{'source_id':s} for s in item['truncation_marker_source_ids']], data=data)) if item['truncation_marker_source_ids'] else ('Not inspected' if item['truncation_detection']=='not_run' else 'Not found')
         content+='</td></tr>'
     groups={field:{key:value for key,value in view.get(field,{}).items() if key in {i.get('input_group_id' if field=='input_groups' else 'result_group_id') for i in items}}
             for field in ('input_groups','result_groups')}
@@ -452,18 +453,81 @@ def detail(title, content, raw=False):
     return '<details><summary>'+esc(title)+'</summary>'+(content if raw else '<pre>'+esc(json.dumps(content,ensure_ascii=False,indent=2,sort_keys=True))+'</pre>')+'</details>'
 
 
-def source_button(ref, label='Source', cls='link', context=None):
+def source_caption(ref, data=None):
+    """Literal navigation previews, never new evidence explanations or verdicts."""
+    data=data or {};sid=ref['source_id'];source=data.get('sources',{}).get(sid,{})
+    role=source.get('role');text=source.get('text');kind=(source.get('content_metadata') or {}).get('kind')
+    names={'user_statement':'Request','assistant_statement':'Assistant statement','tool_call':'Tool input',
+           'tool_result':'Tool result','system_status':'System record','artifact':'Artifact','assistant_record':'Assistant record'}
+    label='Thinking record' if kind=='thinking' or role=='assistant_thinking' else names.get(role,'Record')
+    description=None
+    linked=[t for t in data.get('tools',[]) if t['id'] in source.get('tool_ids',[])]
+    if len(linked)==1 and role in ('tool_call','tool_result'):
+        tool=linked[0];label=tool['name']+(' input' if role=='tool_call' else ' result')
+        origin=data.get('sources',{}).get(tool.get('evidence_id'),{});raw=origin.get('text','')
+        prefix='Tool '+tool['name']+'\nInput: '
+        if isinstance(raw,str) and raw.startswith(prefix) and origin.get('tool_ids')==[tool['id']]:
+            try:fields=json.loads(raw[len(prefix):])
+            except (ValueError,TypeError):fields=None
+            if isinstance(fields,dict):
+                for key in ('description','file_path','path','command','pattern','query','url'):
+                    if isinstance(fields.get(key),str) and fields[key].strip():
+                        description=fields[key]
+                        if key in ('file_path','path'):description='/'.join(re.split(r'[/\\]',description.rstrip('/\\'))[-2:])
+                        break
+    if text and role not in ('tool_call','tool_result') and text.strip().startswith('<task-notification>'):
+        try:
+            node=ET.fromstring(text)
+            if node.tag=='task-notification':label='Task notification';description=node.findtext('summary')
+        except ET.ParseError:pass
+    parsed=command_request(source)
+    if parsed:description=parsed['command']+(' '+parsed['arguments'] if parsed['arguments'] else '')
+    if role=='artifact':description=source.get('metadata',{}).get('label')
+    # Thinking remains in its explicit inspector view, never an evidence preview.
+    if not description and kind!='thinking' and role!='assistant_thinking' and isinstance(text,str):
+        description=next((line.strip() for line in text.splitlines() if line.strip()),None)
+    title=ref.get('explanation') or description or label
+    compact_title=re.sub(r'\s+',' ',title).strip()
+    preview=compact_title[:79].rstrip()+'…' if len(compact_title)>80 else compact_title
+    meta=[label]
+    turns=data.get('main_accounting',data.get('accounting',{})).get('turns',[])
+    turn=next((n for n,t in enumerate(turns,1) if sid in t['event_ids']),None)
+    if turn:meta.append('Turn '+str(turn))
+    elif source.get('agent_id') and source['agent_id']!='main':meta.append('Agent '+source['agent_id'])
+    if source.get('timestamp'):
+        try:
+            date=datetime.fromisoformat(source['timestamp'].replace('Z','+00:00'))
+            meta.append(date.astimezone(timezone.utc).strftime('%H:%M:%S UTC') if date.tzinfo else date.strftime('%H:%M:%S'))
+        except ValueError:pass
+    if not source:meta.append('Not included in export')
+    elif text is None and not ref.get('explanation'):meta.append('Text not included')
+    return {'title':preview,'meta':' · '.join(meta),'full':title,'source_id':sid}
+
+
+def source_button(ref, label='Source', cls='link', context=None, caption=None):
     if isinstance(ref,str): ref={'source_id':ref}
-    return '<button type="button" class="'+cls+' source-link" data-ref="'+esc(canonical(ref))+'"'+(' data-source-context="'+esc(canonical(context))+'"' if context else '')+'>'+icon('link-2')+esc(label)+'</button>'
+    content=esc(label);attributes=''
+    if caption:
+        cls+=' source-citation'
+        attributes=' title="'+esc(caption['full'])+'"'
+        content='<span class="source-caption"><span class="source-caption-title">'+esc(caption['title'])+'</span><span class="source-caption-meta">'+esc(caption['meta'])+'</span></span>'
+    return '<button type="button" class="'+cls+' source-link" data-ref="'+esc(canonical(ref))+'"'+attributes+(' data-source-context="'+esc(canonical(context))+'"' if context else '')+'>'+icon('link-2')+content+'</button>'
 
 
-def refs_html(refs, context=None):
-    return ' '.join(source_button(r, r.get('explanation') or 'Source '+str(i), context=context) for i,r in enumerate(refs,1))
+def refs_html(refs, context=None, data=None):
+    captions=[source_caption(r,data) for r in refs]
+    counts=Counter((c['title'],c['meta']) for c in captions)
+    # Equal previews need a stable record/range discriminator, not a new title.
+    for caption,ref in zip(captions,refs):
+        if counts[caption['title'],caption['meta']]>1:
+            caption['meta']+=' · '+ref['source_id'][-8:]
+            if 'start_char' in ref:caption['meta']+=' · chars '+str(ref['start_char'])+'–'+str(ref['end_char'])
+    return '<span class="source-citations">'+''.join(source_button(r,context=context,caption=c) for r,c in zip(refs,captions))+'</span>' if refs else ''
 
 
-def reference_list(refs, context=None):
+def reference_list(refs, context=None, data=None):
     if not refs:return ''
-    return '<details class="source-list"><summary>'+icon('link-2')+'Sources · '+str(len(refs))+'</summary><div>'+refs_html(refs,context)+'</div></details>'
+    return '<details class="source-list"><summary>'+icon('link-2')+'Sources · '+str(len(refs))+'</summary><div>'+refs_html(refs,context, data=data)+'</div></details>'
 
 
 def evidence_context(owner, label, text, limitations=()):
@@ -668,7 +732,7 @@ def render_report(data, embedded=False):
     if run.get('synopsis'):
         synopsis = run['synopsis']
         body += prose(synopsis['text'],'synopsis prose')
-        body += '<div class="evidence-line">'+reference_list(synopsis['references'],evidence_context(conclusion_owner,'Session synopsis',synopsis['text'],synopsis['limitations']))+'</div>'
+        body += '<div class="evidence-line">'+reference_list(synopsis['references'],evidence_context(conclusion_owner,'Session synopsis',synopsis['text'],synopsis['limitations']), data=data)+'</div>'
         if synopsis['limitations']: body += '<details class="evidence-limits"><summary>Synopsis limits</summary>'+''.join(prose(x,'limit prose') for x in synopsis['limitations'])+'</details>'
     elif run.get('summary'):
         body += prose(run['summary'],'synopsis prose')+prose('Saved conclusion; this run did not record a separate session synopsis.','small muted')
@@ -680,7 +744,7 @@ def render_report(data, embedded=False):
     outcome = run.get('observed_outcome')
     if outcome:
         body += '<h2>Outcome</h2>'+prose(outcome['text'],'outcome prose')
-        body += '<div class="evidence-line"><span>'+esc(outcome['evidence_class'].replace('_',' ').capitalize())+'</span>'+reference_list(outcome['references'],evidence_context(conclusion_owner,'Outcome',outcome['text'],outcome['limitations']))+'</div>'
+        body += '<div class="evidence-line"><span>'+esc(outcome['evidence_class'].replace('_',' ').capitalize())+'</span>'+reference_list(outcome['references'],evidence_context(conclusion_owner,'Outcome',outcome['text'],outcome['limitations']), data=data)+'</div>'
         if outcome['limitations']: body += '<details class="evidence-limits"><summary>Evidence limits</summary>'+''.join(prose(x,'limit prose') for x in outcome['limitations'])+'</details>'
         if conclusion_owner:body+=review_qualification(data,conclusion_owner)
     gaps = data['scope']['capture_gaps']; material = []
@@ -784,7 +848,7 @@ def render_report(data, embedded=False):
         if edit: contents += prose(p['change'])
         contents += '<dl class="review">'+''.join('<dt>'+esc(k.replace('_',' ').capitalize())+'</dt><dd>'+esc(v if isinstance(v,str) else '; '.join(v))+'</dd>' for k,v in plan.items())+'</dl>'
         if p['tradeoffs']: contents += prose(' '.join(p['tradeoffs']))
-        contents += refs_html(p['target_references'],evidence_context(saved['id'],'Proposed change',p['justification'],p['tradeoffs']))+detail('Exact saved proposal',saved)
+        contents += refs_html(p['target_references'],evidence_context(saved['id'],'Proposed change',p['justification'],p['tradeoffs']), data=data)+detail('Exact saved proposal',saved)
         body += detail('Rationale and verification',contents,raw=True)+detail('Validation record',validation)+'</div></article>'
     if not data['recommendations']:
         if run['run_status'] in ('partial','failed'): empty = 'No recommendations saved. The investigation is incomplete.'
@@ -849,18 +913,18 @@ def render_report(data, embedded=False):
         body += recovery_html(data,saved)
         if i.get('expectedness_basis'):
             basis=i['expectedness_basis']
-            body+=prose(basis['explanation'],'small')+refs_html(basis['references'],evidence_context(saved['id'],'Expectedness',basis['explanation']))
+            body+=prose(basis['explanation'],'small')+refs_html(basis['references'],evidence_context(saved['id'],'Expectedness',basis['explanation']), data=data)
         for c in i['claims']:
             body += '<div class="claim">'+prose(c['text'])+prose(c['evidence_class'].replace('_',' '),'small muted')
             if c['limitations']: body += prose(' '.join(c['limitations']),'limit prose')
-            body += refs_html(c['references'],evidence_context(saved['id'],i['title'],c['text'],c['limitations']))+'</div>'
+            body += refs_html(c['references'],evidence_context(saved['id'],i['title'],c['text'],c['limitations']), data=data)+'</div>'
         if i['alternatives']: body += '<h3>Alternatives</h3>'+''.join(prose(x) for x in i['alternatives'])
         if i['open_questions']: body += '<h3>Missing evidence</h3>'+''.join(prose(x,'limit prose') for x in i['open_questions'])
-        body += '<h3>Context and recovery</h3>'+refs_html(i['task_references']+i['recovery_references']+i['counterevidence'],evidence_context(saved['id'],i['title'],i['membership_basis'],i['open_questions']))
+        body += '<h3>Context and recovery</h3>'+refs_html(i['task_references']+i['recovery_references']+i['counterevidence'],evidence_context(saved['id'],i['title'],i['membership_basis'],i['open_questions']), data=data)
         if i.get('attribution'):
             a=i['attribution']; content=prose(a['category'].replace('_',' ')+' · '+a['support'].replace('_',' '),'meta')
             content+=prose(a['component']+' · '+a['version']+' · '+a['version_basis'].replace('_',' '),'small')+prose(a['basis'])
-            content+=refs_html(a['component_references']+a['instruction_references']+a['execution_references'],evidence_context(saved['id'],'Fault attribution',a['basis'],a['alternatives']+a['missing_evidence']))
+            content+=refs_html(a['component_references']+a['instruction_references']+a['execution_references'],evidence_context(saved['id'],'Fault attribution',a['basis'],a['alternatives']+a['missing_evidence']), data=data)
             content+='<h4>Immediate next action</h4>'+prose(a['immediate_next_action'])+'<h4>Persistent change basis</h4>'+prose(a['persistent_change_basis'])
             for limit in a['alternatives']+a['missing_evidence']:content+=prose(limit,'limit small')
             content+=detail('Attribution prerequisites',saved.get('attribution_prerequisites',{}))

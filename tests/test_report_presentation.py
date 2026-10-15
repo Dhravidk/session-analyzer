@@ -183,7 +183,8 @@ class ReportPresentationTests(unittest.TestCase):
         payload=json.loads(re.search(r'id="report-data">(.*?)</script>',output,re.S).group(1))
         self.assertEqual(payload,original)
         self.assertEqual(payload['incidents'][0]['incident']['claims'][0]['references'][0]['explanation'],explanation)
-        self.assertIn('>'+explanation+'</button>',output)
+        self.assertIn('title="'+html.escape(explanation,quote=True)+'"',output)
+        self.assertIn('class="source-caption-title"',output)
 
     def test_complete_chronology_is_available_without_position_based_hiding(self):
         data=report_data(self.store,self.iid,True,True)
