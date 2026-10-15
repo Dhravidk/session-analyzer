@@ -133,6 +133,23 @@ INCIDENT['properties']['pattern'] = obj({
 INCIDENT['properties']['expectedness_basis'] = obj({
     'category':enum('intentional_negative_check','correct_policy_enforcement'),
     'references':arr(REF,1,20), 'explanation':S})
+INCIDENT['properties']['reader_guide'] = obj({
+    'name':{'type':'string','minLength':1,'maxLength':100},
+    'takeaway':{'type':'string','minLength':1,'maxLength':700},
+    'references':arr(REF,1,20), 'limitations':arr(S,maximum=10),
+    'events':arr(obj({
+        'key':ID, 'title':{'type':'string','minLength':1,'maxLength':140},
+        'explanation':{'type':'string','minLength':1,'maxLength':700},
+        'anchor_source_id':ID, 'primary_source_id':ID,
+        'references':arr(REF,1,20), 'limitations':arr(S,maximum=10), 'episode_key':ID},
+        ['key','title','explanation','anchor_source_id','primary_source_id','references','limitations']),1,50)})
+INCIDENT['properties']['reader_guide']['description'] = (
+    'Required in new managed runs. Save your short navigation name and answer first, then ordered local events. '
+    'Each title states what happened here, not Failure evidence or F1. Cite the decisive record in primary_source_id; '
+    'anchor_source_id places it in the main-session turn containing that cited record. Usually both IDs are the result. '
+    'Both IDs must occur in references and already belong to the incident. Preserve specific uncertainty beside its event. '
+    'For a pattern, name the existing episode_key for each event. Do not combine different goals as one episode or '
+    'claim recovery from a launch acknowledgment. The renderer preserves these words without summarizing.')
 
 
 def tool_specs(spec, page):

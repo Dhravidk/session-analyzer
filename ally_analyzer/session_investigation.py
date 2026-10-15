@@ -317,6 +317,8 @@ def save_incident(store, investigation_id, incident):
     from .session_episodes import validate_episode, validate_attribution
     episode_checks=validate_episode(store,run,incident)
     attribution_checks=validate_attribution(store,run,incident)
+    from .session_story import validate_reader_guide
+    validate_reader_guide(store,run,incident)
     if incident.get('evidence_links'):
         from .session_requirements import inspected_refs
         from .session_finding_links import incident_episodes

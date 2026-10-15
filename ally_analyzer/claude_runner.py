@@ -170,7 +170,7 @@ def main(argv=None):
         (work/'artifact-manifest.json').write_text(json.dumps({'source_sha256':hashlib.sha256(manifest_path.read_bytes()).hexdigest(),'admitted_artifact_ids':artifact_ids},indent=2)+'\n')
     run = start_session_investigation(store, aid, sid, args.question, artifact_ids=artifact_ids)['investigation']
     iid = run['id']
-    update_workflow(store, iid, 'investigate', requirement_mapping=True, semantic_consistency=True, citation_explanations=True)
+    update_workflow(store, iid, 'investigate', requirement_mapping=True, semantic_consistency=True, citation_explanations=True, reader_guides=True)
     before = hashlib.sha256(canonical(canonical_report(store, aid)).encode()).hexdigest()
     prompt = ('/ally-session-analyzer:investigate ' + iid + '\n' + args.question + '\n'
               'This host is bound to the selected investigation. Use only the analyzer tools and the packaged writing skill. '

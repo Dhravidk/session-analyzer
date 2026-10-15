@@ -16,7 +16,7 @@ def active_versions(values, field):
     return [v for v in values if v['id'] not in replaced]
 
 
-def update_workflow(store, investigation_id, phase, requirement_mapping=False, semantic_consistency=False, citation_explanations=False):
+def update_workflow(store, investigation_id, phase, requirement_mapping=False, semantic_consistency=False, citation_explanations=False, reader_guides=False):
     """Operator-only transition; deliberately not exposed as an MCP tool."""
     from .session_investigation import active_run
     run = active_run(store, investigation_id)
@@ -34,6 +34,8 @@ def update_workflow(store, investigation_id, phase, requirement_mapping=False, s
         run['review_workflow']['semantic_consistency_version']=CONSISTENCY_VERSION
     if phase=='investigate' and citation_explanations:
         run['review_workflow']['citation_explanations_version']='citation-explanations-v1'
+    if phase=='investigate' and reader_guides:
+        run['review_workflow']['finding_reader_guides_version']='finding-reader-guides-v1'
     with store.connect() as db:
         db.execute('UPDATE session_runs SET payload=? WHERE id=?', (canonical(run), investigation_id))
     return run
