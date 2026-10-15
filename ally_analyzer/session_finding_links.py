@@ -1,5 +1,6 @@
 """Finding navigation from explicit identities and associations, never prose inference."""
 from .session_patterns import RECORDED_FAILURE_OUTCOMES
+from .session_story import saved_source_explanation
 
 ROLE_LABELS = {
     'failure':'Failure evidence', 'recovery':'Recovery evidence',
@@ -42,9 +43,12 @@ def finding_links(data, saved):
         for ref in claim['references']:
             add(ref,context=claim['text'])
             entries[ref['source_id']]['claim_reference']=True
+            entries[ref['source_id']].setdefault('claim_order',sum(e.get('claim_reference',False) for e in entries.values()))
     for relation in incident.get('evidence_links',[]):
         for ref in relation['references']:add(ref,relation['role'],'Saved evidence relationship',relation['basis'])
     for ref in incident.get('pattern',{}).get('references',[]):add(ref,context=incident['pattern']['membership_basis'])
+    for event in incident.get('reader_guide',{}).get('events',[]):
+        for ref in event['references']:add(ref,context=event['explanation'])
     for _,episode,_ in incident_episodes(incident):
         for ref in episode['goal_references']:add(ref,'request','Saved episode goal reference')
         for attempt in episode['attempts']:
@@ -71,8 +75,14 @@ def finding_links(data, saved):
             rank=min(order[r] for r in entry['roles'])
             if result and entry.get('claim_reference') and 'counterevidence' not in entry['roles']:rank=min(rank,4.5)
             elif result and 'counterevidence' in entry['roles']:rank=min(rank,4.75)
-            return rank,not result
+            explanation,verdict=saved_source_explanation(entry['ref'],data,{'owner_id':saved['id']})
+            if result and entry.get('claim_reference') and explanation and 'counterevidence' not in entry['roles']:
+                # Prefer the author's explained claim evidence in saved order.
+                # A peripheral failed grep must not outrank the cited run result.
+                return -1,entry['claim_order'],False
+            return rank,not bool(explanation),not result
         selected=sorted(selected,key=priority)
         for entry in selected:entry['label']=relationship_label(entry['roles'])
-        result[turn['id']]={'label':relationship_label(r for e in selected for r in e['roles']), 'evidence':selected}
+        events=[e for e in incident.get('reader_guide',{}).get('events',[]) if e['anchor_source_id'] in turn['event_ids']]
+        result[turn['id']]={'label':relationship_label(r for e in selected for r in e['roles']), 'evidence':selected,'events':events}
     return result

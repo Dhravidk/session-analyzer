@@ -63,37 +63,101 @@
     for (const open of document.querySelectorAll('dialog[open]')) open.close();
     parentEvidenceDialog=null; dialog.showModal();
   }
-  function showFinding(id,turnId,episodeKey) {
+  function showFinding(id,turnId,episodeKey,eventKey) {
     const dialog=document.getElementById('finding-'+id),saved=data.incidents.find(i=>i.id===id);
     if(!dialog || !saved)return;
+    const guide=saved.incident.reader_guide,allEvents=guide?.events || [];
+    const requested=allEvents.find(e=>e.key===eventKey) || (episodeKey?allEvents.find(e=>e.episode_key===episodeKey):null);
+    const selectedTurn=turnId || sourceTurns.get(requested?.anchor_source_id)?.id;
+    const link=findingNavigation[id]?.turns[selectedTurn],turn=turns.get(selectedTurn);
+    const selected=requested || allEvents.find(e=>turn?.event_ids.includes(e.anchor_source_id));
     const context=dialog.querySelector('.finding-context'),full=dialog.querySelector('.finding-analysis');
-    const link=findingNavigation[id]?.turns[turnId],turn=turns.get(turnId);
-    context.replaceChildren();context.hidden=!link;full.open=!link;
-    if(link && turn){
-      const number=accounting.turns.findIndex(t=>t.id===turnId)+1;
-      const heading=document.createElement('h3');heading.textContent='Turn '+number+' · '+link.label;context.append(heading);
-      const selector=document.createElement('select');selector.setAttribute('aria-label','Evidence linked to turn '+number);
-      const content=document.createElement('div');content.className='finding-selected-evidence';
+    const story=dialog.querySelector('.finding-story'),evidence=dialog.querySelector('.finding-evidence'),inventory=dialog.querySelector('.finding-inventory');
+    context.replaceChildren();story.replaceChildren();evidence.replaceChildren();inventory.replaceChildren();delete evidence.dataset.selectedSource;
+    context.hidden=!selected&&!link;full.open=false;
+    dialog.querySelector('.finding-answer').hidden=!!selected || !!link;
+    dialog.querySelector('.dialog-head h2').textContent=selected?.title || (link?'Turn '+(accounting.turns.indexOf(turn)+1)+' · related evidence':guide?.name || saved.incident.title);
+    const owner={owner_id:id,label:guide?.name || saved.incident.title,text:guide?.takeaway,limitations:guide?.limitations || []};
+    function paragraph(text,cls='prose'){const p=document.createElement('p');p.className=cls;p.textContent=text;return p;}
+    function entryFor(ref,explanation){
+      const old=link?.evidence.find(e=>e.ref.source_id===ref.source_id);
+      return {ref,context:explanation,caption:ref.explanation?{title:ref.explanation}:old?.caption};
+    }
+    function inspect(entry,trigger){showSource(entry.ref,{...owner,text:entry.context,limitations:selected?.limitations || guide?.limitations || []},trigger);}
+    function recordView(entry){
+      const source=sources[entry.ref.source_id];evidence.replaceChildren();
+      evidence.dataset.selectedSource=entry.ref.source_id;
+      const h=document.createElement('h3');h.textContent='Selected evidence';evidence.append(h);
+      evidence.append(iconButton(entry.caption?.title || entry.ref.explanation || 'Open exact source','link-2',trigger=>inspect(entry,trigger)));
+      if(!source){evidence.append(paragraph('Source '+entry.ref.source_id+' is not included in this export.','limit'));return;}
+      const exact=document.createElement('details'),summary=document.createElement('summary');summary.textContent='Exact record';exact.append(summary);
+      exact.append(paragraph(sourceName(source)+(source.timestamp?' · '+source.timestamp:''),'small muted'));
+      exact.append(codePanel(source.role==='tool_result'?'Result':source.role==='tool_call'?'Input':'Record',sourceText(source),'text',source.id,{available:hasSourceText(source),savedLineNumbers:true}));
+      if(entry.label)exact.append(paragraph(entry.label+' · '+(entry.bases?.join(' · ') || 'Saved association'),'small muted'));
+      evidence.append(exact);
+    }
+    if(selected || link){
+      context.append(button('Complete finding · '+(guide?.name || saved.incident.title),()=>showFinding(id)));
+      if(selected){
+        context.append(paragraph(selected.explanation));
+        for(const limit of selected.limitations)context.append(paragraph(limit,'limit small'));
+        recordView(entryFor(selected.references.find(r=>r.source_id===selected.primary_source_id),selected.explanation));
+      } else {
+        context.append(paragraph('A local event explanation was not saved in this analysis.','small muted'));
+        const entry=link.evidence[0];
+        if(entry.caption?.title && entry.caption.title!=='Explanation not saved')context.append(paragraph(entry.caption.title));
+        recordView(entry);
+      }
+    }
+    function appendSequence(container,events){
+      const list=document.createElement('ol');list.className='finding-sequence';
+      for(const event of events){
+        const row=document.createElement('li');row.classList.toggle('selected-event',event.key===selected?.key);
+        const choose=button(event.title,()=>showFinding(id,null,null,event.key));choose.className='event-choice';
+        if(event.key===selected?.key)choose.setAttribute('aria-current','true');
+        const n=accounting.turns.findIndex(t=>t.event_ids.includes(event.anchor_source_id))+1;
+        const number=document.createElement('span');number.className='small muted';number.textContent=n?'Turn '+n:'';
+        const ref=event.references.find(r=>r.source_id===event.primary_source_id);
+        const source=iconButton('','link-2',trigger=>showSource(ref,{...owner,text:event.explanation,limitations:event.limitations},trigger),'icon-button');
+        source.setAttribute('aria-label','Open source: '+(ref.explanation || event.title));source.title=ref.explanation || event.title;
+        row.append(choose,number,source);list.append(row);
+      }
+      container.append(list);
+    }
+    if(guide){
+      const h=document.createElement('h3');h.textContent='What happened';story.append(h);
+      const pattern=saved.incident.pattern,chosenEpisode=selected?.episode_key || episodeKey;
+      if(pattern && !chosenEpisode){
+        story.append(paragraph('Pattern · '+pattern.episodes.length+' separate episodes','small muted'));
+        for(const episode of pattern.episodes){
+          const group=document.createElement('details'),summary=document.createElement('summary');summary.textContent=episode.title;group.append(summary);
+          const state=document.createElement('span');state.className='small muted';state.textContent=' · '+label(episode.resolution);summary.append(state);
+          group.open=['unresolved','unknown'].includes(episode.resolution);
+          for(const question of episode.open_questions)group.append(paragraph(question,'limit small'));
+          appendSequence(group,allEvents.filter(e=>e.episode_key===episode.key));story.append(group);
+        }
+      } else {
+        const episode=pattern?.episodes.find(e=>e.key===chosenEpisode);
+        if(episode)story.append(paragraph(episode.title+' · '+label(episode.resolution),'small muted'));
+        appendSequence(story,chosenEpisode?allEvents.filter(e=>e.episode_key===chosenEpisode):allEvents);
+      }
+    }
+    // The record inventory remains available without leading the explanation.
+    if(link?.evidence.length){
+      const advanced=document.createElement('details');advanced.className='finding-records';
+      const summary=document.createElement('summary');summary.textContent='All linked records · '+link.evidence.length;advanced.append(summary);
+      const label=document.createElement('label');label.textContent='Select an exact record';
+      const selector=document.createElement('select');selector.setAttribute('aria-label','Evidence linked to turn '+(accounting.turns.indexOf(turn)+1));
+      const names=link.evidence.map(entry=>(entry.caption?.title || 'Explanation not saved')+' · '+(entry.caption?.meta || sourceName(sources[entry.ref.source_id] || {})));
       for(const [index,entry] of link.evidence.entries()){
-        const source=sources[entry.ref.source_id],option=document.createElement('option');option.value=String(index);
-        option.textContent=entry.label+' · '+(source?sourceName(source):entry.ref.source_id)+(source?.timestamp?' · '+source.timestamp:'');selector.append(option);
+        const option=document.createElement('option');option.value=String(index);
+        option.textContent=names[index]+(names.filter(name=>name===names[index]).length>1?' · '+entry.ref.source_id:'');
+        option.selected=entry.ref.source_id===evidence.dataset.selectedSource;selector.append(option);
       }
-      if(link.evidence.length>1){const label=document.createElement('label');label.textContent=link.evidence.length+' linked records';label.append(selector);context.append(label);}
-      function draw(){
-        const entry=link.evidence[Number(selector.value)||0],source=sources[entry.ref.source_id];content.replaceChildren();
-        const relation=document.createElement('p');relation.className='small muted';relation.textContent=entry.bases.join(' · ') || 'Saved incident membership; no relationship role was recorded.';content.append(relation);
-        if(!source){const note=document.createElement('p');note.className='limit';note.textContent='Source '+entry.ref.source_id+' is not included in this export.';content.append(note);return;}
-        content.dataset.selectedSource=source.id;
-        const meta=document.createElement('p');meta.className='small muted';meta.textContent=sourceName(source)+(source.timestamp?' · '+source.timestamp:'');content.append(meta);
-        const citation={owner_id:id,label:'Saved claim and qualifications',text:entry.context,limitations:[]};
-        const relevance=document.createElement('div');sourceRelevance(entry.ref,source,citation,relevance);content.append(relevance);
-        content.append(codePanel(source.role==='tool_result'?'Result':source.role==='tool_call'?'Input':'Record',sourceText(source),'text',source.id,{available:hasSourceText(source),savedLineNumbers:true}));
-        content.append(iconButton('Inspect source and surrounding context','link-2',trigger=>showSource(entry.ref,citation,trigger)));
-      }
-      selector.addEventListener('change',draw);context.append(content);draw();
+      selector.addEventListener('change',()=>recordView(link.evidence[Number(selector.value)]));label.append(selector);advanced.append(label);inventory.append(advanced);
     }
     showEvidenceDialog('finding-',id);dialog.scrollTop=0;
-    if(episodeKey){const episode=[...dialog.querySelectorAll('[data-pattern-episode]')].find(e=>e.dataset.patternEpisode===episodeKey);if(episode){full.open=true;episode.open=true;episode.scrollIntoView({block:'start'});}}
+    if(episodeKey && !guide){const episode=[...dialog.querySelectorAll('[data-pattern-episode]')].find(e=>e.dataset.patternEpisode===episodeKey);if(episode){full.open=true;episode.open=true;episode.scrollIntoView({block:'start'});}}
   }
   function showSubagent(id) {
     showEvidenceDialog('subagent-',id);
@@ -648,7 +712,7 @@
     else if(control.hasAttribute('data-source-close')) returnFromSource();
     else if(control.hasAttribute('data-source-reopen')) reopenSource(control);
     else if (control.hasAttribute('data-ref')) showSource(JSON.parse(control.dataset.ref),control.dataset.sourceContext?JSON.parse(control.dataset.sourceContext):null,control);
-    else if (control.dataset.finding) showFinding(control.dataset.finding,control.dataset.findingTurn,control.dataset.findingEpisode);
+    else if (control.dataset.finding) showFinding(control.dataset.finding,control.dataset.findingTurn,control.dataset.findingEpisode,control.dataset.findingEvent);
     else if (control.dataset.failures) showEvidenceDialog('failures-',control.dataset.failures);
     else if (control.dataset.subagent) showSubagent(control.dataset.subagent);
     else if (control.dataset.agentMore) renderAgentEvents(control.dataset.agentMore,control.closest('dialog'));

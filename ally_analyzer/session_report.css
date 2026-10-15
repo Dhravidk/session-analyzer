@@ -113,9 +113,26 @@ thead th{color:var(--muted);font-size:12px;font-weight:400;vertical-align:bottom
 .command-source{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-top:1px solid var(--line);padding-top:10px;font-size:12px}
 .command-source details{flex:1;min-width:0;margin:0}
 .command-source .source-link{flex-shrink:0}
-.finding-refs{display:flex;flex-wrap:wrap;gap:5px}
-.finding-ref{color:var(--blue);background:var(--soft);border:1px solid #ded5e5;padding:2px 7px;min-width:32px;font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums;text-align:left;white-space:normal}
-.finding-ref:hover{border-color:var(--blue)}
+.finding-refs{display:flex;flex-direction:column;gap:10px}
+.finding-ref{color:var(--blue);background:transparent;border:0;padding:0;font-size:13px;line-height:1.45;text-align:left;white-space:normal}
+.finding-event-title{display:block;text-decoration:underline;text-underline-offset:3px}
+.finding-reference-id{display:block;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;margin-top:3px}
+.finding-ref:hover .finding-event-title{color:var(--ink)}
+.finding-answer,.finding-context>p,.finding-takeaway{max-width:75ch}
+.finding-context>.link{font-size:12px;margin-bottom:12px}
+.finding-story:empty,.finding-evidence:empty{display:none}
+.finding-story h3,.finding-evidence h3{font-size:15px;margin:18px 0 10px}
+.finding-sequence{list-style:none;padding:0;margin:8px 0 16px;border-top:1px solid var(--line)}
+.finding-sequence li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding:8px 10px}
+.finding-sequence .event-choice{border:0;padding:2px 0;text-align:left;font-size:14px;color:var(--blue)}
+.finding-sequence .selected-event{background:var(--soft);border-left:2px solid var(--blue)}
+.finding-sequence .icon-button{color:var(--blue)}
+.finding-records{font-size:12px;margin:12px 0}
+.finding-records label{display:block;margin:8px 0;color:var(--muted)}
+.finding-records select{display:block;width:100%;max-width:100%;font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);padding:6px;margin-top:4px}
+.finding-evidence>.link{font-size:14px;text-align:left;max-width:75ch}
+.finding-evidence .code-viewport{max-height:19em}
+.saved-finding-title{font-weight:600}
 .finding-dimensions{display:flex;flex-wrap:wrap;gap:12px 28px;margin:8px 0;font-size:13px}
 .finding-dimensions dt{color:var(--muted);font-size:12px}.finding-dimensions dd{margin:2px 0}
 .finding-context{border-top:1px solid var(--line);padding-top:12px;margin:16px 0}

@@ -63,5 +63,13 @@ class FindingLinkTests(unittest.TestCase):
         self.assertEqual(entry['ref']['source_id'],'unknown')
         self.assertEqual(entry['label'],'Related evidence')
 
+    def test_explained_claim_result_precedes_a_peripheral_failure(self):
+        data,saved=self.fixture()
+        saved['incident']['claims'][0]['references'][0]['explanation']='The complete fixture check reports its failure.'
+        entries=finding_links(data,saved)['t1']['evidence']
+        self.assertEqual(entries[0]['ref']['source_id'],'unknown')
+        self.assertEqual(entries[0]['label'],'Related evidence')
+        self.assertIn('bad',[e['ref']['source_id'] for e in entries])
+
 
 if __name__=='__main__':unittest.main()

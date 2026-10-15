@@ -172,7 +172,7 @@ class ConsistencyTests(unittest.TestCase):
             assessment='The failure was a read probe; expectedness was not established.',remaining_uncertainty=['The intended negative-test purpose was not recorded.'])}]
         before=copy.deepcopy(data);html=render_report(data)
         dialog=html[html.index('id="finding-'+saved['id']):]
-        self.assertLess(dialog.index('Claude review · qualified'),dialog.index('class="claim"'))
+        self.assertLess(dialog.index('Claude review of complete finding · qualified'),dialog.index('class="claim"'))
         self.assertIn('<dt>Expectedness</dt><dd>expected</dd>',dialog);self.assertIn('expectedness was not established',dialog)
         self.assertEqual(data,before)
 

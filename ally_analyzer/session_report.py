@@ -17,6 +17,7 @@ from .session_review import active_versions
 from .session_investigation import accounting, records
 from .session_patterns import RECORDED_FAILURE_OUTCOMES, turn_patterns
 from .session_finding_links import finding_links, incident_episodes
+from .session_story import saved_source_explanation
 from .session_scope import entities, exposure, get_run, get_scope, projection, scope_rows, source_record
 from .session_validation import get_validation_results
 from .trajectory import require_content, trajectory_text
@@ -252,12 +253,12 @@ def verification_html(checks, prerequisites=None, context=None, data=None):
     return content
 
 
-def review_qualification(data, record_id):
+def review_qualification(data, record_id, label='Claude review'):
     """Show the actual current review next to its subject; never repair prose."""
     reviews=[r['check'] for r in data.get('review_checks',[]) if r['check']['record_id']==record_id]
     if not reviews or reviews[-1]['verdict']=='supported': return ''
     review=reviews[-1]
-    body='<aside class="review-qualification"><p class="small"><strong>Claude review · '+esc(review['verdict'].replace('_',' '))+'</strong></p>'
+    body='<aside class="review-qualification"><p class="small"><strong>'+esc(label)+' · '+esc(review['verdict'].replace('_',' '))+'</strong></p>'
     body+=prose(review['assessment']) if review['verdict']=='needs_revision' else detail('Review assessment',prose(review['assessment']),raw=True)
     for uncertainty in review['remaining_uncertainty']: body+=prose(uncertainty,'limit small')
     for check in review.get('semantic_checks',[]):
@@ -453,23 +454,6 @@ def detail(title, content, raw=False):
     return '<details><summary>'+esc(title)+'</summary>'+(content if raw else '<pre>'+esc(json.dumps(content,ensure_ascii=False,indent=2,sort_keys=True))+'</pre>')+'</details>'
 
 
-def saved_source_explanation(ref, data, context=None):
-    """Reuse only the citation or its latest same-owner, range-verified review."""
-    if ref.get('explanation'):
-        return ref['explanation'], None
-    owner=(context or {}).get('owner_id')
-    reviews=[r for r in data.get('review_checks',[]) if owner and r['check']['record_id']==owner]
-    if not reviews:return None, None
-    review=reviews[-1];source=data.get('sources',{}).get(ref['source_id'],{})
-    for item,exact in zip(review['check'].get('evidence_checks',[]),review.get('verified_quote_ranges',[])):
-        same=(item['reference']['source_id']==ref['source_id']==exact.get('source_id')
-              and exact.get('text_sha256') and exact['text_sha256']==source.get('text_sha256'))
-        inside=not ref.get('text_sha256') or (ref['text_sha256']==exact.get('text_sha256')
-                and ref['start_char']<=exact['start_char'] and ref['end_char']>=exact['end_char'])
-        if same and inside:return item['supports_or_contradicts'], review['check']['verdict']
-    return None, None
-
-
 def source_caption(ref, data=None, context=None):
     """Saved Claude explanations for claims; literal previews for raw navigation."""
     data=data or {};sid=ref['source_id'];source=data.get('sources',{}).get(sid,{})
@@ -569,13 +553,17 @@ def turn_incidents(data, navigation=None):
     return result
 
 
-def finding_reference(saved, label, turn_id=None, relationship=None):
+def finding_reference(saved, label, turn_id=None, event=None):
     """A navigation reference, never a shortened or regenerated finding title."""
     sid, title = saved['id'], saved['incident']['title']
-    visible=label+(' · '+relationship if relationship else '')
+    guide=saved['incident'].get('reader_guide',{})
+    title=guide.get('name') or title
+    visible=event['title'] if event else 'Related evidence'
+    content='<span class="finding-event-title">'+esc(visible)+'</span><span class="finding-reference-id">'+esc(label)+'</span>'
     return ('<button class="finding-ref" data-finding="'+esc(sid)+'" '+('data-finding-turn="'+esc(turn_id)+'" ' if turn_id else '')+
+            ('data-finding-event="'+esc(event['key'])+'" ' if event else '')+
             'aria-haspopup="dialog" aria-controls="finding-'+esc(sid)+'" '
-            'aria-label="Open '+esc(visible)+': '+esc(title)+'" title="'+esc(title)+'">'+esc(visible)+'</button>')
+            'aria-label="Open '+esc(visible)+' · '+esc(label)+'" title="'+esc(title)+'">'+content+'</button>')
 
 
 def finding_key(data, turns, mapping, labels):
@@ -584,8 +572,11 @@ def finding_key(data, turns, mapping, labels):
         sid = saved['id']
         linked = [(index, turn['id']) for index, turn in enumerate(turns, 1)
                   if any(item['id'] == sid for item in mapping[turn['id']])]
-        body += '<article class="finding-index" id="finding-key-'+esc(sid)+'">'+finding_reference(saved, labels[sid])
-        body += '<div><h4><button class="link" data-finding="'+esc(sid)+'">'+esc(saved['incident']['title'])+'</button></h4>'
+        name=saved['incident'].get('reader_guide',{}).get('name') or saved['incident']['title']
+        body += '<article class="finding-index" id="finding-key-'+esc(sid)+'"><span class="finding-reference-id">'+esc(labels[sid])+'</span>'
+        body += '<div><h4><button class="link" data-finding="'+esc(sid)+'">'+esc(name)+'</button></h4>'
+        if saved['incident'].get('pattern'):body+=prose('Pattern · '+str(len(saved['incident']['pattern']['episodes']))+' episodes','small muted')
+        elif saved['incident'].get('episode'):body+=prose('Episode','small muted')
         if linked:
             body += focus_turns_button([tid for _, tid in linked], 'Linked '+('turn ' if len(linked)==1 else 'turns ')+', '.join(str(n) for n, _ in linked), 'Evidence linked to '+labels[sid])
         else:
@@ -739,6 +730,10 @@ def render_report(data, embedded=False):
     sources, turns = data.get('sources',{}), display_accounting['turns']
     finding_labels = {saved['id']: 'F'+str(index) for index, saved in enumerate(data['incidents'], 1)}
     navigation={saved['id']:{'label':finding_labels[saved['id']], 'turns':finding_links(data,saved)} for saved in data['incidents']}
+    for saved in data['incidents']:
+        for link in navigation[saved['id']]['turns'].values():
+            for entry in link['evidence']:
+                entry['caption']=source_caption(entry['ref'],data,{'owner_id':saved['id']})
     mapping = turn_incidents(data,navigation)
     title = run.get('title') or 'Session '+run['root_session_id'][:12]
     dates = sorted(s['timestamp'] for s in sources.values() if s.get('timestamp'))
@@ -804,12 +799,19 @@ def render_report(data, embedded=False):
     if pending:body+=focus_turns_button(pending,'Open work and evidence')
     if episode_turns:body+=focus_turns_button(episode_turns,'Recovery episodes')
     body+='</div>'+finding_key(data, turns, mapping, finding_labels)
-    body+='<p class="table-hint">Scroll the table horizontally for findings.</p><div class="table-scroll" tabindex="0" aria-label="Turn table"><table class="turns"><thead><tr><th aria-label="Expand"></th><th>#</th><th>Request</th><th>LLM calls</th><th>Tools</th><th>Findings</th></tr></thead><tbody>'
+    body+='<p class="table-hint">Scroll the table horizontally for findings.</p><div class="table-scroll" tabindex="0" aria-label="Turn table"><table class="turns"><thead><tr><th aria-label="Expand"></th><th>#</th><th>Request</th><th>LLM calls</th><th>Tools</th><th>What happened</th></tr></thead><tbody>'
     for index,turn in enumerate(turns,1):
         sid = turn['request_event_id']; source=sources.get(sid,{})
         parsed = command_request(source)
         preview = request_preview(source, parsed)
-        links = '<div class="finding-refs">'+''.join(finding_reference(i, finding_labels[i['id']],turn['id'],navigation[i['id']]['turns'][turn['id']]['label']) for i in mapping[turn['id']])+'</div>' if mapping[turn['id']] else '—'
+        links=''
+        for item in mapping[turn['id']]:
+            link=navigation[item['id']]['turns'][turn['id']]
+            if link['events']:
+                links+=''.join(finding_reference(item,finding_labels[item['id']],turn['id'],event=e) for e in link['events'])
+            else:
+                links+=finding_reference(item,finding_labels[item['id']],turn['id'])
+        links='<div class="finding-refs">'+links+'</div>' if links else '—'
         body += '<tr id="'+esc(turn['id'])+'" class="turn-row"><td><button class="turn-toggle" data-turn="'+esc(turn['id'])+'" aria-expanded="false" aria-controls="detail-'+esc(turn['id'])+'" aria-label="Expand turn '+str(index)+'">'+icon('chevron-right')+'</button></td><th scope="row">'+str(index)+'</th><td class="request"><button class="request-control'+(' command-preview' if parsed else '')+'" data-turn="'+esc(turn['id'])+'" aria-expanded="false" aria-controls="detail-'+esc(turn['id'])+'" aria-label="Read turn '+str(index)+'">'+preview+'</button></td><td>'+number(turn['metrics']['llm_calls']['value'])+'</td><td>'+number(turn['metrics']['tool_invocations']['value'])+'</td><td>'+links+'</td></tr>'
         body += '<tr id="detail-'+esc(turn['id'])+'" class="turn-detail" hidden><td colspan="6"><div class="turn-content"><div class="turn-detail-head"><h3>Turn '+str(index)+'</h3>'+(source_button(sid,'Full request and source') if not parsed else '')+'</div>'+request_details({**source,'id':sid},parsed)+token_breakdown(turn['metrics'],'Turn '+str(index)+' tokens')+'<dl class="turn-metrics">'
         for key,label in (('turn_duration_seconds','Recorded duration (s)'),('observed_turn_span_seconds','Observed span (s)')):
@@ -926,11 +928,25 @@ def render_report(data, embedded=False):
     # Every finding is kept once in a modal; no duplicate recommendations in turns.
     for saved in data['incidents']:
         i = saved['incident']
-        body += '<dialog class="finding-dialog" id="finding-'+esc(saved['id'])+'" aria-labelledby="title-'+esc(saved['id'])+'"><div class="dialog-head"><h2 id="title-'+esc(saved['id'])+'">'+esc(i['title'])+'</h2><button data-close aria-label="Close finding">Close</button></div>'
+        guide=i.get('reader_guide')
+        body += '<dialog class="finding-dialog" id="finding-'+esc(saved['id'])+'" aria-labelledby="title-'+esc(saved['id'])+'"><div class="dialog-head"><h2 id="title-'+esc(saved['id'])+'">'+esc(guide['name'] if guide else i['title'])+'</h2><button data-close aria-label="Close finding">Close</button></div>'
         body += prose(finding_labels[saved['id']], 'finding-id small muted')
-        body += '<dl class="finding-dimensions">'+''.join('<div><dt>'+label+'</dt><dd>'+esc(i[key].replace('_',' '))+'</dd></div>' for key,label in (('expectedness','Expectedness'),('resolution','Recovery'),('diagnosis','Diagnosis')))+'</dl>'
-        body += review_qualification(data,saved['id'])
-        body += '<section class="finding-context" aria-label="Selected turn evidence" hidden></section><details class="finding-analysis" open><summary>Full finding</summary>'
+        body += '<section class="finding-answer">'
+        if guide:
+            body+=prose(guide['takeaway'],'prose finding-takeaway')+''.join(prose(x,'limit small') for x in guide['limitations'])
+            body+=reference_list(guide['references'],evidence_context(saved['id'],guide['name'],guide['takeaway'],guide['limitations']),data)
+        else:
+            # Historical claims remain complete; no sentence extraction or rewrite.
+            for claim in i['claims']:
+                body+=prose(claim['text'],'prose')+''.join(prose(x,'limit small') for x in claim['limitations'])
+                body+=reference_list(claim['references'],evidence_context(saved['id'],i['title'],claim['text'],claim['limitations']),data)
+        body+='</section><section class="finding-context" aria-label="Selected turn evidence" hidden></section>'
+        body += review_qualification(data,saved['id'],'Claude review of complete finding')
+        body+='<section class="finding-story" aria-label="Evidence sequence"></section><section class="finding-evidence" aria-label="Selected evidence"></section><section class="finding-inventory" aria-label="All linked records"></section>'
+        dimensions='<dl class="finding-dimensions">'+''.join('<div><dt>'+label+'</dt><dd>'+esc(i[key].replace('_',' '))+'</dd></div>' for key,label in (('expectedness','Expectedness'),('resolution','Recovery'),('diagnosis','Diagnosis')))+'</dl>'
+        body+=detail('Classifications · complete finding',dimensions,raw=True)
+        body += '<details class="finding-analysis"><summary>Full finding</summary>'
+        body+=prose(i['title'],'saved-finding-title')
         body += recovery_html(data,saved)
         if i.get('expectedness_basis'):
             basis=i['expectedness_basis']
