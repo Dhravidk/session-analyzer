@@ -472,6 +472,32 @@ def turn_incidents(data):
     return result
 
 
+def finding_reference(saved, label):
+    """A navigation reference, never a shortened or regenerated finding title."""
+    sid, title = saved['id'], saved['incident']['title']
+    return ('<button class="finding-ref" data-finding="'+esc(sid)+'" '
+            'aria-haspopup="dialog" aria-controls="finding-'+esc(sid)+'" '
+            'aria-label="Open '+esc(label)+': '+esc(title)+'" title="'+esc(title)+'">'+esc(label)+'</button>')
+
+
+def finding_key(data, turns, mapping, labels):
+    body = '<section aria-labelledby="findings-heading" class="findings-section"><h3 id="findings-heading">Findings</h3>'
+    for saved in data['incidents']:
+        sid = saved['id']
+        linked = [(index, turn['id']) for index, turn in enumerate(turns, 1)
+                  if any(item['id'] == sid for item in mapping[turn['id']])]
+        body += '<article class="finding-index" id="finding-key-'+esc(sid)+'">'+finding_reference(saved, labels[sid])
+        body += '<div><h4><button class="link" data-finding="'+esc(sid)+'">'+esc(saved['incident']['title'])+'</button></h4>'
+        if linked:
+            body += focus_turns_button([tid for _, tid in linked], 'Linked '+('turn ' if len(linked)==1 else 'turns ')+', '.join(str(n) for n, _ in linked))
+        else:
+            body += '<p class="small muted">No attributed turn</p>'
+        body += '</div></article>'
+    if not data['incidents']:
+        body += prose('No findings saved.','muted')
+    return body+'</section>'
+
+
 def pattern_failure_entries(data, pattern):
     """Resolve the exact requested invocations counted by a pattern's failure metric."""
     tool_map = {t['id']:t for t in data.get('tools',[])}
@@ -614,6 +640,7 @@ def render_report(data, embedded=False):
         conclusion_owner=None
     sources, turns = data.get('sources',{}), display_accounting['turns']
     mapping = turn_incidents(data)
+    finding_labels = {saved['id']: 'F'+str(index) for index, saved in enumerate(data['incidents'], 1)}
     title = run.get('title') or 'Session '+run['root_session_id'][:12]
     dates = sorted(s['timestamp'] for s in sources.values() if s.get('timestamp'))
     try: date = datetime.fromisoformat(dates[0].replace('Z','+00:00')).strftime('%b %d, %Y')+' · UTC'
@@ -677,12 +704,13 @@ def render_report(data, embedded=False):
     episode_turns=related_turns(data,event_ids=[s for e in episodes for a in e['attempts'] for s in a['event_ids']],tool_ids=[t for e in episodes for a in e['attempts'] for t in a['tool_ids']])
     if pending:body+=focus_turns_button(pending,'Open work and evidence')
     if episode_turns:body+=focus_turns_button(episode_turns,'Recovery episodes')
-    body+='</div><p class="table-hint">Scroll the table horizontally for findings.</p><div class="table-scroll" tabindex="0" aria-label="Turn table"><table class="turns"><thead><tr><th aria-label="Expand"></th><th>#</th><th>Request</th><th>LLM calls</th><th>Tools</th><th>Findings</th></tr></thead><tbody>'
+    body+='</div>'+finding_key(data, turns, mapping, finding_labels)
+    body+='<p class="table-hint">Scroll the table horizontally for findings.</p><div class="table-scroll" tabindex="0" aria-label="Turn table"><table class="turns"><thead><tr><th aria-label="Expand"></th><th>#</th><th>Request</th><th>LLM calls</th><th>Tools</th><th>Findings</th></tr></thead><tbody>'
     for index,turn in enumerate(turns,1):
         sid = turn['request_event_id']; source=sources.get(sid,{})
         parsed = command_request(source)
         preview = request_preview(source, parsed)
-        links = ''.join('<button class="link finding-link" data-finding="'+esc(i['id'])+'" title="'+esc(i['incident']['title'])+'">'+esc(i['incident']['title'])+'</button>' for i in mapping[turn['id']]) or '—'
+        links = '<div class="finding-refs">'+''.join(finding_reference(i, finding_labels[i['id']]) for i in mapping[turn['id']])+'</div>' if mapping[turn['id']] else '—'
         body += '<tr id="'+esc(turn['id'])+'" class="turn-row"><td><button class="turn-toggle" data-turn="'+esc(turn['id'])+'" aria-expanded="false" aria-controls="detail-'+esc(turn['id'])+'" aria-label="Expand turn '+str(index)+'">'+icon('chevron-right')+'</button></td><th scope="row">'+str(index)+'</th><td class="request"><button class="request-control'+(' command-preview' if parsed else '')+'" data-turn="'+esc(turn['id'])+'" aria-expanded="false" aria-controls="detail-'+esc(turn['id'])+'" aria-label="Read turn '+str(index)+'">'+preview+'</button></td><td>'+number(turn['metrics']['llm_calls']['value'])+'</td><td>'+number(turn['metrics']['tool_invocations']['value'])+'</td><td>'+links+'</td></tr>'
         body += '<tr id="detail-'+esc(turn['id'])+'" class="turn-detail" hidden><td colspan="6"><div class="turn-content"><div class="turn-detail-head"><h3>Turn '+str(index)+'</h3>'+(source_button(sid,'Full request and source') if not parsed else '')+'</div>'+request_details({**source,'id':sid},parsed)+token_breakdown(turn['metrics'],'Turn '+str(index)+' tokens')+'<dl class="turn-metrics">'
         for key,label in (('turn_duration_seconds','Recorded duration (s)'),('observed_turn_span_seconds','Observed span (s)')):
@@ -703,15 +731,6 @@ def render_report(data, embedded=False):
     assigned_tools={tid for t in turns for tid in t['tool_ids']}
     unassigned_invocations=[d for d in data.get('delegations',[]) if 'main' in d['parent_agent_ids'] and d['tool_id'] not in assigned_tools]
     if unassigned_invocations:body+='<p>Invocations without an attributed turn: '+', '.join(subagent_button(d,d.get('label') or d['tool_id']) for d in unassigned_invocations)+'</p>'
-    linked = {s['id'] for values in mapping.values() for s in values}
-    orphans = [s for s in data['incidents'] if s['id'] not in linked]
-    if orphans:
-        body += '<p>Findings outside an attributed turn: '+''.join('<button class="link finding-link" data-finding="'+esc(i['id'])+'">'+esc(i['incident']['title'])+'</button>' for i in orphans)+'</p>'
-    body += '</section><section aria-labelledby="findings-heading" class="findings-section"><h2 id="findings-heading">Findings</h2>'
-    for saved in data['incidents']:
-        body += '<article class="finding-index"><h3><button class="link" data-finding="'+esc(saved['id'])+'">'+esc(saved['incident']['title'])+'</button></h3></article>'
-    if not data['incidents']:
-        body += prose('No findings saved.','muted')
     body += '</section><section aria-labelledby="proposals-heading" class="proposals-section"><h2 id="proposals-heading">Proposed changes</h2>'
     for saved in data['recommendations']:
         p = saved['recommendation']; validation = data['validation'][saved['id']]; edit = p.get('edit')
@@ -809,6 +828,7 @@ def render_report(data, embedded=False):
     for saved in data['incidents']:
         i = saved['incident']
         body += '<dialog class="finding-dialog" id="finding-'+esc(saved['id'])+'" aria-labelledby="title-'+esc(saved['id'])+'"><div class="dialog-head"><h2 id="title-'+esc(saved['id'])+'">'+esc(i['title'])+'</h2><button data-close aria-label="Close finding">Close</button></div>'
+        body += prose(finding_labels[saved['id']], 'finding-id small muted')
         body += prose(' · '.join(i[k].replace('_',' ') for k in ('expectedness','resolution','diagnosis')),'meta')
         body += review_qualification(data,saved['id'])
         body += recovery_html(data,saved)

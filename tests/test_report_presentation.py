@@ -1,5 +1,6 @@
 """Report data integrity and unknown-state regressions; UI behavior is checked in-browser."""
 import copy
+import html
 import json
 import re
 import unittest
@@ -109,6 +110,51 @@ class ReportPresentationTests(unittest.TestCase):
             with self.subTest(text=text):self.assertIsNone(command_request({'role':'user_statement','text':text}))
         self.assertIsNone(command_request({'role':'assistant_statement','text':raw}))
         self.assertIsNone(command_request({'role':'user_statement'}))
+
+    def test_finding_references_preserve_identity_titles_and_turn_membership(self):
+        from ally_analyzer.session_investigation import save_incident
+        save_incident(self.store,self.iid,fixture.DiagnosticTests.incident(self))
+        data=report_data(self.store,self.iid,True,True)
+        turns=data['main_accounting']['turns']
+        first=data['incidents'][0]
+        first['incident']['title']='Saved <title> & punctuation; no shortened interpretation.'
+        distinct=copy.deepcopy(first)
+        distinct['id']='synthetic-distinct-finding'
+        first['incident']['task_references'].append({'source_id':turns[1]['request_event_id']})
+        orphan=copy.deepcopy(first)
+        orphan['id']='synthetic-unattributed-finding'
+        orphan['incident']['title']='Synthetic finding without an attributed turn'
+        for key in ('member_event_ids','tool_ids','task_references','recovery_references','counterevidence','claims'):
+            orphan['incident'][key]=[]
+        data['incidents'].extend([distinct,orphan])
+        original=copy.deepcopy(data)
+        output=render_report(data)
+        key=re.search(r'<section aria-labelledby="findings-heading".*?</section>',output,re.S).group(0)
+        self.assertEqual(key.count('>'+html.escape(first['incident']['title'])+'</button>'),2)
+        self.assertIn('Linked turns 1, 2',key)
+        self.assertIn('Linked turn 1',key)
+        self.assertIn('No attributed turn',key)
+        self.assertIn('finding-key-'+orphan['id'],key)
+        for index,expected in ((0,[(first['id'],'F1'),(distinct['id'],'F2')]),(1,[(first['id'],'F1')])):
+            row=re.search(r'<tr id="'+turns[index]['id']+r'".*?</tr>',output,re.S).group(0)
+            refs=re.findall(r'<button class="finding-ref" data-finding="([^"]+)"[^>]*>([^<]+)</button>',row)
+            self.assertEqual(refs,expected)
+            self.assertNotIn(first['incident']['title'],html.unescape(re.sub(r'<[^>]+>','',row)))
+            self.assertIn('aria-label="Open F1: '+html.escape(first['incident']['title'],quote=True)+'"',row)
+        for saved in data['incidents']:
+            self.assertIn('id="finding-'+saved['id']+'"',output)
+        payload=json.loads(re.search(r'id="report-data">(.*?)</script>',output,re.S).group(1))
+        self.assertEqual(payload,original)
+        self.assertEqual(data,original)
+
+    def test_no_findings_does_not_manufacture_navigation_references(self):
+        data=report_data(self.store,self.iid,True,True)
+        self.assertEqual(data['incidents'],[])
+        output=render_report(data)
+        key=re.search(r'<section aria-labelledby="findings-heading".*?</section>',output,re.S).group(0)
+        self.assertIn('No findings saved.',key)
+        self.assertNotIn('class="finding-ref"',key)
+        self.assertNotIn('<article class="finding-index"',output)
 
     def test_command_empty_argument_is_distinct_from_absent_and_copy_keeps_whitespace(self):
         raw='<command-message>run</command-message><command-name>/run</command-name>'

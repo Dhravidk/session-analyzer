@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 14 · October 15, 2026 · Governing contract for version 0.13.3 (earlier release sections retained as history)
+Revision 15 · October 15, 2026 · Governing contract for version 0.13.4 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -654,3 +654,9 @@ Turn ordinals and call counts stay on one line, use tabular digits and align wit
 ## 0.13.3 — Readable turn findings
 
 The turn table allocates 32% of its width to findings, leaving requests the larger text column. Saved titles wrap in full, without a line clamp or invented shorter label; multiple findings remain distinct controls opening the existing complete finding. A 720-pixel minimum table width protects the request column and single-line numeric cells. Narrow report columns scroll horizontally. Request expansion, complete chronology, source navigation and saved analysis data remain unchanged.
+
+## 0.13.4 — Shared finding references
+
+The turn table uses compact navigation references (F1, F2, …) keyed to saved incident identities. An adjacent finding key displays each full, unchanged saved title once, with its explicitly linked turn numbers. Selecting those numbers uses the existing turn filter; filtering never renumbers findings. Every reference opens the complete existing finding directly and exposes its saved title to assistive technology and on hover. Identical titles do not merge identities, and findings without an attributed main turn remain in the key with that limitation. No findings produces no references.
+
+The Findings navigation targets this key above the table. Requests retain the available text width beside a compact reference column; the table scrolls at narrow widths. These presentation references replace repeated full titles in rows, superseding the 0.13.3 column allocation. Claude-authored text, evidence associations, review qualifications, exports and saved payloads are unchanged.

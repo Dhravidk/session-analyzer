@@ -1,3 +1,9 @@
+# Implementation status — 0.13.4
+
+The turn table uses compact F1/F2 references instead of repeating long finding titles. A shared key above the table shows each unchanged saved title and its linked turns. Selecting linked turns filters the chronology; every reference opens the existing full finding directly. Identical titles keep distinct identities, and findings without attributed turns remain accessible. Requests gain the freed column width. Presentation, identity/payload regressions, packaging and desktop/narrow browser checks passed; see [validation](validation.md).
+
+---
+
 # Implementation status — 0.13.3
 
 Turn findings use a wider responsive column and display their entire saved titles. Requests retain the larger text column; narrow views scroll the table instead of squeezing either column. Multiple findings stay separate and open their existing complete detail dialogs. The supplied migration report was verified on desktop, with the source inspector open, and at 390 pixels, including keyboard access and full requests. See [validation](validation.md).

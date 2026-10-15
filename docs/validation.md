@@ -1,3 +1,13 @@
+# Validation — 0.13.4 shared finding references
+
+October 15, 2026. Fifteen report-presentation and clean-package tests pass. The new regressions cover one finding linked across multiple turns, two different finding identities with identical titles, multiple references on one turn, an unattributed finding, no findings, escaped titles and unchanged embedded data. The renderer assigns references by identity and saved order; it does not summarize titles or merge similarly worded findings.
+
+In the supplied migration report, the key shows F1 linked to turn 32 and F2 linked to turns 13, 19, 28, 29, 30 and 32. The linked-turn controls select exactly those rows, and All turns restores all 32 without renumbering the references. Pointer and Enter activation open the original complete finding dialogs; their saved titles and review qualifications remain intact. The request column grows to 469 pixels at the normal 1,115-pixel browser viewport. The Findings navigation reaches the shared key above the table.
+
+At 390 × 844, both complete titles fit the key without clipping or page overflow. The 620-pixel table scrolls inside its 354-pixel viewport and retains a 326-pixel request column; Enter still opens F2 from turn 32. Opening and collapsing the source inspector remains functional, with the table scrolling inside a 412-pixel desktop report column. Screenshots and check logs are retained under `.analysis/finding-refs-0.13.4/`. No Claude investigation or authored-output revision was needed.
+
+---
+
 # Validation — 0.13.3 readable findings
 
 October 15, 2026. The saved migration report now renders complete finding titles without a three-line cutoff. At the normal 1,115-pixel browser viewport, the request column measures 336.84 pixels and findings 244.16 pixels. All seven visible links across the six evidence-linked turns fit their rendered boxes, including two distinct findings on turn 32. Pointer and Enter activation open the original full findings. Expanding turn 28 retains its complete request, beyond the shortened table preview.
