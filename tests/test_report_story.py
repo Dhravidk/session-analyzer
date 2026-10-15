@@ -41,5 +41,21 @@ class StoryPresentationTests(unittest.TestCase):
         self.assertIn('<summary>Classifications · complete finding</summary>',rendered)
         self.assertIn('data-finding="'+incident['id']+'">Synthetic fixture repair</button>',rendered)
 
+    def test_partial_draft_is_visible_without_becoming_a_final_conclusion(self):
+        from ally_analyzer.session_report import report_data, render_report
+        self.read_all();save_incident(self.store,self.iid,self.guided())
+        data=report_data(self.store,self.iid,True,True)
+        data['investigation'].update(run_status='partial',review_workflow={'latest_draft_id':'fixture-draft'})
+        data['conclusion_drafts']=[{'id':'fixture-draft','conclusion':{
+            'title':'Unreviewed fixture title','summary':'Saved fixture draft identifies a correction still needed.',
+            'run_status':'partial','stop_basis':'external_limit','stop_reason':'Synthetic budget stop.',
+            'unresolved_questions':['Review has not finished.']}}]
+        before=copy.deepcopy(data);rendered=render_report(data)
+        self.assertIn('Latest Claude draft · not finalized',rendered)
+        self.assertIn('Saved fixture draft identifies a correction still needed.',rendered)
+        self.assertIn('Claude review of complete finding · not saved',rendered)
+        self.assertNotIn('<h1>Unreviewed fixture title</h1>',rendered)
+        self.assertEqual(data,before)
+
 
 if __name__=='__main__':unittest.main()

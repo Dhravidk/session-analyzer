@@ -256,7 +256,11 @@ def verification_html(checks, prerequisites=None, context=None, data=None):
 def review_qualification(data, record_id, label='Claude review'):
     """Show the actual current review next to its subject; never repair prose."""
     reviews=[r['check'] for r in data.get('review_checks',[]) if r['check']['record_id']==record_id]
-    if not reviews or reviews[-1]['verdict']=='supported': return ''
+    if not reviews:
+        if data['investigation'].get('review_workflow'):
+            return '<aside class="review-qualification">'+prose(label+' · not saved','small limit')+'</aside>'
+        return ''
+    if reviews[-1]['verdict']=='supported': return ''
     review=reviews[-1]
     body='<aside class="review-qualification"><p class="small"><strong>'+esc(label)+' · '+esc(review['verdict'].replace('_',' '))+'</strong></p>'
     body+=prose(review['assessment']) if review['verdict']=='needs_revision' else detail('Review assessment',prose(review['assessment']),raw=True)
@@ -776,6 +780,11 @@ def render_report(data, embedded=False):
     if material: body += prose(' · '.join(material),'coverage-note')
     if run['run_status'] in ('partial','failed'):
         body += prose(run.get('stop_reason','No stop reason saved.'),'limit prose')
+        if draft and conclusion_owner is None:
+            pending=draft['conclusion']
+            body+='<details class="pending-conclusion"><summary>Latest Claude draft · not finalized</summary>'
+            body+='<h3>'+esc(pending.get('title','Untitled draft'))+'</h3>'+prose(pending.get('summary',''),'prose')
+            body+=detail('Draft status', {k:pending.get(k) for k in ('run_status','stop_basis','stop_reason','unresolved_questions')})+'</details>'
     body += remaining_work_html(data)
     body += requirements_html(data)
     body += '</section><section class="metrics" aria-label="Main session metrics"><div class="metric-counts">'
