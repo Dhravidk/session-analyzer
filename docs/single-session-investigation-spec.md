@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 13 · October 15, 2026 · Governing contract for version 0.13.2 (earlier release sections retained as history)
+Revision 14 · October 15, 2026 · Governing contract for version 0.13.3 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -650,3 +650,7 @@ Word-wrap states use local vector glyphs with the same canvas, stroke, displayed
 ## 0.13.2 — Turn-table number layout
 
 Turn ordinals and call counts stay on one line, use tabular digits and align with their column headings. The ordinal column reserves sufficient room for multi-digit numbers. On narrow screens, the table retains its horizontal scrolling instead of breaking numbers across lines. Values, identities and the complete chronology remain unchanged.
+
+## 0.13.3 — Readable turn findings
+
+The turn table allocates 32% of its width to findings, leaving requests the larger text column. Saved titles wrap in full, without a line clamp or invented shorter label; multiple findings remain distinct controls opening the existing complete finding. A 720-pixel minimum table width protects the request column and single-line numeric cells. Narrow report columns scroll horizontally. Request expansion, complete chronology, source navigation and saved analysis data remain unchanged.

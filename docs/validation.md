@@ -1,3 +1,11 @@
+# Validation — 0.13.3 readable findings
+
+October 15, 2026. The saved migration report now renders complete finding titles without a three-line cutoff. At the normal 1,115-pixel browser viewport, the request column measures 336.84 pixels and findings 244.16 pixels. All seven visible links across the six evidence-linked turns fit their rendered boxes, including two distinct findings on turn 32. Pointer and Enter activation open the original full findings. Expanding turn 28 retains its complete request, beyond the shortened table preview.
+
+With the source inspector open, the table retains a 720-pixel width in a 412-pixel viewport; at 390 × 844 it scrolls within a 354-pixel viewport without page overflow. Requests retain 307.60 pixels and findings 230.40 pixels. All visible turn numbers and counts remain single-line. Keyboard navigation reaches a complete finding in the narrow view. Saved Claude wording, source records and metrics were not edited; no new investigation was run. Desktop and narrow screenshots are retained in `.analysis/finding-column-0.13.3/`. Existing presentation and clean-package checks are recorded in `checks.log` in that directory.
+
+---
+
 # Validation — 0.13.2 turn numbers
 
 October 15, 2026. Thirteen existing report-presentation and clean-package checks passed in 0.958 s. The turn ordinal column now has 48 pixels of space; ordinals and call counts use single-line, right-aligned tabular digits instead of inheriting arbitrary text wrapping. This is a CSS-only behavior change and does not alter saved values.

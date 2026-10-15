@@ -1,3 +1,9 @@
+# Implementation status — 0.13.3
+
+Turn findings use a wider responsive column and display their entire saved titles. Requests retain the larger text column; narrow views scroll the table instead of squeezing either column. Multiple findings stay separate and open their existing complete detail dialogs. The supplied migration report was verified on desktop, with the source inspector open, and at 390 pixels, including keyboard access and full requests. See [validation](validation.md).
+
+---
+
 # Implementation status — 0.13.2
 
 Turn numbers and call counts stay on one line and align consistently. The turn-number column has sufficient space for multi-digit ordinals; narrow layouts preserve table scrolling. Saved values and source data are unchanged. The affected migration report and existing presentation/package checks passed; see [validation](validation.md).
