@@ -1,3 +1,11 @@
+# Implementation status — 0.14.3
+
+The source inspector uses a draggable `<|>` divider and a compact collapse icon. Width follows the available report area, with minimum reading widths and a proportion remembered for the browser tab. Keyboard arrows, Home/End and Enter provide resizing and collapse. Selected evidence, wrapping and source scroll survive collapse/reopen; narrow screens retain the full-width modal drawer.
+
+Twenty-six relevant presentation, source-caption and packaging checks passed. Native pointer dragging, keyboard bounds, sidebar/window resizing, retained reading state, mobile focus and exports were exercised against the real saved migration report. Its saved JSON and Claude-authored wording remain unchanged. This presentation release makes no new model-quality claim. See [validation](validation.md).
+
+---
+
 # Implementation status — 0.14.2
 
 Source citation labels now use Claude's saved explanation or an exact, same-owner saved review note. Missing explanations remain explicit; filenames no longer stand in for an explanation of a claim. Authored wording, qualifications, record identity and source content remain unchanged. New managed runs reject missing or overlong citation explanations and require Claude to supply them; the existing writing/review skills explain their purpose as link labels.

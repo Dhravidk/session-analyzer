@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 18 · October 15, 2026 · Governing contract for version 0.14.2 (earlier release sections retained as history)
+Revision 19 · October 15, 2026 · Governing contract for version 0.14.3 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -691,3 +691,11 @@ New managed investigations pin `citation-explanations-v1` in their operator-owne
 Review quote references already have `supports_or_contradicts`; do not require a duplicate explanation on those inner references. Historical investigations keep their pinned rules and immutable records. The older interactive workflow receives the updated writing guidance but is not retroactively enrolled in managed-run enforcement. Source IDs, hashes, ranges, masked text, input/result distinction, exact copying and exports are unchanged. A better explanation of old evidence requires a Claude-authored revision; renderer code cannot improve a weak saved sentence.
 
 Acceptance includes wrong-owner reviews, changed fingerprints, out-of-range quotes, later negative checks, missing review metadata, preserved long historical qualifications, rejected unexplained saves without partial insertion, and a fresh managed Claude run over explicitly synthetic opaque-file evidence. Report mechanical validation and observed Claude behavior separately; neither establishes general diagnostic quality or superiority over `/insights`.
+
+## 0.14.3 — Resizable source inspector
+
+Replace the fixed Expand/Restore controls from 0.11.1 with a draggable vertical `<|>` divider and an icon-only collapse button. Desktop resizing keeps the report and source visible together, with minimum pane widths of 360 and 320 pixels respectively. Store the chosen proportion for the browser tab; clamp it to the available report area as the viewport or session sidebar changes. Do not persist selected evidence into an exported report.
+
+The divider is a labelled, keyboard-focusable vertical separator with current/minimum/maximum width and readable value text. Left/Right arrows widen/narrow by 24 pixels, Shift uses 64 pixels, Home/End select the bounds, and Enter collapses. Pointer capture keeps a drag active outside the grip; cancellation restores the previous proportion. A visible focus indicator and a labelled collapse button are required. Narrow screens retain the existing full-width modal drawer and hide the inapplicable divider.
+
+Layout changes retain the selected source, its settings and scroll position, and the report's visible source anchor subject to document scroll limits and text reflow. Sources reopens that retained view. These controls change presentation only: Claude-authored explanations, source identity and citation ranges, disclosure, exact copied text, and exported data remain unchanged. Verify pointer and keyboard resizing, both bounds, collapse/reopen, viewport/sidebar changes and narrow-screen behavior using actual saved reports.

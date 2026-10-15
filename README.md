@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.14.2
+# Ally Session Analyzer 0.14.3
 
 ## Browse local sessions
 
@@ -127,7 +127,7 @@ The writing skill requires specific evidence, plain language and concrete remain
 ```sh
 python3 -m unittest discover -v
 python3 scripts/package_plugin.py
-claude --plugin-dir dist/ally-session-analyzer-0.14.2.zip
+claude --plugin-dir dist/ally-session-analyzer-0.14.3.zip
 ```
 
 The ZIP includes only allowlisted implementation files, skills and documentation. It excludes private logs, stores, reports, tests and legacy variants. The engine and regression tests run without Claude; opt-in live tests use the operator's authenticated Claude host. CLI plugin loading is tested; permanent desktop installation and other operating systems are not certified.
@@ -182,6 +182,6 @@ The runner now stops on terminal setup/API failures instead of starting another 
 - [PM slide deck](output/Ally-session-analyzer-PM-0.10.4-reviewed.pptx) (generated local artifact; excluded from Git).
 - [Local development and version history](docs/development.md).
 
-The source inspector supports **Expand**, **Restore**, and **Collapse**. Use **Source** in the report header to reopen the selected record with its reading state retained.
+Drag the **<|> divider** to resize the source inspector. Its collapse icon hides the panel; **Sources** reopens the selected record with its reading state retained. The chosen proportion is remembered for the browser tab and adapts to available space. Focus the divider and use Left/Right arrows to resize, Home/End for the width limits, or Enter to collapse. Narrow screens use a full-width drawer.
 
 Thinking-only records are labelled **Assistant record · thinking**. Empty, missing, provider-redacted and unsupported content have distinct explanations. Explicit local source exports can include captured masked thinking; model-facing evidence reads continue to omit it. Separate thinking tokens appear only when reported, inside inclusive output usage. Empty excerpts cannot support findings.

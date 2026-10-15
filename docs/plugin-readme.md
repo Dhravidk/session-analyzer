@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.14.2
+# Ally Session Analyzer 0.14.3
 
 ## Browse local sessions
 
@@ -18,7 +18,7 @@ Discovery is bounded (three levels, 10,000 parent logs, first and last 1 MiB for
 Local deterministic accounting and a single-session investigation workflow for an approved Claude host. Requires Python 3.9+ on PATH; no third-party runtime packages or engine model/network client.
 
 ```sh
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.14.2.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.14.3.zip
 ```
 
 Use `/ally-session-analyzer:analyze /absolute/path/session.log` to import and measure, `/ally-session-analyzer:explain ANALYSIS_ID` for accounting, or `/ally-session-analyzer:investigate INVESTIGATION_ID` for the scoped investigation. The investigation skill can also select one root from an analysis. Loading the plugin does not collect logs automatically.
@@ -95,6 +95,6 @@ python3 /absolute/path/ally-session-analyzer/scripts/ally-session.py --help
 
 This follows the [Claude Code plugin layout](https://code.claude.com/docs/en/plugins-reference). No marketplace location is configured or claimed. See the [0.13.0 release audit](docs/release-audit-0.13.0.md) for mechanical checks, interrupted Claude checks and the remaining independent evaluation. Earlier outputs and their limitations remain preserved; they are not rewritten by this release.
 
-The source inspector supports **Expand**, **Restore**, and **Collapse**. Use **Source** in the report header to reopen the selected record with its reading state retained.
+Drag the **<|> divider** to resize the source inspector. Its collapse icon hides the panel; **Sources** reopens the selected record with its reading state retained. The chosen proportion is remembered for the browser tab and adapts to available space. Focus the divider and use Left/Right arrows to resize, Home/End for the width limits, or Enter to collapse. Narrow screens use a full-width drawer.
 
 Thinking-only records are labelled **Assistant record · thinking**. Empty, missing, provider-redacted and unsupported content have distinct explanations. Explicit local source exports can include captured masked thinking; model-facing evidence reads continue to omit it. Separate thinking tokens appear only when reported, inside inclusive output usage. Empty excerpts cannot support findings.

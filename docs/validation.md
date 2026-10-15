@@ -1,3 +1,17 @@
+# Validation — 0.14.3 resizable source inspector
+
+October 15, 2026. The existing report-presentation, source-caption and packaging suites passed: 26 tests in 1.095 seconds. The renderer JavaScript passed the bundled Node syntax check. No new model call was made for this presentation change.
+
+Native pointer dragging in the real saved migration report changed the source pane from 383 to 503 pixels. Keyboard Home/End reached the 320-pixel source minimum and the 360-pixel report minimum; Shift+Right narrowed the source by 64 pixels. Collapsing the session sidebar changed a 487-pixel source pane to 663 pixels in the larger available area; reopening it restored 487 pixels. A subsequent renderer reload retained that proportion. The final preview uses a 461-pixel source pane beside a 450-pixel report area.
+
+Native collapse/reopen retained the selected source and its 710.5-pixel scroll offset. The exact clicked source link remained at the same report height within 0.2 pixels during a measured collapse/reopen cycle; other paragraphs naturally reflow. Keyboard Enter collapses the inspector, reopening retains the chosen width, and wrapped results remain wrapped. The automated locator click scrolled the sticky control before activation in one probe; the native pointer check avoids treating that test-runner movement as a retention failure. No browser errors were reported during the checks.
+
+At 390 × 844, the divider is hidden, the source occupies the 390-pixel viewport, modal focus stays inside the drawer, and outer horizontal overflow is zero. The collapse target is 44 × 44 pixels. Returning to desktop restores the preferred proportion. Desktop and narrow screenshots are retained under `.analysis/source-resize-0.14.3/`.
+
+The downloaded HTML matches the current standard renderer and its embedded payload matches the saved report; the JSON download matches the immutable file byte-for-byte. Its SHA-256 remains `f82437e544f65d61917e2ef05413f28103771bf3a45a8a698ffe7a86a7ff54b5`. The selected source, exact citation and all saved explanations remain unchanged. Receipts: `checks.log`, `exports.json`, `desktop.png`, `narrow.png` and `package.json` in the same ignored validation directory. Browser checks cover the current macOS in-app browser; no broader browser compatibility claim is made.
+
+---
+
 # Validation — 0.14.2 generated source explanations
 
 October 15, 2026. The full backend suite discovered 275 tests: 273 passed and two optional private-corpus checks skipped (24.796 s). The earlier broad run found two historical review fixtures without `evidence_checks`; the final renderer and inspector now accept that absence without borrowing an unverified label. Fifty-six focused checks passed before that compatibility repair; the full final run includes them. The packaged JavaScript passed the bundled Node syntax check; clean-extraction packaging tests passed. The release archive contains 92 allowlisted files and excludes private sessions and stores.
