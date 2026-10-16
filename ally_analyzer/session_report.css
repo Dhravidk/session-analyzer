@@ -366,6 +366,15 @@ a{color:inherit}
 .resource-table { font-variant-numeric:tabular-nums; }
 .resource-table td:not(:first-child) { white-space:nowrap; }
 .timeline-boundary { background:#f3f0f5; }
+/* One scroll surface keeps timeline headings aligned in both directions. */
+.context-timeline{max-height:min(60vh,560px);scroll-padding-top:40px;isolation:isolate}
+.context-timeline table{min-width:760px;border-collapse:separate;border-spacing:0}
+.context-timeline thead th{position:sticky;top:0;z-index:2;background:var(--paper);white-space:nowrap;box-shadow:inset 0 -1px var(--line)}
+@media print{
+  .context-timeline{max-height:none;overflow:visible}
+  .context-timeline table{min-width:0}
+  .context-timeline thead th{position:static;box-shadow:none}
+}
 /* Saved reviewer disagreements stay beside the status they qualify. */
 .review-qualification {border-left:2px solid #a38caf;padding:2px 12px;margin:10px 0;background:#f6f2f7}
 .review-qualification p {margin:5px 0}

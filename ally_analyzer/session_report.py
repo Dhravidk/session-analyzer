@@ -398,7 +398,7 @@ def context_html(data, agent_id='main', turn=None):
         peak=view['peak_input']; share=view['cache_read_share']
         content+=prose('Peak observed input: '+number(peak['known_maximum'])+' · '+str(peak['known'])+'/'+str(peak['eligible'])+' inputs recorded.','small')
         content+=prose('Cache-read share: '+(number(share['value']*100)+'%' if share['value'] is not None else 'Unknown')+' · matched known population '+str(share['known'])+'/'+str(share['eligible'])+'.','small')
-    content+='<div class="resource-page"><div class="table-scroll" tabindex="0" aria-label="Context and cache timeline"><table class="resource-table"><thead><tr><th>Record</th><th>Input total</th><th>Uncached</th><th>Cache write</th><th>Cache read</th><th>Output</th><th>Read share</th></tr></thead><tbody>'
+    content+='<div class="resource-page"><div class="table-scroll context-timeline" role="region" tabindex="0" aria-label="Context and cache timeline"><table class="resource-table"><thead><tr><th scope="col">Record</th><th scope="col">Input total</th><th scope="col">Uncached</th><th scope="col">Cache write</th><th scope="col">Cache read</th><th scope="col">Output</th><th scope="col">Read share</th></tr></thead><tbody>'
     for p in items:
         refs=[{'source_id':s} for s in p['source_ids']]
         if p['kind']=='response':
