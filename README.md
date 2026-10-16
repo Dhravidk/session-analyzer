@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.16.0
+# Ally Session Analyzer 0.16.1
 
 ## Ask Claude without opening the GUI
 
@@ -20,7 +20,7 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.16.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.16.1.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. To create a full saved report, use the investigation workflow below; its managed runner adds a separate evidence-review host. Ordinary chat answers do not receive that independent review automatically. Skill instructions and successful tool checks do not guarantee that every Claude answer is correct.
@@ -153,7 +153,7 @@ The writing skill requires specific evidence, plain language and concrete remain
 ```sh
 python3 -m unittest discover -v
 python3 scripts/package_plugin.py
-claude --plugin-dir dist/ally-session-analyzer-0.16.0.zip
+claude --plugin-dir dist/ally-session-analyzer-0.16.1.zip
 ```
 
 The ZIP includes only allowlisted implementation files, skills and documentation. It excludes private logs, stores, reports, tests and legacy variants. The engine and regression tests run without Claude; opt-in live tests use the operator's authenticated Claude host. CLI plugin loading is tested; permanent desktop installation and other operating systems are not certified.

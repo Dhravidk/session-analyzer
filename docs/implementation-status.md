@@ -1,3 +1,9 @@
+# Implementation status — 0.16.1
+
+Managed verification and recovery membership no longer require impossible captions on internal event IDs. Source scope, exposure, reader-facing captions and semantic reviews remain enforced. MCP schemas advertise the active run's caption/review requirements; the runner reserves half its initial allowance for review. Context/cache tables keep column headers visible inside their scroll region in main, turn and child details. See the [0.16.1 audit](release-audit-0.16.1.md) for validation and the migration rerun.
+
+---
+
 # Implementation status — 0.16.0
 
 Claude Code can answer session questions through the existing plugin without a browser. The expanded `explain` skill covers scope selection, computed measurements, source checks, failed/recovered attempts and historical instruction attribution. A guide tool exposes the exact bundled skill to hosts without native skill invocation. Saved-investigation discovery, read-only queries on finalized scopes and captured-response accounting inspection support follow-ups without changing saved judgments.

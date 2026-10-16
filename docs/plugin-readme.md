@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.16.0
+# Ally Session Analyzer 0.16.1
 
 ## Ask Claude without opening the GUI
 
@@ -20,7 +20,7 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.16.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.16.1.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. To create a full saved report, use the investigation workflow below; its managed runner adds a separate evidence-review host. Ordinary chat answers do not receive that independent review automatically. Skill instructions and successful tool checks do not guarantee that every Claude answer is correct.
@@ -46,7 +46,7 @@ Local deterministic accounting and a single-session investigation workflow for a
 The session library and standalone report offer HTML, Markdown (.md), and JSON exports. Markdown uses the saved analysis and included source text without another model call. The CLI and `export_session_investigation` tool accept format `md`; their existing source-disclosure controls still apply.
 
 ```sh
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.16.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.16.1.zip
 ```
 
 Use `/ally-session-analyzer:analyze /absolute/path/session.log` to import and measure, `/ally-session-analyzer:explain ANALYSIS_ID` for accounting, or `/ally-session-analyzer:investigate INVESTIGATION_ID` for the scoped investigation. The investigation skill can also select one root from an analysis. Loading the plugin does not collect logs automatically.

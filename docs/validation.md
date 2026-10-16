@@ -1,5 +1,13 @@
 # Validation
 
+## 0.16.1 — workflow repair, completed migration review and sticky timeline headings
+
+The full suite discovered 306 tests: 304 passed and two optional private-corpus tests skipped. After the presentation change, 39 report/evidence/packaging checks passed; final review-workflow and clean-package checks passed 19 tests. New managed-workflow regressions preserve reader-facing caption requirements while accepting identity-only ordering/membership anchors, with scope and evidence-read enforcement intact.
+
+The approved migration rerun completed investigation and independent review for $6.1830416 within a $12/1,800-second cap. Eleven current record/draft checks were saved, with one finding, six current failure explanations and no recommendations. Saved authored fields match Claude's submissions, canonical measurements are unchanged and the library's imported JSON is byte-identical. The review completed for its declared inquiry; the 14-item requirement map remains partial, with 13 unverified items and 16 missing child traces. This is not exhaustive confirmation of the migration or an independent quality benchmark.
+
+Browser checks covered the new finding sequence, decisive source navigation, single visible session with completed status, sticky timeline headings on desktop and at 390 × 844, horizontal alignment and paginated rows. Main, turn and child details share the timeline renderer. Print removes the scroll limit. Exact results, retained revisions and limitations are in [the release audit](release-audit-0.16.1.md).
+
 ## 0.16.0 — headless Claude questions
 
 Final full suite: **302 discovered, 300 passed, 2 optional private-corpus skips**. The new tests exercise frozen read-only queries, main/child/shared populations, captured streaming usage, invalid/missing fields, scope/disclosure restrictions, automatic exact guide delivery and clean packaging.
