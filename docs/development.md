@@ -29,3 +29,12 @@ Build the distributable plugin with `python3 scripts/package_plugin.py`. Packagi
 Raw sessions, `.analysis/`, generated `output/`, release `dist/`, private corpus inventories, credentials and caches stay local and ignored. Existing validation documents refer to some of these local artifacts; cloning the source repository does not copy those artifacts. Synthetic fixtures under `tests/fixtures/` are intentionally tracked.
 
 No Git remote is configured. Commits and tags provide local history, not an off-device backup. Adding a remote or publishing the repository requires a separate user instruction.
+
+
+For an opt-in headless Claude exercise on locally generated, clearly synthetic evidence:
+
+```sh
+python3 scripts/test_claude_conversation.py --claude /absolute/path/approved/claude
+```
+
+This runs three questions in one real Claude conversation, first with metadata-only disclosure and then with controlled synthetic excerpts. It saves the immutable tested plugin, prompts, raw transcripts, unedited answers and checks under `.analysis/claude-conversation/`. The $3 default cap and 600-second timeout cover the exercise; resumed host usage is reserved conservatively. Mechanical checks verify guide delivery, registered queries, source-accounting inspection, retained child collection, policy enforcement and preservation of saved judgments. Read the answers and sources separately to evaluate correctness. A passed tool-use test is not a semantic-quality pass. Rejected attempts remain in the audit.

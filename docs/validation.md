@@ -1,4 +1,14 @@
-# Validation — 0.15.1 Markdown export
+# Validation
+
+## 0.16.0 — headless Claude questions
+
+Final full suite: **302 discovered, 300 passed, 2 optional private-corpus skips**. The new tests exercise frozen read-only queries, main/child/shared populations, captured streaming usage, invalid/missing fields, scope/disclosure restrictions, automatic exact guide delivery and clean packaging.
+
+A real three-turn Claude conversation passed all nine tool/delivery/preservation checks on synthetic evidence. A separate Claude run with the native Skill tool disabled queried a finalized synthetic investigation, received both bundled guides, inspected captured accounting and left saved records unchanged. Its reported cache-write count (80) and cache-read token share (120/240 = 50%) match the fixture and registered calculation.
+
+Transport success did not certify the reasoning: the contextual conversation made a false absence claim, corrected it after challenge, and retained an overclaim about nonexecution. All answers and unsuccessful attempts remain unedited. See the [0.16.0 audit](release-audit-0.16.0.md) for exact runs, changed guidance, what was mechanically verified, and unresolved model-quality limits.
+
+## 0.15.1 — Markdown export
 
 October 15, 2026. The final suite discovered 289 tests: 287 passed and two optional private-corpus checks skipped (26.286 s). Both renderer/library JavaScript syntax checks passed. Five new regressions cover partial wording and unknown usage, source links and unchanged payloads/read receipts, long records and nested code fences, captured thinking separated from evidence, exact replacement text, absent sources/missing children, disclosure gates, actual CLI output, file permissions, overwrite rejection and unfinalized drafts. Existing library HTTP tests now check Markdown MIME type, attachment filename and exact response bytes; the isolated plugin check verifies that the scoped tool advertises `md`.
 
