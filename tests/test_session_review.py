@@ -209,6 +209,7 @@ class ReviewWorkflowTests(unittest.TestCase):
                     'references':[{'source_id':self.ids['event-6']}],'limitations':[]}))
                 candidate=latest_draft(self.store,self.iid)['conclusion'];emit('finish_investigation',investigation_id=self.iid,**candidate)
             else:
+                emit('save_review_checks',__unparsedToolInput='{"checks": [synthetic malformed input')
                 packet=get_investigation_review(self.store,self.iid)
                 checks=[]
                 for v in packet['records']+[packet['latest_conclusion_draft']]:
@@ -232,6 +233,8 @@ class ReviewWorkflowTests(unittest.TestCase):
         self.assertEqual([s['phase'] for s in audit['stages']],['investigate','review'])
         self.assertAlmostEqual(audit['stages'][0]['budget_usd'],0.5)
         self.assertAlmostEqual(audit['stages'][1]['budget_usd'],0.9)
+        self.assertTrue(any('__unparsedToolInput' in c['input'] for c in audit['calls']))
+        self.assertTrue(audit['review_checks_match_claude_tool_inputs'])
         self.assertEqual((work/'review/claude-answer.md').read_text(),'Exact synthetic host answer.')
         self.assertTrue((work/'tested-plugin.zip').is_file())
 

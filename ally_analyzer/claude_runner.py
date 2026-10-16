@@ -280,7 +280,9 @@ def main(argv=None):
     exact_inquiries = all(r['inquiry'] in submitted('save_inquiry','inquiry') for r in data.get('inquiries',[]))
     exact_maps = all(r['requirement_map'] in submitted('save_requirement_map','requirement_map') for r in data.get('requirement_map_history',[]))
     exact_failures = all(r['explanation'] in submitted('save_failure_explanation','explanation') for r in data.get('failure_explanations',[]))
-    review_inputs = [check for c in calls if c['name'].endswith('__save_review_checks') for check in c['input']['checks']]
+    # Claude Code retains malformed arguments as __unparsedToolInput. Preserve
+    # that failed attempt in calls, but it cannot attest a saved review check.
+    review_inputs = [check for c in calls if c['name'].endswith('__save_review_checks') for check in c['input'].get('checks',[])]
     exact_reviews = all(r['check'] in review_inputs for r in data.get('review_checks',[]))
     exact_drafts = all(any(r['conclusion'] == {k:v for k,v in f.items() if k!='investigation_id'} for f in finishes) for r in data.get('conclusion_drafts',[]))
     exact_report = (work / 'claude-investigation.html').read_bytes() == render_report(data).encode()
