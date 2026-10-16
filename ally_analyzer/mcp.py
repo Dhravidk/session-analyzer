@@ -103,8 +103,9 @@ def validate(value, schema, path="arguments"):
         if len(value) > schema.get("maxProperties", 100):
             raise AnalyzerError(path + " has too many fields")
         props = schema.get("properties", {})
-        if any(k not in value for k in schema.get("required", [])):
-            raise AnalyzerError(path + " is missing required fields")
+        missing = [k for k in schema.get("required", []) if k not in value]
+        if missing:
+            raise AnalyzerError(path + " is missing required fields: " + ', '.join(missing))
         for k, v in value.items():
             child = props.get(k, schema.get("additionalProperties", {}))
             if child is False:
@@ -151,7 +152,7 @@ class Protocol:
         elif method == "tools/list":
             if params.get("cursor"):
                 return error(-32602, "No additional tool pages")
-            result = {"tools": [t for t in TOOLS if self.service.tool_available(t["name"])]}
+            result = {"tools": self.service.tool_definitions()}
         elif method == "tools/call":
             name, args = params.get("name"), params.get("arguments", {})
             if not isinstance(name, str) or name not in BY_NAME:

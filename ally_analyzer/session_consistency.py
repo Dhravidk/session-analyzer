@@ -73,7 +73,11 @@ def validate_semantic_check(check, kind, active_ids, map_id):
     by_aspect={entry['aspect']:entry for entry in entries}
     if len(by_aspect)!=len(entries): raise AnalyzerError('Semantic check aspects must be unique')
     missing=set(ASPECTS[kind])-by_aspect.keys()
-    if missing: raise AnalyzerError('Review the required semantic aspects: '+', '.join(sorted(missing)))
+    if missing:
+        raise AnalyzerError('Review the required semantic aspects for '+check['record_id']+' ('+kind+'): '+
+                            ', '.join(sorted(missing))+'. Put each in semantic_checks with your assessment. '
+                            'Read get_investigation_review for the current record and revision dependencies; '
+                            'no checks in this submission were saved.')
     for entry in entries:
         if set(entry['related_record_ids'])-active_ids:
             raise AnalyzerError('Semantic checks must refer to current records, not superseded revisions')

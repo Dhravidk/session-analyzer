@@ -56,7 +56,7 @@ def validate_refs(store, run, refs, require_text=False, reader_facing=True):
         if reader_facing and run.get('review_workflow',{}).get('citation_explanations_version'):
             explanation=ref.get('explanation','')
             if not explanation.strip():
-                raise AnalyzerError('Save explanation on each reader-facing citation: a brief sentence saying what this inspected source establishes about the linked claim. A filename or source ID is not an explanation. No report text was changed.')
+                raise AnalyzerError('Save explanation on each reader-facing citation, including '+ref['source_id']+': a brief sentence saying what this inspected source establishes about the linked claim. A filename or source ID is not an explanation. No report text was changed.')
             if len(explanation)>240:
                 raise AnalyzerError('Keep each source explanation within 240 characters, preserving any material qualification. Put detailed reasoning in the linked claim; the renderer will not shorten your sentence.')
         if require_text:

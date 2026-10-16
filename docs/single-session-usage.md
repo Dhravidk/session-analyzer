@@ -1,6 +1,6 @@
 # Single-session investigation: use and operator checks
 
-Version 0.16.0. Start with one captured task and preserve the resulting report, including uncertainty and unsuccessful proposals. The [product design](session-analyzer-product-design.md) explains the workflow; the [specification](single-session-investigation-spec.md) defines its contract.
+Version 0.16.1. Start with one captured task and preserve the resulting report, including uncertainty and unsuccessful proposals. The [product design](session-analyzer-product-design.md) explains the workflow; the [specification](single-session-investigation-spec.md) defines its contract.
 
 ## Ask Claude without opening the GUI
 
@@ -37,7 +37,7 @@ python3 bin/ally-session investigate --source /absolute/path/session.log \
   --allow-content --include-source-text-in-report
 ```
 
-This is packaged with the plugin; run it from the unpacked directory. It uses the approved authenticated Claude CLI and model quota. The default shared cap is $3 and 600 seconds, with 60% reserved for the initial host and the remaining allowance used for review. `--max-budget-usd` and `--timeout` set those total caps. Missing first-stage usage reserves its full allocation rather than treating it as free. A stopped host and its MCP descendants are terminated before proceeding.
+This is packaged with the plugin; run it from the unpacked directory. It uses the approved authenticated Claude CLI and model quota. The default shared cap is $3 and 600 seconds, with 50% reserved for the initial host and the remaining allowance used for review. `--max-budget-usd` and `--timeout` set those total caps. Missing first-stage usage reserves its full allocation rather than treating it as free. A stopped host and its MCP descendants are terminated before proceeding.
 
 The workflow reads all main-session user requests and saves a scoped requirement-to-result map before completion; it does not require reading every assistant step. A voluntary partial finish remains a checkpoint, with at most one additional review continuation inside the original budget. The first finish submission is a saved draft. A separate Claude process rereads primary evidence, reviews causes, recovery, task outcome and missing-evidence claims, and can continue unfinished inquiry. It makes corrections through append-only revisions. Exact quoted evidence must occur in the source and have been delivered during review. Current records and the exact final draft need attributed review checks before finalization. This is model review, not an engine proof of entailment. `partial` remains valid; absent child logs do not by themselves require partial investigation. A completed investigation does not mean the developer's task succeeded.
 

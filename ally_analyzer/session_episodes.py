@@ -52,7 +52,7 @@ def validate_episode(store, run, incident):
         for rid in attempt['response_ids']:
             if rid not in responses or not event_ids.intersection(responses[rid]['evidence']):
                 raise AnalyzerError('An attempt response must have a recorded frame in that attempt; usage is not allocated from time intervals')
-        inspected_refs(store,run,[{'source_id':sid} for sid in attempt['event_ids']])
+        inspected_refs(store,run,[{'source_id':sid} for sid in attempt['event_ids']],reader_facing=False)
     checks=verification_checks(store,run,episode['verification'])
     for check in episode['verification']:
         if any(ref['source_id'] not in used_events for ref in check['references'] if ref['source_id'] in get_scope(store,run)['event_ids']):

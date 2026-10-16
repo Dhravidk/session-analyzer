@@ -209,8 +209,15 @@ def main(argv=None):
         stage_dir = work / phase
         stage_dir.mkdir(mode=0o700)
         (stage_dir/'request.txt').write_text(stage_prompt)
-        budget = remaining_budget * 0.60 if phase == 'investigate' else remaining_budget
-        timeout = remaining_time * 0.60 if phase == 'investigate' else remaining_time
+        # Independent review must reread evidence and may need to repair drafts.
+        # Reserve half the original allowance rather than starving that stage.
+        budget = remaining_budget * 0.50 if phase == 'investigate' else remaining_budget
+        timeout = remaining_time * 0.50 if phase == 'investigate' else remaining_time
+        stage_prompt += (' Your stage has a maximum budget of $'+format(budget,'.2f')+
+                         ' and '+str(int(timeout))+' seconds. Save valid progress incrementally. '
+                         'Check each save response; correct rejected inputs before treating them as saved. '
+                         'Use the advertised required fields and the current review packet; never relax evidence judgments to finish.')
+        (stage_dir/'request.txt').write_text(stage_prompt)
         command = [args.claude, '--plugin-dir', str(plugin), '--setting-sources', '', '--tools', 'Skill',
                    '--allowedTools', *allowed, 'Skill(ally-session-analyzer:write-report)', '--permission-mode', 'dontAsk',
                    '--model', args.model, '--effort', 'medium' if phase == 'investigate' else 'high',

@@ -105,6 +105,20 @@ class Service:
         self.investigation_id = os.environ.get("ALLY_ANALYZER_INVESTIGATION_ID")
         self.session_only = os.environ.get("ALLY_ANALYZER_SESSION_ONLY") == "1" or bool(self.investigation_id)
 
+    def tool_definitions(self):
+        from .mcp import TOOLS
+        from .session_contract import workflow_tool_spec
+        from .session_scope import get_run
+        workflow = get_run(self.store, self.investigation_id).get('review_workflow', {}) if self.investigation_id else {}
+        return [workflow_tool_spec(t, workflow) for t in TOOLS if self.tool_available(t['name'])]
+
+    def tool_definition(self, name):
+        from .mcp import BY_NAME
+        from .session_contract import workflow_tool_spec
+        from .session_scope import get_run
+        workflow = get_run(self.store, self.investigation_id).get('review_workflow', {}) if self.investigation_id else {}
+        return workflow_tool_spec(BY_NAME[name], workflow)
+
     def tool_available(self, name):
         from .mcp import SESSION_TOOLS
         names = {t["name"] for t in SESSION_TOOLS}
@@ -152,7 +166,7 @@ class Service:
             self.delivered_guides.add(a.get('skill', 'explain'))
             return guide
         if name in {t["name"] for t in SESSION_TOOLS}:
-            validate(a, BY_NAME[name]["inputSchema"])
+            validate(a, self.tool_definition(name)["inputSchema"])
             from . import session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries
             if self.investigation_id and a.get("investigation_id") != self.investigation_id:
                 session_scope.log_access(self.store, session_scope.get_run(self.store, self.investigation_id), "blocked_scope", {"name": name}, error="Different investigation ID rejected")

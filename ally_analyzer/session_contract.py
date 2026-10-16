@@ -1,4 +1,5 @@
 """Strict model-facing contract. Execution attestations have no model write API."""
+from copy import deepcopy
 S = {"type": "string", "minLength": 1, "maxLength": 8000}
 ID = {"type": "string", "minLength": 1, "maxLength": 256}
 
@@ -82,6 +83,40 @@ FORMULAS = ("response_count", "tool_invocations", "tool_failures", "prompt_token
             "uncached_input_tokens", "cache_creation_tokens", "peak_input_tokens", "cache_read_share",
             "input_change_tokens", "cache_read_share_change_pp", "recorded_compaction_duration_ms",
             "captured_tool_result_bytes", "recorded_tool_duration_ms", "elapsed_seconds", "occurrence_rate")
+
+
+def workflow_tool_spec(tool, workflow):
+    """Advertise the same prerequisites that the selected managed run enforces.
+
+    Historical/unmanaged contracts stay unchanged. This supplies required input
+    fields, never explanations, verdicts or evidence on the model's behalf.
+    """
+    if not workflow or tool['annotations']['readOnlyHint']:
+        return tool
+    result = deepcopy(tool)
+    if workflow.get('citation_explanations_version') and tool['name'] != 'save_review_checks':
+        def require_captions(schema):
+            props = schema.get('properties', {})
+            if 'source_id' in props and 'explanation' in props:
+                schema['required'] = list(dict.fromkeys(schema.get('required', []) + ['explanation']))
+                props['explanation']['maxLength'] = 240
+            for child in props.values():
+                require_captions(child)
+            if isinstance(schema.get('items'), dict):
+                require_captions(schema['items'])
+        require_captions(result['inputSchema'])
+    if workflow.get('semantic_consistency_version') and tool['name'] == 'save_review_checks':
+        from .session_consistency import ASPECTS
+        check = result['inputSchema']['properties']['checks']['items']
+        check['required'] = list(dict.fromkeys(check['required'] + ['semantic_checks']))
+        check['properties']['semantic_checks']['minItems'] = min(map(len, ASPECTS.values()))
+        check['properties']['semantic_checks']['description'] = (
+            'Required for EVERY check, including needs_revision. Use every required_aspect from '
+            'get_investigation_review for this exact current record, with your own assessment. '
+            'Required by record kind: ' + '; '.join(k + ': ' + ', '.join(v) for k, v in ASPECTS.items()) +
+            '. Refresh the packet after revisions; bind an opening check to its current requirement map. '
+            'Do not fill in approvals merely to satisfy this schema.')
+    return result
 
 # Scope and revision relationships are explicitly attributed model judgments.
 # Mechanical prerequisites reject inconsistent claims, not semantic mistakes.

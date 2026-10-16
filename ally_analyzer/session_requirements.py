@@ -26,10 +26,10 @@ def delivered_response_check(store, run, item):
     return True
 
 
-def inspected_refs(store, run, refs):
+def inspected_refs(store, run, refs, reader_facing=True):
     from .session_investigation import validate_refs
     from .session_diagnostics import inspected_reference
-    validate_refs(store, run, refs)
+    validate_refs(store, run, refs, reader_facing=reader_facing)
     delivered = exposure(store, run['id'])['sources']
     if any(not inspected_reference(store, run, ref, delivered) for ref in refs):
         raise AnalyzerError('Read each cited source range before saving this evidence relationship')
@@ -46,7 +46,9 @@ def verification_checks(store, run, checks):
         changed = check['relevant_change_event_ids']
         if len(set(changed)) != len(changed) or set(changed) - positions.keys():
             raise AnalyzerError('Relevant changes must be unique event identities in this scope')
-        for sid in changed: inspected_refs(store, run, [{'source_id':sid}])
+        # These are identity-only ordering anchors, not authored source captions.
+        # Scope and full-text exposure still apply.
+        for sid in changed: inspected_refs(store, run, [{'source_id':sid}], reader_facing=False)
         sid = check.get('check_event_id')
         if sid and (sid not in positions or sid not in {r['source_id'] for r in check['references']}):
             raise AnalyzerError('A check event must be a cited scoped event')

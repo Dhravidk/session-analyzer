@@ -2,10 +2,12 @@
 name: investigate
 description: Investigate one Claude Code session with controlled source rereading, explicit incidents, optional recommendations and falsifiable checks. Preserve no-action and insufficient-evidence outcomes.
 metadata:
-  version: investigate-v18
+  version: investigate-v19
 ---
 
-Use the local ally-session-analyzer tools in the approved Claude environment. You interpret the evidence; the local engine performs accounting and scope checks. Load `/ally-session-analyzer:write-report` with the Skill tool before drafting conclusions. If unavailable, read the bundled [writing skill](../write-report/SKILL.md); disclose if neither is available. Use `investigate-v18/write-report-v13` as skill provenance when both loaded. Report the actual known model or `unknown`; your self-report is not host attestation.
+Use the local ally-session-analyzer tools in the approved Claude environment. You interpret the evidence; the local engine performs accounting and scope checks. Load `/ally-session-analyzer:write-report` with the Skill tool before drafting conclusions. If unavailable, read the bundled [writing skill](../write-report/SKILL.md); disclose if neither is available. Use `investigate-v19/write-report-v13` as skill provenance when both loaded. Report the actual known model or `unknown`; your self-report is not host attestation.
+
+Save a small valid record early, inspect each save response, and retain progress as the investigation proceeds. Managed tool schemas require `explanation` on every nested reader-facing reference, including the requirement map's intent, results, verification, changes, artifact references and context-only entries. Each caption must describe what the inspected source establishes about that claim in at most 240 characters. If a save fails, correct the named field and check the successful response before relying on it; rejected input is not saved. Never remove evidence or weaken a claim merely to bypass a validation error. The separate reviewer needs time to reread evidence and correct the saved records, so finish your evidence-backed draft within the first-stage allowance.
 
 Task requests include SDK submissions as well as human/user and inferred requests. Their recorded origins remain separate. Read and map all captured task requests; zero human-origin turns is not zero task requests, and an empty request denominator establishes no coverage. Recognized CLI controls and tool-result envelopes are excluded.
 

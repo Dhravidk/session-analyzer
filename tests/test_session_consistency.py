@@ -31,6 +31,91 @@ class ConsistencyTests(unittest.TestCase):
     mapped=evidence.EvidenceTests.mapped
     check=review.ReviewWorkflowTests.check
 
+    def test_ordering_anchors_need_exposure_but_cannot_carry_reader_captions(self):
+        from ally_analyzer.session_requirements import verification_checks
+        update_workflow(self.store,self.iid,'investigate',citation_explanations=True)
+        check=self.verification()
+        check['references'][0]['explanation']='The fixture full check passed after the edit.'
+        self.read(self.ids['event-6'])
+        with self.assertRaisesRegex(AnalyzerError,'Read each cited'):
+            verification_checks(self.store,get_run(self.store,self.iid),[check])
+        self.read(self.ids['event-4'])
+        self.assertTrue(verification_checks(self.store,get_run(self.store,self.iid),[check])[0]['adequate_for_completion'])
+        check['relevant_change_event_ids']=['foreign-event']
+        with self.assertRaisesRegex(AnalyzerError,'identities in this scope'):
+            verification_checks(self.store,get_run(self.store,self.iid),[check])
+
+    def test_managed_recovery_accepts_identity_only_attempts_without_inventing_captions(self):
+        update_workflow(self.store,self.iid,'investigate',citation_explanations=True)
+        self.read_all()
+        incident=evidence.EvidenceTests.episode(self)
+        def explain(value):
+            if isinstance(value,dict):
+                if 'source_id' in value:value['explanation']='The inspected synthetic record documents this fixture attempt or its result.'
+                for child in value.values():explain(child)
+            elif isinstance(value,list):
+                for child in value:explain(child)
+        explain(incident)
+        before=copy.deepcopy(incident)
+        saved=save_incident(self.store,self.iid,incident)
+        self.assertEqual(saved['incident'],before)
+        self.assertEqual(incident,before)
+
+    def test_managed_schema_exposes_nested_captions_and_preserves_legacy_contract(self):
+        from ally_analyzer.mcp import BY_NAME, Protocol
+        from ally_analyzer.service import Service
+        from ally_analyzer.session_investigation import records
+        legacy_schema = copy.deepcopy(BY_NAME['save_requirement_map'])
+        service = Service(self.store, allow_content=True)
+        service.investigation_id = self.iid
+        self.assertEqual(service.tool_definition('save_requirement_map'), legacy_schema)
+        update_workflow(self.store, self.iid, 'investigate', citation_explanations=True, semantic_consistency=True)
+        self.read_all()
+        protocol = Protocol(service)
+        protocol.initialized = True
+        protocol.version = '2025-06-18'
+        listed = protocol.handle({'jsonrpc':'2.0','id':1,'method':'tools/list'})['result']['tools']
+        schema = next(t for t in listed if t['name']=='save_requirement_map')['inputSchema']
+        refs = []
+        def walk(s):
+            props=s.get('properties',{})
+            if 'source_id' in props and 'explanation' in props: refs.append(s)
+            for child in props.values():walk(child)
+            if 'items' in s:walk(s['items'])
+        walk(schema)
+        self.assertGreater(len(refs),5)
+        self.assertTrue(all('explanation' in r['required'] and r['properties']['explanation']['maxLength']==240 for r in refs))
+        self.assertEqual(BY_NAME['save_requirement_map'],legacy_schema)
+        payload=self.mapped();original=copy.deepcopy(payload)
+        with self.assertRaisesRegex(AnalyzerError,r'intent_references\[0\].*explanation'):
+            service.call('save_requirement_map',{'investigation_id':self.iid,'requirement_map':payload})
+        self.assertEqual(payload,original)
+        self.assertEqual(records(self.store,self.iid,'requirement_map'),[])
+        def explain(value):
+            if isinstance(value,dict):
+                if 'source_id' in value:value['explanation']='The inspected synthetic fixture record establishes this requirement or verification step.'
+                for child in value.values():explain(child)
+            elif isinstance(value,list):
+                for child in value:explain(child)
+        explain(payload)
+        service.call('save_requirement_map',{'investigation_id':self.iid,'requirement_map':payload})
+        self.assertEqual(records(self.store,self.iid,'requirement_map')[0]['requirement_map'],payload)
+
+    def test_managed_review_schema_requires_semantics_but_not_duplicate_quote_caption(self):
+        from ally_analyzer.service import Service
+        self.strict()
+        service=Service(self.store,allow_content=True);service.investigation_id=self.iid
+        spec=service.tool_definition('save_review_checks')
+        schema=spec['inputSchema']['properties']['checks']['items']
+        self.assertIn('semantic_checks',schema['required'])
+        self.assertNotIn('explanation',schema['properties']['evidence_checks']['items']['properties']['reference']['required'])
+        item=next(r for r in get_investigation_review(self.store,self.iid)['records'] if r['kind']=='requirement_map')
+        with self.assertRaisesRegex(AnalyzerError,r'checks\[0\].*semantic_checks'):
+            service.call('save_review_checks',{'investigation_id':self.iid,'checks':[self.check(item['id'])]})
+        corrected=self.semantic_check(item)
+        saved=service.call('save_review_checks',{'investigation_id':self.iid,'checks':[corrected]})
+        self.assertEqual(saved['saved'][0]['check'],corrected)
+
     def strict(self):
         from ally_analyzer.session_diagnostics import save_inquiry
         from ally_analyzer.session_failures import save_failure_explanation
