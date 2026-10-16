@@ -27,6 +27,16 @@ flowchart TB
     B -->|"Open log locally"| S
     B -->|"Open latest saved analysis; no model call"| F
     B -->|"Approve controlled excerpts for selected session"| U
+    Q["Claude Code conversation — no GUI<br/>Load explain skill; select/reuse a scoped investigation"]
+    A["Answer the developer's question<br/>Verify primary evidence and captured usage fields<br/>Keep uncertainty; do not edit saved judgments"]
+    U --> Q
+    Q -->|"Import only the selected log if needed"| S
+    Q -->|"Read-only queries, including finalized scopes"| M
+    Q -->|"Inspect relevant requests, results and instructions"| R
+    M --> A
+    R --> A
+    A -->|"Follow-up question in the same scope"| Q
+    Q -->|"Full saved investigation requested"| I
     U --> S
     S --> M
     S --> R

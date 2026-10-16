@@ -1,6 +1,31 @@
 # Single-session investigation: use and operator checks
 
-Version 0.10.2. Start with one captured task and preserve the resulting report, including uncertainty and unsuccessful proposals. The [product design](session-analyzer-product-design.md) explains the workflow; the [specification](single-session-investigation-spec.md) defines its contract.
+Version 0.16.0. Start with one captured task and preserve the resulting report, including uncertainty and unsuccessful proposals. The [product design](session-analyzer-product-design.md) explains the workflow; the [specification](single-session-investigation-spec.md) defines its contract.
+
+## Ask Claude without opening the GUI
+
+Load the plugin in your approved Claude Code environment and select a session log or a saved investigation. Ask naturally, or invoke `/ally-session-analyzer:explain`:
+
+```text
+Analyze /absolute/path/session.jsonl. What work is unfinished?
+What was the main agent's cache-read token share, and how much input was cache writes?
+Did the passing retry verify the same requirement and final revision?
+Does the evidence establish a skill defect, or is the child result missing?
+```
+
+The `explain` skill selects relevant tools, checks the question's premise and rechecks saved judgments against primary evidence. Focused questions use the existing timeline, turn, failure, child and artifact readers; they do not require a full report. Completed investigations support new read-only `query_measurement` calculations. `inspect_response_accounting` exposes the captured numeric fields and streaming frames behind a reconciled response. Neither tool edits Claude's saved prose. The first successful data-tool response supplies the exact conversation and writing skills once per connection, even if Claude skips definitions. `get_session_guide` reloads them when native skill invocation is unavailable or context has been lost. Agent filters keep main, child and combined populations distinct.
+
+Keep using the same configured `ALLY_ANALYZER_HOME` store for follow-ups. `list_session_investigations` finds saved scopes within a selected analysis. Opening a scope binds that MCP connection; switching sessions needs a new unbound connection or an operator-selected binding. No source scanning or cross-store discovery happens automatically. A focused query scope is not a completed investigation.
+
+For a managed run, its store is `<run-directory>/store` and its `audit.json` contains the investigation ID. Reconnect directly:
+
+```sh
+ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
+ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.16.0.zip
+```
+
+Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. To create a full saved report, use the investigation workflow below; its managed runner adds a separate evidence-review host. Ordinary chat answers do not receive that independent review automatically. Skill instructions and successful tool checks do not guarantee that every Claude answer is correct.
 
 ## Managed Claude investigation and evidence review
 
@@ -49,7 +74,7 @@ ALLY_ANALYZER_HOME="$PWD/.analysis/ally" \
 ALLY_ANALYZER_ALLOW_CONTENT=1 \
 ALLY_ANALYZER_SESSION_ONLY=1 \
 ALLY_ANALYZER_INVESTIGATION_ID=INVESTIGATION_ID \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.10.2.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.16.0.zip
 ```
 
 Invoke `/ally-session-analyzer:investigate INVESTIGATION_ID`. Controlled text access is for the approved environment. Without the content flag, metric/navigation queries work but text reads and searches fail explicitly. The bound analyzer rejects other investigations and legacy APIs. The host may expose unrelated tools; use a restricted host configuration when enforcing access beyond this plugin.

@@ -2,6 +2,8 @@
 
 The analyzer investigates one selected Claude Code session. It should help a developer understand the requested work, what the captured evidence supports, what remains unfinished and whether a specific change is justified. A report can correctly contain no recommendation.
 
+Developers can also ask Claude Code directly, without a browser. The `explain` skill resolves a selected log or saved investigation and uses the same scoped tools for a focused answer. Read-only measurements work after an investigation is finalized; captured numeric source frames let Claude check reconciled usage. Saved judgments are evidence to reassess, not unquestionable answers. A conversation can proceed to a full investigation when requested, but ordinary chat answers do not automatically receive the managed workflow's independent review. The [usage guide](single-session-usage.md) explains how to reconnect to the same store and scope.
+
 ## 1. Select and preserve the evidence
 
 The operator can open `ally-session browse <directory>` to search parent logs, switch sessions and reopen each session’s latest saved analysis. Folder labels show the last two path components with the full path on expansion. Browsing and local previews do not call Claude; starting an investigation requires explicit controlled-excerpt approval. The operator can also select a log, native session file, directory or ZIP directly. The importer copies the source into a local store and records its identity. For a native parent session it also looks in that session's adjacent subagent directory. Only structurally linked children join the investigation. Missing children and unrelated captured files remain visible as coverage limits.

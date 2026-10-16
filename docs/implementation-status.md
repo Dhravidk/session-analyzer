@@ -1,3 +1,11 @@
+# Implementation status — 0.16.0
+
+Claude Code can answer session questions through the existing plugin without a browser. The expanded `explain` skill covers scope selection, computed measurements, source checks, failed/recovered attempts and historical instruction attribution. A guide tool exposes the exact bundled skill to hosts without native skill invocation. Saved-investigation discovery, read-only queries on finalized scopes and captured-response accounting inspection support follow-ups without changing saved judgments.
+
+Validation and live Claude observations are recorded in the [0.16.0 audit](release-audit-0.16.0.md). Chat answers remain model judgments; the standalone managed investigation/review workflow remains separate. No Ally connector, automatic cross-store discovery or independent quality guarantee is added.
+
+---
+
 # Implementation status — 0.15.1
 
 Markdown (.md) is available from the session library, standalone reports, CLI and scoped Claude export tool. It preserves saved analysis wording, exact source/replacement text, all captured token categories, coverage and unfinished/review states. The same deterministic renderer backs every route; existing disclosure and overwrite protections apply. No new model call or analysis revision was made.
