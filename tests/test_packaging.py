@@ -1,4 +1,5 @@
 """Exercise the shipped archive without the checkout or an installed package."""
+import hashlib
 import json
 import os
 import subprocess
@@ -34,7 +35,8 @@ class PackagingTests(unittest.TestCase):
                 'protocolVersion':'2025-06-18','capabilities':{},'clientInfo':{'name':'package-regression','version':'1'}}},
                 {'jsonrpc':'2.0','method':'notifications/initialized'},
                 {'jsonrpc':'2.0','id':2,'method':'tools/list'},
-                {'jsonrpc':'2.0','id':3,'method':'tools/call','params':{'name':'get_definitions','arguments':{}}}]
+                {'jsonrpc':'2.0','id':3,'method':'tools/call','params':{'name':'get_definitions','arguments':{}}},
+                {'jsonrpc':'2.0','id':4,'method':'tools/call','params':{'name':'get_session_guide','arguments':{}}}]
             env=dict(os.environ,ALLY_ANALYZER_HOME=str(root/'isolated store'))
             for name in ('PYTHONPATH','ALLY_ANALYZER_ALLOW_CONTENT','ALLY_ANALYZER_INVESTIGATION_ID','ALLY_ANALYZER_SESSION_ONLY'):
                 env.pop(name,None)
@@ -43,13 +45,18 @@ class PackagingTests(unittest.TestCase):
             self.assertEqual(result.returncode,0,result.stderr)
             self.assertEqual(result.stderr,'')
             responses=[json.loads(line) for line in result.stdout.splitlines()]
-            self.assertEqual([r['id'] for r in responses],[1,2,3])
+            self.assertEqual([r['id'] for r in responses],[1,2,3,4])
             names={t['name'] for t in responses[1]['result']['tools']}
             export=next(t for t in responses[1]['result']['tools'] if t['name']=='export_session_investigation')
             self.assertIn('md',export['inputSchema']['properties']['format']['enum'])
             self.assertTrue({'start_session_investigation','read_investigation_evidence','save_incident',
-                'save_requirement_map','export_session_investigation'} <= names,names)
+                'save_requirement_map','export_session_investigation', 'get_session_guide',
+                'list_session_investigations', 'query_measurement', 'inspect_response_accounting'} <= names,names)
             self.assertFalse(responses[2]['result']['structuredContent']['content_disclosure_enabled'])
+            guide = responses[3]['result']['structuredContent']
+            raw = (plugin/'skills/explain/SKILL.md').read_bytes()
+            self.assertEqual(guide['instructions'], raw.decode())
+            self.assertEqual(guide['sha256'], hashlib.sha256(raw).hexdigest())
             browse=subprocess.run([sys.executable,'-I',str(plugin/'scripts/ally-session.py'),'browse','--help'],
                 cwd=root,capture_output=True,text=True,timeout=20)
             self.assertEqual(browse.returncode,0,browse.stderr)

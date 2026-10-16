@@ -85,6 +85,11 @@ def parser():
     a.add_argument("analysis_id"); a.add_argument("destination")
     a.add_argument("--format", choices=["html", "json"], default="html")
     sub.add_parser("definitions")
+    a = sub.add_parser("session-guide", help="Read a bundled Claude skill without opening a browser")
+    a.add_argument("--skill", choices=["explain", "analyze", "investigate", "review", "write-report"], default="explain")
+    a = sub.add_parser("session-investigations", help="Find saved scoped investigations in a selected analysis")
+    a.add_argument("analysis_id"); a.add_argument("--session-id")
+    a.add_argument("--limit", type=int, default=20); a.add_argument("--offset", type=int, default=0)
     sub.add_parser("investigate", help="Run an approved Claude investigation and independent evidence review", add_help=False)
     sub.add_parser("browse", help="Open a local session directory and its saved reports", add_help=False)
     a = sub.add_parser("session-start", help="Start an immutable single-session investigation")
@@ -183,6 +188,12 @@ def main(argv=None):
             result = export_investigation(store, args.analysis_id, args.destination, args.format)
         elif c == "definitions":
             result = DEFINITIONS
+        elif c == "session-guide":
+            from .guidance import get_session_guide
+            result = get_session_guide(args.skill)
+        elif c == "session-investigations":
+            from .session_queries import list_session_investigations
+            result = list_session_investigations(store, args.analysis_id, args.session_id, args.limit, args.offset)
         elif c == "session-start":
             from .session_scope import start_session_investigation
             result = start_session_investigation(store, args.analysis_id, args.session_id, args.purpose,

@@ -219,7 +219,11 @@ class InvestigationTests(unittest.TestCase):
             output = invoke("get_investigation_context", args)
             cli = subprocess.run([sys.executable, "-m", "ally_analyzer", "--data-dir", str(self.store.root), "context", self.analysis_id, self.events["event-6"], "--content"], cwd=ROOT, capture_output=True, text=True, timeout=10)
             self.assertEqual(cli.returncode, 0, cli.stderr)
-            self.assertEqual(json.loads(cli.stdout), output["structuredContent"])
+            data = dict(output['structuredContent'])
+            self.assertEqual(len(data.pop('session_guides')), 2)
+            self.assertEqual(data.pop('guide_errors'), [])
+            data.pop('guide_delivery')
+            self.assertEqual(json.loads(cli.stdout), data)  # Added host guidance does not alter evidence.
             self.assertFalse(invoke("save_insight", {"analysis_id": self.analysis_id, "insight": self.insight})["isError"])
             bad = copy.deepcopy(self.insight)
             bad["observations"] = "invalid"

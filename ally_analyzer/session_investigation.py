@@ -192,6 +192,23 @@ def get_investigation_records(store, investigation_id, kind, limit=20, offset=0,
 
 def measure_selection(store, investigation_id, formula, selection, opportunity_tool_ids=None):
     run = active_run(store, investigation_id)
+    body = _selection_measurement(store, run, formula, selection, opportunity_tool_ids)
+    rid = put_record(store, run, "measurement", body)
+    return {"id": rid, **body}
+
+
+def query_measurement(store, investigation_id, formula, selection, opportunity_tool_ids=None):
+    """Answer follow-up questions without changing a frozen investigation."""
+    run = get_run(store, investigation_id)
+    body = _selection_measurement(store, run, formula, selection, opportunity_tool_ids)
+    request_id = log_access(store, run, "query_measurement", {
+        "formula": formula, "selection": selection, "opportunity_tool_ids": opportunity_tool_ids or []})
+    return {"query_id": "query_" + digest([run['scope_id'], body])[:24],
+            "request_id": request_id, "investigation_id": run['id'], "scope_id": run['scope_id'],
+            "saved_as_claim_evidence": False, **body}
+
+
+def _selection_measurement(store, run, formula, selection, opportunity_tool_ids=None):
     validate_payload(selection, SELECTION)
     if formula not in FORMULAS:
         raise AnalyzerError("Unknown formula")
@@ -199,6 +216,9 @@ def measure_selection(store, investigation_id, formula, selection, opportunity_t
     all_tools = {t["id"]: t for t in entities(store, run, "tool")}
     all_events = {r["id"]: r for r in scope_rows(store, run)}
     response_ids, tool_ids, event_ids = (selection.get(k, []) for k in ("response_ids", "tool_ids", "event_ids"))
+    agent_selection = None
+    if selection.get('agent_id') and not (selection.get('turn_id') or selection.get('all_scoped')):
+        raise AnalyzerError('agent_id requires turn_id or all_scoped; explicit IDs already define their own population')
     if selection.get('turn_id') or selection.get('all_scoped'):
         if any(selection.get(k) for k in ('response_ids', 'tool_ids', 'event_ids')) or (selection.get('turn_id') and selection.get('all_scoped')):
             raise AnalyzerError('Choose explicit identities, one turn or the entire scope, not a mixture')
@@ -210,6 +230,21 @@ def measure_selection(store, investigation_id, formula, selection, opportunity_t
             response_ids, tool_ids, event_ids = (selected[k] for k in ('response_ids','tool_ids','event_ids'))
         else:
             response_ids, tool_ids, event_ids = list(all_responses), list(all_tools), list(all_events)
+    if selection.get('agent_id'):
+        agent = selection['agent_id']; scope = get_scope(store, run)
+        if agent not in scope['agent_ids']:
+            if any(link['child_agent_id'] == agent for link in scope['delegation_links']):
+                raise AnalyzerError('The selected child trace is unavailable; its usage is unknown, not zero')
+            raise AnalyzerError('Agent is outside this immutable scope')
+        agent_selection = {'agent_id': agent, 'population': 'Identities assigned exclusively to this captured agent',
+                           'shared_response_ids_excluded': [r for r in response_ids if agent in all_responses[r]['agent_ids'] and len(all_responses[r]['agent_ids']) > 1],
+                           'shared_tool_ids_excluded': [t for t in tool_ids if agent in all_tools[t]['agent_ids'] and len(all_tools[t]['agent_ids']) > 1],
+                           'limitation': 'Shared identities cannot be attributed to this agent; excluded usage is not zero. Captured usage is not complete execution coverage.'}
+        response_ids = [r for r in response_ids if all_responses[r]['agent_ids'] == [agent]]
+        tool_ids = [t for t in tool_ids if all_tools[t]['agent_ids'] == [agent]]
+        event_ids = [e for e in event_ids if all_events[e]['agent_id'] == agent]
+        if opportunity_tool_ids and any(all_tools.get(t, {}).get('agent_ids') != [agent] for t in opportunity_tool_ids):
+            raise AnalyzerError('Opportunity population must use identities assigned exclusively to the selected agent')
     for values, allowed, label in ((response_ids, all_responses, "response_ids"), (tool_ids, all_tools, "tool_ids"), (event_ids, all_events, "event_ids")):
         check_ids(values, allowed, label)
     responses, tools = [all_responses[x] for x in response_ids], [all_tools[x] for x in tool_ids]
@@ -263,7 +298,7 @@ def measure_selection(store, investigation_id, formula, selection, opportunity_t
         start, end = [timestamp(all_events[x]["timestamp"]) for x in event_ids]
         eligible = 2; known = sum(x is not None for x in (start, end)); unit = "seconds"; refs = event_ids
         value = subtotal = end - start if known == 2 and end >= start else None
-    body = {**extra, "formula": formula, "formula_version": "selection-v2", "selection": selection,
+    body = {**extra, "formula": formula, "formula_version": "selection-v3" if agent_selection else "selection-v2", "selection": selection,
             "selection_hash": digest({'scope_id':run['scope_id'], 'response_ids':sorted(response_ids),'tool_ids':sorted(tool_ids),'event_ids':event_ids}),
             "resolved_identity_counts": {'responses':len(response_ids),'tools':len(tool_ids),'events':len(event_ids)},
             "resolved_identities": {'response_ids':sorted(response_ids),'tool_ids':sorted(tool_ids),'event_ids':event_ids},
@@ -272,8 +307,9 @@ def measure_selection(store, investigation_id, formula, selection, opportunity_t
             "unavailable_reason": "Missing or conflicting required observations, invalid interval or zero denominator" if value is None else None,
             "deduplication": "unique reconciled identities in this immutable scope", "membership_relevance": "caller interpretation, not engine-verified",
             "non_additive": True, "limitations": "Selections may overlap. Use union identities for totals. Associated usage or an interval is not avoidable overhead."}
-    rid = put_record(store, run, "measurement", body)
-    return {"id": rid, **body}
+    if agent_selection:
+        body['agent_selection'] = agent_selection
+    return body
 
 
 def save_incident(store, investigation_id, incident):

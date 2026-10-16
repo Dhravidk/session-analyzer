@@ -101,6 +101,7 @@ class Service:
     def __init__(self, store, allow_content=False):
         self.store, self.allow_content = store, allow_content
         self.jobs = JobManager(store)
+        self.delivered_guides = set()
         self.investigation_id = os.environ.get("ALLY_ANALYZER_INVESTIGATION_ID")
         self.session_only = os.environ.get("ALLY_ANALYZER_SESSION_ONLY") == "1" or bool(self.investigation_id)
 
@@ -108,21 +109,51 @@ class Service:
         from .mcp import SESSION_TOOLS
         names = {t["name"] for t in SESSION_TOOLS}
         if self.investigation_id:
-            return name in names - {"start_session_investigation"} or name == "get_definitions"
+            return name in names - {"start_session_investigation"} or name in ("get_definitions", "get_session_guide")
         if self.session_only:
-            return name in names or name in ("get_definitions", "list_analyses", "list_sessions")
+            return name in names or name in ("get_definitions", "get_session_guide", "list_analyses", "list_sessions", "list_session_investigations")
         return True
 
+    def _guidance(self):
+        from .guidance import get_session_guide
+        guides, errors = [], []
+        for skill in ('explain', 'write-report'):
+            if skill in self.delivered_guides:
+                continue
+            try:
+                guides.append(get_session_guide(skill))
+                self.delivered_guides.add(skill)
+            except AnalyzerError as exc:
+                errors.append({'skill': skill, 'error': str(exc)})
+        return {'session_guides': guides, 'guide_errors': errors,
+                'guide_delivery': 'Bundled conversation and writing skills delivered once per MCP connection; apply their instructions. Use get_session_guide to reload after context loss.'}
+
     def call(self, name, a):
+        result = self._call(name, a)
+        # Hosts can skip get_definitions despite the skill. Deliver guidance on
+        # the first successful data call too, without changing its actual data.
+        if name not in ('get_definitions', 'get_session_guide') and isinstance(result, dict):
+            guidance = self._guidance()
+            if guidance['session_guides'] or guidance['guide_errors']:
+                result = {**result, **guidance}
+        return result
+
+    def _call(self, name, a):
         from .mcp import BY_NAME, SESSION_TOOLS, validate
         if not self.tool_available(name):
             if self.investigation_id:
                 from .session_scope import get_run, log_access
                 log_access(self.store, get_run(self.store, self.investigation_id), "blocked_tool", {"name": name}, error="Tool not allowed by bound-session policy")
             raise AnalyzerError("Tool is unavailable in the bound single-session workflow; legacy APIs cannot bypass its scope")
+        if name == "get_session_guide":
+            from .guidance import get_session_guide
+            validate(a, BY_NAME[name]["inputSchema"])
+            guide = get_session_guide(**a)
+            self.delivered_guides.add(a.get('skill', 'explain'))
+            return guide
         if name in {t["name"] for t in SESSION_TOOLS}:
             validate(a, BY_NAME[name]["inputSchema"])
-            from . import session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes
+            from . import session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries
             if self.investigation_id and a.get("investigation_id") != self.investigation_id:
                 session_scope.log_access(self.store, session_scope.get_run(self.store, self.investigation_id), "blocked_scope", {"name": name}, error="Different investigation ID rejected")
                 raise AnalyzerError("This host is bound to a different investigation")
@@ -134,7 +165,7 @@ class Service:
                 session_scope.get_run(self.store, a["investigation_id"])
                 self.investigation_id = a["investigation_id"]
                 self.session_only = True
-            for module in (session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes):
+            for module in (session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries):
                 function = getattr(module, name, None)
                 if function:
                     kwargs = dict(a)
@@ -155,6 +186,10 @@ class Service:
             return list_datasets(self.store, **a)
         if name == "list_analyses":
             return list_analyses(self.store, **a)
+        if name == "list_session_investigations":
+            from .session_queries import list_session_investigations
+            validate(a, BY_NAME[name]["inputSchema"])
+            return list_session_investigations(self.store, **a)
         if name == "get_summary":
             summary = self.store.analysis(a["analysis_id"])["summary"]
             evidence = summary["coverage"]["unresolved_parent_evidence"]
@@ -191,6 +226,9 @@ class Service:
             from .session_metrics import DEFINITIONS as SESSION_DEFINITIONS
             from .session_resources import DEFINITIONS as RESOURCE_DEFINITIONS
             return {"metric_version": "1", "definitions": DEFINITIONS, "session_metric_definitions": SESSION_DEFINITIONS,
+                    **self._guidance(),
+                    "conversation_guide": {"skill": "ally-session-analyzer:explain", "fallback_tool": "get_session_guide",
+                                           "readonly_measurements": "query_measurement", "captured_usage_inspection": "inspect_response_accounting"},
                     "resource_definitions":RESOURCE_DEFINITIONS,
                     "session_contract": "single-session-v2", "bound_investigation_id": self.investigation_id,
                     "disclosure_policy": "metadata-v1", "content_disclosure_enabled": self.allow_content,

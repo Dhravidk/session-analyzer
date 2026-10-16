@@ -176,7 +176,10 @@ class TrajectoryTests(unittest.TestCase):
                 cli = subprocess.run([sys.executable, "-m", "ally_analyzer", "--data-dir", str(self.store.root), *cli_args],
                                      cwd=ROOT, capture_output=True, text=True, timeout=10)
                 self.assertEqual(cli.returncode, 0, cli.stderr)
-                self.assertEqual(json.loads(cli.stdout), result["structuredContent"])
+                data = dict(result['structuredContent'])
+                for key in ('session_guides', 'guide_errors', 'guide_delivery'):
+                    data.pop(key, None)  # Once-per-connection instructions, not source content.
+                self.assertEqual(json.loads(cli.stdout), data)
             invalid = protocol.handle({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {
                 "name": "read_trajectory_event", "arguments": {"analysis_id": self.aid, "event_id": self.events["event-1"],
                                                                "expected_text_sha256": "too-short"}}})

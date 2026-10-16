@@ -82,11 +82,11 @@ def terminal_host_failure(outcome, final):
     return None
 
 
-def audit_tool_policy(calls, transcript, allowed):
+def audit_tool_policy(calls, transcript, allowed, allowed_skills=('ally-session-analyzer:write-report',)):
     """Keep failed attempts visible; a host-rejected unknown tool did not execute."""
     def permitted(c):
         return c['name'] in allowed or (c['name']=='Skill' and isinstance(c.get('input'),dict)
-                                        and c['input'].get('skill')=='ally-session-analyzer:write-report')
+                                        and c['input'].get('skill') in allowed_skills)
     undeclared = [c for c in calls if not permitted(c)]
     results = {}
     for line in transcript.read_text().splitlines():
@@ -182,7 +182,7 @@ def main(argv=None):
     if args.allow_content:
         prompt += ' The operator authorizes controlled excerpts through this approved Claude host.'
     (work / 'request.txt').write_text(prompt)
-    names = [t['name'] for t in SESSION_TOOLS if t['name'] != 'start_session_investigation'] + ['get_definitions']
+    names = [t['name'] for t in SESSION_TOOLS if t['name'] != 'start_session_investigation'] + ['get_definitions', 'get_session_guide']
     allowed = ['mcp__plugin_ally-session-analyzer_ally-session-analyzer__' + name for name in names]
     env = dict(os.environ, ALLY_ANALYZER_HOME=str(store.root), ALLY_ANALYZER_ALLOW_CONTENT='1' if args.allow_content else '0',
                ALLY_ANALYZER_SESSION_ONLY='1', ALLY_ANALYZER_INVESTIGATION_ID=iid)
