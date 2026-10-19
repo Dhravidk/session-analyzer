@@ -38,6 +38,11 @@ h4{font-size:14px;margin:15px 0 8px}
 p{margin:5px 0 9px}
 .meta,.small,.target{font-size:13px}
 header .meta{margin:0 0 12px}
+.agent-cost{margin:0 0 22px;padding:14px 18px;border-left:3px solid var(--blue);background:var(--soft);overflow-wrap:anywhere}
+.agent-cost .cost-label{font-size:14px;font-weight:600;margin:0}
+.agent-cost .cost-value{font-size:34px;font-weight:650;letter-spacing:-.7px;line-height:1.2;margin:4px 0 9px}
+.agent-cost p{max-width:85ch}
+.agent-cost details{font-size:12px}
 .status-tag{display:inline-block;padding:1px 8px;border-radius:10px;background:#eee7dc;color:#785a37;line-height:1.3}
 .status-tag.completed{background:#e8eee8;color:#435f4a}
 .status-tag.failed{background:#f1e5e4;color:#8c4a45}
@@ -79,7 +84,7 @@ button.source-citation.link{display:flex;align-items:flex-start;text-decoration:
 .metrics>details[open]{flex-basis:100%}
 .section-heading{display:flex;align-items:center;justify-content:space-between;gap:14px}
 .section-heading>.link{font-size:13px}
-#overview,#outcome,#turns-heading,#proposals-heading,#coverage{scroll-margin-top:72px}
+#overview,#outcome,#requirements,#turns-heading,#proposals-heading,#coverage{scroll-margin-top:72px}
 .table-scroll{max-width:100%;overflow:auto}
 table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
 th,td{padding:5px 6px;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
@@ -318,7 +323,7 @@ body.has-source .table-hint{display:block}
 .report-nav a[aria-current]::before{top:auto;bottom:0;left:12px;right:12px;width:auto;height:2px}
 .source-inspector{top:96px;padding:20px 18px}
 .source-divider{top:96px}
-#overview,#outcome,#turns-heading,#proposals-heading,#coverage{scroll-margin-top:112px}
+#overview,#outcome,#requirements,#turns-heading,#proposals-heading,#coverage{scroll-margin-top:112px}
 .product{padding:0 20px}
 }
 @media(max-width:760px){
@@ -397,7 +402,7 @@ body.library-embedded{--nav-width:0px;--source-width:clamp(350px,42vw,560px)}
 .library-embedded.has-source .report-nav{margin-right:calc(var(--source-width) + 24px);gap:18px}
 .library-embedded .source-inspector{top:0}
 .library-embedded .source-divider{top:0}
-.library-embedded #overview,.library-embedded #outcome,.library-embedded #turns-heading,.library-embedded #findings-heading,.library-embedded #proposals-heading,.library-embedded #coverage{scroll-margin-top:64px}
+.library-embedded #overview,.library-embedded #outcome,.library-embedded #requirements,.library-embedded #turns-heading,.library-embedded #findings-heading,.library-embedded #proposals-heading,.library-embedded #coverage{scroll-margin-top:64px}
 @media(max-width:760px){
 .library-embedded .report-nav{margin:0 18px;gap:22px}
 .library-embedded #report-column,.library-embedded.has-source #report-column{margin:0;padding:18px 18px 40px}

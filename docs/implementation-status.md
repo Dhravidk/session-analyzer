@@ -1,3 +1,13 @@
+# Implementation status — 0.17.0
+
+The report opens with source-agent cost before the saved narrative, in HTML, embedded library views and Markdown. A pinned rate card prices reconciled captured usage once; partial pricing remains a subtotal. Otherwise, a usable latest main-trace host snapshot supplies a recorded estimate. Snapshot selection uses captured source-file order when timestamps are absent, preserves ordering uncertainty, and never sums snapshots or adds them to response/child totals. Unknown cost remains unavailable. Analyzer usage is separate.
+
+Instruction and task compliance is expanded near the opening with its own navigation link. The investigation, writing and review guidance now prioritizes actual constraints, applicable captured instructions, approval gates, subsequent authorizations and the captured ending. Drafting permission remains distinct from implementation approval; unavailable external files do not prove nonproduction. The renderer exposes saved statuses and uncertainty without creating a compliance score or editing Claude-authored findings. Existing JSON without cost accounting remains renderable and explicitly needs re-export from its investigation store for cost calculation.
+
+This release changes accounting, presentation and future investigation guidance. No live Claude run or new semantic-quality evaluation was performed. See [validation](validation.md) for mechanical and browser checks.
+
+---
+
 # Implementation status — 0.16.1
 
 Managed verification and recovery membership no longer require impossible captions on internal event IDs. Source scope, exposure, reader-facing captions and semantic reviews remain enforced. MCP schemas advertise the active run's caption/review requirements; the runner reserves half its initial allowance for review. Context/cache tables keep column headers visible inside their scroll region in main, turn and child details. See the [0.16.1 audit](release-audit-0.16.1.md) for validation and the migration rerun.

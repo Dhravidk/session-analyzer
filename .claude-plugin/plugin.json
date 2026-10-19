@@ -1,6 +1,6 @@
 {
   "name": "ally-session-analyzer",
-  "version": "0.16.1",
+  "version": "0.17.0",
   "description": "Local deterministic session analysis and evidence-linked investigations through your approved Claude host.",
   "author": {"name": "Ally Session Analyzer project"}
 }

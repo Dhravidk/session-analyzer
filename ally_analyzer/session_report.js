@@ -173,6 +173,7 @@
   }
   function hasSourceText(s) { return typeof s?.text==='string' && s.text.trim().length>0; }
   function sourceName(s) {
+    if(s.kind==='cost-state')return 'Recorded host cost snapshot';
     if(['tool_call','tool_result','system_status','artifact'].includes(s.role))return label(s.role).replace(/^./,c=>c.toUpperCase());
     if(s.content_metadata?.kind==='thinking' || s.role==='assistant_thinking')return 'Assistant record · thinking';
     if(s.kind==='assistant' && s.content_metadata?.kind==='mixed')return 'Assistant record · '+(s.content_metadata.has_visible_text?'text and thinking':'thinking and other content');
@@ -527,7 +528,7 @@
     nav.append(previous,owner,next);
     const disclosure=s.disclosure || {},limits=[];
     if (disclosure.redaction_matches) limits.push(disclosure.redaction_matches+' pattern redactions');
-    if(citationContext && !hasSourceText(s))limits.push('This record has no available evidence text and cannot substantiate the linked claim.');
+    if(citationContext && !hasSourceText(s))limits.push(s.captured_cost_fields?.totalCostUSD!==undefined?'Captured cost metadata supports the recorded snapshot amount; it does not establish a final invoice.':'This record has no available evidence text and cannot substantiate the linked claim.');
     const content=document.getElementById('source-text');content.replaceChildren();
     const text=sourceText(s),chars=Array.from(text);
     const cited=hasSourceText(s) && selectedCitation.text_sha256===s.text_sha256 && Number.isInteger(selectedCitation.start_char) && Number.isInteger(selectedCitation.end_char) && selectedCitation.end_char>selectedCitation.start_char;
@@ -553,7 +554,8 @@
       const results=tool.evidence.map(id=>sources[id]).filter(x=>x?.role==='tool_result');
       for (const [index,result] of results.entries()) panels.append(codePanel('Result'+(results.length>1?' '+(index+1):''),sourceText(result),languageForResult(tool,fields),result.id,{savedLineNumbers:true,selectable:result.id!==s.id,available:result.text!==undefined}));
       if (!results.length) { const note=document.createElement('p');note.className='limit small';note.textContent='No result record was captured for this invocation.';panels.append(note); }
-    } else panels.append(codePanel('Record',text,'text',s.id,{available:s.text!==undefined}));
+    } else if(s.captured_cost_fields && Object.keys(s.captured_cost_fields).length)panels.append(codePanel('Captured host cost fields',JSON.stringify(s.captured_cost_fields,null,2),'json',s.id));
+    else panels.append(codePanel('Record',text,'text',s.id,{available:s.text!==undefined}));
     if(hasSourceText(s) && contentReasons(s).length)panels.append(sourceNotice(s));
     for(const [index,block] of (s.content_metadata?.thinking_text || []).entries()){
       panels.append(codePanel('Captured thinking'+(s.content_metadata.thinking_text.length>1?' '+(index+1):''),block.text,'text',s.id));

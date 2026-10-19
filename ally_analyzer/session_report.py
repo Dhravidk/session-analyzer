@@ -12,6 +12,7 @@ from pathlib import Path
 from .session_diagnostics import record_role, coverage_assertions
 from .session_edits import inspect_edit
 from .session_agents import build_agent_views
+from .session_cost import captured_cost_fields, cost_readout, source_session_cost
 from .session_failures import active_explanations, failure_coverage
 from .session_review import active_versions
 from .session_investigation import accounting, records
@@ -79,6 +80,8 @@ def report_data(store, investigation_id, include_source_text=False, allow_conten
             raw_records[row['id']] = raw
             item['role'] = record_role(raw, row['kind'])
             item['content_metadata'] = source_content(raw, include_thinking_text=include_source_text)
+            if raw.get('type') == 'cost-state':
+                item['captured_cost_fields'] = captured_cost_fields(raw)
             item['source_refs'] = [{'member_id':digest(r['path'])[:16], 'line':r['line']} for r in db.execute(
                 'SELECT path,line FROM provenance WHERE dataset_id=? AND event_id=? ORDER BY path,line', (scope['dataset_id'],row['id']))]
             sources[row['id']] = item
@@ -112,6 +115,7 @@ def report_data(store, investigation_id, include_source_text=False, allow_conten
             if sid in sources:
                 sources[sid].setdefault('response_ids',[]).append(response['id'])
     return {'report_version':'session-investigation-v2','investigation':run,'scope':scope,
+            'source_cost':source_session_cost(store,run),
             'accounting':metrics,'turn_patterns':turn_patterns(metrics['turns'],tools), **agent_views,
             'incidents':incidents,
             'requirement_map':current_map(store,investigation_id),
@@ -273,7 +277,8 @@ def review_qualification(data, record_id, label='Claude review'):
 
 def requirements_html(data):
     saved=data.get('requirement_map')
-    if not saved:return ''
+    if not saved:
+        return '<section id="requirements"><h2>Instruction and task compliance</h2>'+prose('No requirement map has been saved. A compliance verdict is not established.','muted')+'</section>'
     mapped=saved['requirement_map']; items=mapped['requirements']
     unverified=sum(i['status']=='unverified' for i in items)
     content=prose(mapped['scope'])+prose(mapped['inventory_status'].replace('_',' '),'small muted')+review_qualification(data,saved['id'])
@@ -314,7 +319,20 @@ def requirements_html(data):
         content+='</article></td></tr>'
     content+='</tbody></table></div>'
     content+=detail('Inventory coverage and saved versions',{'coverage':saved['request_coverage'],'history':data.get('requirement_map_history',[])})
-    return '<details id="requirements"><summary>Requirements · '+str(len(items))+' mapped'+(' · '+str(unverified)+' unverified' if unverified else '')+'</summary>'+content+'</details>'
+    return '<details id="requirements" open><summary>Instruction and task compliance · '+str(len(items))+' mapped'+(' · '+str(unverified)+' unverified' if unverified else '')+'</summary>'+content+'</details>'
+
+
+def agent_cost_html(data):
+    cost=data.get('source_cost')
+    readout=cost_readout(cost)
+    body='<section id="agent-cost" class="agent-cost" aria-label="Source agent cost">'
+    body+=prose(readout['label'],'cost-label')+prose(readout['value'],'cost-value')+prose(readout['basis'],'small muted')
+    body+=prose(readout['limitations'][0],'small muted')
+    if cost:
+        body+='<details><summary>Cost basis and exact values</summary>'+''.join(prose(limit,'small muted') for limit in readout['limitations'])+detail('Exact accounting',cost)+'</details>'
+        if readout['source_ids']:
+            body+=reference_list([{'source_id':sid} for sid in readout['source_ids']],data=data)
+    return body+'</section>'
 
 
 def focus_turns_button(turn_ids, label='Related turns', filter_label=None):
@@ -466,6 +484,7 @@ def source_caption(ref, data=None, context=None):
     names={'user_statement':'Request','assistant_statement':'Assistant statement','tool_call':'Tool input',
            'tool_result':'Tool result','system_status':'System record','artifact':'Artifact','assistant_record':'Assistant record'}
     label='Thinking record' if kind=='thinking' or role=='assistant_thinking' else names.get(role,'Record')
+    if source.get('kind')=='cost-state':label='Recorded host cost snapshot'
     description=None
     linked=[t for t in data.get('tools',[]) if t['id'] in source.get('tool_ids',[])]
     if len(linked)==1 and role in ('tool_call','tool_result'):
@@ -749,7 +768,7 @@ def render_report(data, embedded=False):
     if run['run_status']=='running' and not data['incidents'] and not data.get('inquiries') and not data['exposure'].get('requests'):
         status = 'Investigation not run'
     body = '<div class="product"><div><b>Ally</b><span> / Session report</span></div><div class="product-actions"><button class="link source-reopen" data-source-reopen aria-controls="source-dialog" aria-expanded="false" aria-label="Reopen selected source" hidden>'+icon('chevron-left')+'Source</button><span class="product-date">'+esc(date)+'</span><details class="export"><summary>'+icon('download')+'Export</summary><div><button data-export="html">HTML report</button><button data-export="md">Markdown (.md)</button><button data-export="json">JSON report</button></div></details></div></div>'
-    body += '<nav class="report-nav" aria-label="Report sections">'+''.join('<a href="#'+key+'"'+(' aria-current="location"' if key=='overview' else '')+'>'+label+'</a>' for key,label in (('overview','Overview'),('outcome','Outcome'),('turns-heading','Turns'),('findings-heading','Findings'),('proposals-heading','Proposed changes'),('coverage','Coverage')))+'</nav><main id="report-column"><header id="overview"><h1>'+esc(title)+'</h1><p class="meta">'+esc(date)+' · <span class="status-tag '+esc(run['run_status'])+'">'+esc(status)+'</span></p>'
+    body += '<nav class="report-nav" aria-label="Report sections">'+''.join('<a href="#'+key+'"'+(' aria-current="location"' if key=='overview' else '')+'>'+label+'</a>' for key,label in (('overview','Overview'),('outcome','Outcome'),('requirements','Compliance'),('turns-heading','Turns'),('findings-heading','Findings'),('proposals-heading','Proposed changes'),('coverage','Coverage')))+'</nav><main id="report-column"><header id="overview">'+agent_cost_html(data)+'<h1>'+esc(title)+'</h1><p class="meta">'+esc(date)+' · <span class="status-tag '+esc(run['run_status'])+'">'+esc(status)+'</span></p>'
     if run.get('synopsis'):
         synopsis = run['synopsis']
         body += prose(synopsis['text'],'synopsis prose')
@@ -786,8 +805,8 @@ def render_report(data, embedded=False):
             body+='<details class="pending-conclusion"><summary>Latest Claude draft · not finalized</summary>'
             body+='<h3>'+esc(pending.get('title','Untitled draft'))+'</h3>'+prose(pending.get('summary',''),'prose')
             body+=detail('Draft status', {k:pending.get(k) for k in ('run_status','stop_basis','stop_reason','unresolved_questions')})+'</details>'
-    body += remaining_work_html(data)
     body += requirements_html(data)
+    body += remaining_work_html(data)
     body += '</section><section class="metrics" aria-label="Main session metrics"><div class="metric-counts">'
     request_key='task_requests' if 'task_requests' in session else 'user_turns'
     for key,label in ((request_key,'task requests' if request_key=='task_requests' else 'turns'),('llm_calls','observed calls'),('tool_invocations','tools')):

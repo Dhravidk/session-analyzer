@@ -1,6 +1,6 @@
 # Single-session investigation: use and operator checks
 
-Version 0.16.1. Start with one captured task and preserve the resulting report, including uncertainty and unsuccessful proposals. The [product design](session-analyzer-product-design.md) explains the workflow; the [specification](single-session-investigation-spec.md) defines its contract.
+Version 0.17.0. Start with one captured task and preserve the resulting report, including uncertainty and unsuccessful proposals. The [product design](session-analyzer-product-design.md) explains the workflow; the [specification](single-session-investigation-spec.md) defines its contract.
 
 ## Ask Claude without opening the GUI
 
@@ -22,7 +22,7 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.16.1.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.17.0.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. To create a full saved report, use the investigation workflow below; its managed runner adds a separate evidence-review host. Ordinary chat answers do not receive that independent review automatically. Skill instructions and successful tool checks do not guarantee that every Claude answer is correct.
@@ -74,7 +74,7 @@ ALLY_ANALYZER_HOME="$PWD/.analysis/ally" \
 ALLY_ANALYZER_ALLOW_CONTENT=1 \
 ALLY_ANALYZER_SESSION_ONLY=1 \
 ALLY_ANALYZER_INVESTIGATION_ID=INVESTIGATION_ID \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.16.1.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.17.0.zip
 ```
 
 Invoke `/ally-session-analyzer:investigate INVESTIGATION_ID`. Controlled text access is for the approved environment. Without the content flag, metric/navigation queries work but text reads and searches fail explicitly. The bound analyzer rejects other investigations and legacy APIs. The host may expose unrelated tools; use a restricted host configuration when enforcing access beyond this plugin.
@@ -85,7 +85,7 @@ The workflow loads `write-report`, maps requests and outcomes, tracks material q
 
 | Tool | Use and bounds |
 | --- | --- |
-| `get_session_overview` | Session metrics, compact turn patterns, request/ending landmarks, capture gaps and admitted artifacts. |
+| `get_session_overview` | Source-agent cost facts with estimate/subtotal/snapshot coverage, session metrics, compact turn patterns, request/ending landmarks, capture gaps and admitted artifacts. |
 | `get_investigation_records` | Page events, compact turns, responses, tools, incidents, claims, measurements, proposals, access or capture diagnostics. Defaults to 20, maximum 200 records; oversized pages shrink without truncating member records. |
 | `get_investigation_records` with `turn_id` | Retrieve all event, response or tool identities belonging to a particular turn through ordinary pagination. |
 | `read_investigation_batch` | Read up to eight selected sources; defaults to 2,000 characters each, maximum 3,000. Every page has its own continuation. |

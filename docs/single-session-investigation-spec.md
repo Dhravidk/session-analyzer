@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 21 · October 15, 2026 · Governing contract for version 0.15.1 (earlier release sections retained as history)
+Revision 22 · October 19, 2026 · Governing contract for version 0.17.0 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -750,3 +750,12 @@ Managed MCP tool definitions reflect the selected run's validation policy: reade
 Missing-field errors identify the input path and fields; semantic errors identify the record, kind and missing aspects. Reviewers save substantive checks incrementally, repair rejected submissions, refresh current IDs after revisions and review the final opening against the current map. Rejected batches remain atomic and historical Claude output stays immutable. The managed runner reserves half the original time and monetary allowance for independent review; unused first-stage allowance transfers to review. It reports the actual stage allowance in the preserved prompt. Caps remain bounded and exhaustion never implies successful finalization.
 
 Context/cache timelines use a labelled keyboard-focusable scroll region with a bounded viewport height. Column headers stay at the top of that region during vertical scrolling and move with their columns during horizontal scrolling. Main, turn and child timelines use the same renderer. Pagination and source links remain available; print rendering removes the scroll-height limit. No metrics or saved prose are changed.
+
+
+## 0.17.0 — Cost first and explicit instruction compliance
+
+Expose source-agent cost in `get_session_overview.source_cost` and the report opening before the saved narrative. Calculate priced captured usage only from the analysis's pinned rate card and reconciled eligible response identities. Preserve known/eligible coverage, exact values, source IDs and rate-card provenance. Incomplete pricing is a subtotal, not the full bill. Without usable priced usage, select only a usable latest main-trace host cost snapshot. Cumulative snapshots are never summed or added to response estimates or child totals. Exclude child snapshots from main-host selection. Native snapshots without timestamps use importer provenance and captured file order; inconsistent source ordering stays unresolved. Disclose later captured responses, uncertain freshness and missing children. Estimates are not invoices, unknown cost is not zero, and source-agent cost is separate from analyzer usage.
+
+Keep overview cost provenance bounded with counts and source previews; report exports retain the exact identities. A saved report without these new facts remains renderable but explicitly lacks cost accounting; re-export from its investigation store is required to calculate it. Rendering a saved report does not reread source files or manufacture cost values.
+
+Expand the saved requirement map near the opening as Instruction and task compliance, with dedicated navigation. No map establishes no compliance verdict. Display completed, not met, unverified, superseded and withdrawn obligations using their saved basis and evidence; do not infer a score or new violation. Investigators and reviewers prioritize material user constraints, applicable captured instructions, actual approval gates and later authorizations, including whether repeated permission requests blocked already authorized drafting. Keep required developer approval before implementation when evidenced. Inspect the captured ending and recovery before calling a planning loop unresolved. Unavailable files from another workstation establish an inspection limit, not proof they were never produced. Preserve all historical Claude-authored findings and reviews unchanged.

@@ -245,7 +245,7 @@ class EvidenceTests(unittest.TestCase):
         self.read_all();saved=save_requirement_map(self.store,self.iid,self.mapped());i=save_incident(self.store,self.iid,self.episode(attribution=self.attribution()))
         data=report_data(self.store,self.iid,include_source_text=True,allow_content=True);rendered=render_report(data)
         self.assertEqual(data['requirement_map']['requirement_map'],saved['requirement_map'])
-        for expected in ('Requirements ·','Context and cache timeline','Captured tool outputs','Recovery episode','Cache write','Recorded execution durations'):
+        for expected in ('Instruction and task compliance ·','Context and cache timeline','Captured tool outputs','Recovery episode','Cache write','Recorded execution durations'):
             self.assertIn(expected,rendered)
         self.assertEqual(data['episode_resources'][i['id']]['metrics']['prompt_tokens']['value'],180)
         self.assertIn('requirements',json.dumps(data))

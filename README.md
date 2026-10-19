@@ -1,4 +1,6 @@
-# Ally Session Analyzer 0.16.1
+# Ally Session Analyzer 0.17.0
+
+Reports open with **the source agent's estimated cost**, or a clearly labelled partial subtotal, recorded host snapshot or unavailable amount. This is separate from analyzer cost and is not an invoice. An expanded **Instruction and task compliance** review follows the outcome, mapping material requests, constraints and approval gates to saved evidence. Successful delivery, missed instructions and unverified work remain distinct; historical Claude-authored analysis is preserved.
 
 ## Ask Claude without opening the GUI
 
@@ -20,7 +22,7 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.16.1.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.17.0.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. To create a full saved report, use the investigation workflow below; its managed runner adds a separate evidence-review host. Ordinary chat answers do not receive that independent review automatically. Skill instructions and successful tool checks do not guarantee that every Claude answer is correct.
@@ -117,7 +119,9 @@ A recommendation contains its trigger, target, concrete change, tradeoffs and fa
 
 ## Read the session report
 
-The opening contains Claude's saved one-to-three-sentence synopsis of intent, recorded work and outcome, followed by open requirements and findings. Requirement rows separate requested work, status and verification evidence. Every turn remains accessible; descriptive finding links and explicit evidence filters help locate relevant work. Saved recovery attempts can be compared directly. Copy remaining work collates saved text, checks, limits and references without inventing an action. The renderer has no model or summarization step.
+The opening shows source-agent cost before Claude's saved synopsis and outcome. With a pinned rate card, reconciled captured response usage is priced once; incomplete pricing is a subtotal. Without priced usage, a usable latest main-trace host snapshot can supply a recorded estimate. Cumulative snapshots are never summed or added to response costs. Snapshot freshness, missing children, rate-card provenance and exact values remain inspectable. No usable cost evidence means unavailable, not zero. Old saved JSON without cost accounting stays unavailable until re-exported from its investigation store.
+
+The expanded instruction and task compliance review shows saved requirement descriptions, statuses and verification evidence without creating new verdicts or a compliance score. It covers adherence to the captured task instructions, rather than regulatory certification. Every turn remains accessible; descriptive finding links and explicit evidence filters help locate relevant work. Saved recovery attempts can be compared directly. Copy remaining work collates saved text, checks, limits and references without inventing an action. The renderer has no model or summarization step.
 
 Full requirement, recovery, token and source details remain behind their controls. Proposed changes appear once. Literal previews retain complete source text when source embedding is enabled. Library HTML exports use the current layout over immutable saved data; original HTML and JSON remain retained.
 
@@ -153,7 +157,7 @@ The writing skill requires specific evidence, plain language and concrete remain
 ```sh
 python3 -m unittest discover -v
 python3 scripts/package_plugin.py
-claude --plugin-dir dist/ally-session-analyzer-0.16.1.zip
+claude --plugin-dir dist/ally-session-analyzer-0.17.0.zip
 ```
 
 The ZIP includes only allowlisted implementation files, skills and documentation. It excludes private logs, stores, reports, tests and legacy variants. The engine and regression tests run without Claude; opt-in live tests use the operator's authenticated Claude host. CLI plugin loading is tested; permanent desktop installation and other operating systems are not certified.

@@ -10,6 +10,7 @@ import re
 
 from .session_finding_links import finding_links
 from .session_reading import REQUIREMENT_STATUS, current_review, remaining_work_text
+from .session_cost import cost_readout
 from .session_story import saved_source_explanation
 
 
@@ -115,6 +116,19 @@ def markdown_parts(data):
     latest = run.get('review_workflow', {}).get('latest_draft_id')
     draft = next((r for r in data.get('conclusion_drafts', []) if r['id'] == latest), None)
     owner = latest if draft and all(draft['conclusion'].get(k) == run.get(k) for k in ('synopsis','observed_outcome','summary')) else None
+    cost = cost_readout(data.get('source_cost'))
+    heading(cost['label'] + ': ' + cost['value'], 2)
+    paragraph(cost['basis'])
+    paragraph(cost['limitations'][0])
+    if data.get('source_cost'):
+        add('<details>\n<summary>Cost basis and exact values</summary>\n\n')
+        for limit in cost['limitations']: paragraph(limit)
+        details('Exact accounting', data['source_cost'])
+        add('</details>\n\n')
+    if cost['source_ids']:
+        add('<details>\n<summary>Cost sources · ' + str(len(cost['source_ids'])) + '</summary>\n\n')
+        refs([{'source_id':sid} for sid in cost['source_ids']], None)
+        add('</details>\n\n')
     heading(run.get('title') or 'Session ' + run['root_session_id'], 1)
     paragraph('Investigation: ' + run['run_status'])
     paragraph('Session: ' + run['root_session_id'] + ' · Analysis: ' + run['id'])
@@ -139,13 +153,7 @@ def markdown_parts(data):
         heading('Remaining work and evidence')
         code(remaining)
 
-    main = data.get('main_accounting', data['accounting'])
-    heading('Main-agent metrics')
-    paragraph('Input total includes uncached input, cache write and cache read. Thinking is included in output when reported that way by the provider. Observed spans are not active-work durations.')
-    metrics(main.get('session', {}))
-    paragraph(main.get('limitations'))
-
-    heading('Requirements')
+    heading('Instruction and task compliance')
     mapped = data.get('requirement_map')
     if not mapped: paragraph('No requirement map has been saved. Inventory coverage is not established.')
     else:
@@ -161,6 +169,12 @@ def markdown_parts(data):
             for limit in item['missing_evidence']: paragraph(limit)
             details('Requirement, verification, revision and intent changes', item)
         details('Request coverage and inventory prerequisites', {k:v for k,v in mapped.items() if k != 'requirement_map'})
+
+    main = data.get('main_accounting', data['accounting'])
+    heading('Main-agent metrics')
+    paragraph('Input total includes uncached input, cache write and cache read. Thinking is included in output when reported that way by the provider. Observed spans are not active-work durations.')
+    metrics(main.get('session', {}))
+    paragraph(main.get('limitations'))
 
     navigation = [(saved, finding_links(data, saved)) for saved in data.get('incidents', [])]
     heading('Turns')

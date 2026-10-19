@@ -2,7 +2,7 @@
 name: write-report
 description: Write or edit Ally Session Analyzer explanations and recommendations in clear, specific prose grounded in the selected session evidence. Use before saving insights or presenting an analysis.
 metadata:
-  version: write-report-v13
+  version: write-report-v14
 ---
 
 Write for a teammate deciding whether anything should change. Make the evidence, optional action and important limit easy to find. Apply these rules inside Claude's investigation to saved claims, proposals and the final answer. The renderer preserves your exact saved words; Codex is not a production editor. This skill does not authorize applying a change or accessing more data.
@@ -15,7 +15,7 @@ Write for a teammate deciding whether anything should change. Make the evidence,
 - Check whether the proposed fix already happened. Follow available later evidence before saving; an arbitrary context-window boundary is not a reason to stop when it could change the advice. If a fix happened, identify it and suggest retaining or testing it in future work only when useful. Do not give stale repair advice. A passed command establishes that check's result, not completion of the whole task.
 - Name the concrete target and proposed change. For a prompt, supply the actual replacement or addition and its triggering situation. For a skill, prefer a small edit to an existing relevant skill; identify the procedure and the proposed instruction. Do not invent a path, claim a skill was loaded without evidence, or treat a current file as its historical version.
 - Separate an observed problem from a possible cause. State a material alternative or missing fact. Avoid invented alternatives added to fill a field; say the cause is unresolved when that is the supported conclusion.
-- Use registered measurements for material numerical claims, with their scope and coverage. Do not infer cost from bytes, waste from token volume, execution time from timestamp gaps, or team-wide prevalence from one session. This investigation concerns one root session and admitted children. Turn-pattern shares describe reconstructed turns, not quality or time spent. Prompt tokens include cached reads and writes; do not add them twice.
+- Use registered measurements for material numerical claims, or the overview's `source_cost` for source-session cost, with their scope and coverage. Do not infer cost from bytes, waste from token volume, execution time from timestamp gaps, or team-wide prevalence from one session. This investigation concerns one root session and admitted children. Turn-pattern shares describe reconstructed turns, not quality or time spent. Prompt tokens include cached reads and writes; do not add them twice.
 - Keep this session's preferences scoped to this session. A chosen document size, file count or workflow step is not a universal requirement. Do not report your own tool-call counts or context savings unless an execution record or measurement supplies them.
 - Include an observable follow-up check. Describe proposed benefits as something to test. Do not promise a percentage improvement or call a change proven because its description sounds plausible.
 - Return fewer recommendations, or none, when evidence is weak. Do not fill space with advice to be clearer, test more, improve collaboration or optimize workflows. A recommendation that fits almost any session needs more evidence or should be removed.
@@ -51,6 +51,10 @@ Useful: "The edit was rejected because the file changed after the earlier read. 
 A style pass is not a factual verifier or a guarantee that a report is free of low-quality AI output. Do not award a 'slop-free' badge, an AI-authorship score or an unmeasured quality rating. Report what was actually checked.
 
 ## Session opening
+
+The report starts with the source agent's cost. Use only the overview's `source_cost` facts when discussing it: name a complete estimate for captured responses, a partial subtotal, a recorded snapshot, or unavailable cost accurately. Give the relevant scope and evidence limit; estimates are not invoices and the analyzer's own cost is separate. Do not infer missing cost, add cumulative snapshots, or present incomplete pricing as the full session bill.
+
+Make instruction and task compliance prominent in the outcome: whether the material user constraints and evidenced approval gates were followed, which obligations remain unmet or unverified, and whether a planning loop recovered before the captured ending. Preserve successful delivery separately from any missed explicit process requirement. Cite the instruction or authorization and the decisive action/result; missing external artifacts establish a verification gap, not automatic noncompliance. Do not manufacture a violation, a compliance score, or an approval requirement to fill this section.
 
 Give the opening fields different jobs. `synopsis.text` is one to three sentences identifying the developer's intent and what work was done. `observed_outcome.text` states what is supported as complete, what remains unfinished, and any decision-changing evidence gap. `summary` explains the reasoning behind the conclusion; it is supporting detail, not another chronological recap. Do not paste the same chronology or caution into all three. Keep the title short enough to identify the task, without listing every failure and qualification. Read the requests, current requirement map and relevant results before writing. Do not convert a completion claim into a verified result. Supply source references and keep each missing-evidence statement beside the affected claim, once. The renderer has no summarization step and will not improve your wording.
 

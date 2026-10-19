@@ -1,5 +1,11 @@
 # Validation
 
+## 0.17.0 — Cost first and instruction compliance
+
+The full offline suite discovered 317 tests: 315 passed and two optional private-corpus tests skipped. Eleven new cost regressions cover pinned rates, cache TTL pricing and thinking counted once, streaming reconciliation, partial usage, legitimate zero cost, unlinked/missing children, cumulative timestamp-less snapshots, process resets, invalid fields, ordering ambiguity, analyzer-cost isolation, old report compatibility and unchanged report data. Existing requirement tests now check the expanded compliance review and preserved saved statuses. Native numeric cost fields remain inspectable even when a cost-state record has no message text. No live Claude run was performed; these checks do not establish improved diagnostic quality or complete compliance discovery.
+
+Browser verification used labelled synthetic captures in the 721-pixel in-app browser and a 390 × 844 report iframe. It checked the cost-first opening, partial subtotal and unavailable states, expanded compliance rows, navigation and mobile wrapping. A mobile anchor check exposed a heading hidden by sticky navigation; the compliance anchor now uses the matching scroll offset. Original saved prose, source identities, exact values, source exports and unknown states remain preserved. Private native logs were also spot-checked locally for snapshot selection and freshness; they were not copied into the repository or package.
+
 ## 0.16.1 — workflow repair, completed migration review and sticky timeline headings
 
 The full suite discovered 306 tests: 304 passed and two optional private-corpus tests skipped. After the presentation change, 39 report/evidence/packaging checks passed; final review-workflow and clean-package checks passed 19 tests. New managed-workflow regressions preserve reader-facing caption requirements while accepting identity-only ordering/membership anchors, with scope and evidence-read enforcement intact.
