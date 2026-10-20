@@ -1,5 +1,5 @@
 """Versioned intent-to-result maps. Authorship is separate from prerequisites."""
-from .session_scope import exposure, get_run, scope_rows
+from .session_scope import exposure, get_run, instruction_updates, scope_rows
 from .util import AnalyzerError
 
 VERSION = 'requirement-evidence-v3'
@@ -79,11 +79,14 @@ def current_map(store, investigation_id):
 def map_coverage(store, run, requirement_map):
     from .session_investigation import accounting
     main = {r['id'] for r in scope_rows(store, run) if r['agent_id']=='main'}
-    requests = {t['request_event_id'] for t in accounting(store, run)['turns'] if t['request_event_id'] in main}
+    main_requests = {t['request_event_id'] for t in accounting(store, run)['turns'] if t['request_event_id'] in main}
+    updates = {u['source_id'] for u in instruction_updates(store, run)}
+    requests = main_requests | updates
     mapped = {r['source_id'] for item in requirement_map['requirements'] for r in item['intent_references']}
     mapped |= {r['source_id'] for item in requirement_map['requirements'] for change in item['intent_changes'] for r in change['references']}
     context = {r['source_id'] for item in requirement_map['context_only'] for r in item['references']}
-    return {'main_request_count':len(requests), 'population':'captured_main_task_requests',
+    return {'main_request_count':len(main_requests), 'instruction_update_source_count':len(updates),
+            'requirement_source_count':len(requests), 'population':'captured_main_task_requests_and_structured_instruction_updates',
             'coverage_status':'empty_population' if not requests else 'partial' if requests-mapped-context else 'all_observed_requests_referenced',
             'mapped_request_ids':sorted(requests & mapped),
             'context_only_request_ids':sorted(requests & context), 'unmapped_request_ids':sorted(requests - mapped - context),

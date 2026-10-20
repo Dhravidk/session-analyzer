@@ -1,6 +1,10 @@
-# Ally Session Analyzer 0.18.0
+# Ally Session Analyzer 0.19.0
 
-Claude's default session readout starts with **“You spent approximately $… (… input tokens, including … cached input tokens; … output tokens, including … reasoning tokens) on this session.”** The values come from the scoped accounting; unavailable values and partial cost stay explicit. Recommendations/outcome come next, followed by evidence and concrete changes. Caching and compaction diagnosis or tuning is on request; the underlying analysis, tool-call evidence and follow-up tools remain available. Source cost is separate from analyzer cost and is not an invoice. The expanded **Instruction and task compliance** review preserves completed, not met and unverified outcomes, approval gates and historical Claude-authored findings.
+Claude's default session readout starts with **“You spent approximately $… (… input tokens, including … cached input tokens; … output tokens, including … reasoning tokens) on this session.”** The values come from scoped accounting; unavailable values and partial cost stay explicit. The recommendation or outcome comes next, followed immediately by separate **Task outcome** and **Instruction following** assessments, decisive evidence and supported concrete changes. Claude checks the actual request, authorizations, actions/results and captured ending; unmet and unverified outcomes stay distinct. Required approval before implementation remains intact. Caching and compaction diagnosis or tuning is on request; all underlying accounting, evidence and follow-up tools remain available. Source cost is separate from analyzer cost and is not an invoice.
+
+`prepare_session_reply` requires both authored assessments to appear in the visible body before returning a ready reply. It preserves their exact wording and all historical findings; it does not infer a verdict or certify semantic correctness. A missing external artifact is not proof of nonproduction, and an already adequate ignored instruction does not justify adding the same rule again.
+
+With disclosure enabled, the general readout requires reading indexed ordinary requests and structured queued instruction updates, including continuations. These updates stay separate from reconstructed turns and token counts. The default body is at most 450 words; Claude revises it rather than the tool shortening it. Guidance also checks recorded parent branches before attributing an ignored authorization: chronological order alone does not prove delivery into a model response.
 
 ## Ask Claude without opening the GUI
 
@@ -22,7 +26,7 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.18.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.19.0.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. To create a full saved report, use the investigation workflow below; its managed runner adds a separate evidence-review host. Ordinary chat answers do not receive that independent review automatically. Skill instructions and successful tool checks do not guarantee that every Claude answer is correct.
@@ -159,7 +163,7 @@ The writing skill requires specific evidence, plain language and concrete remain
 ```sh
 python3 -m unittest discover -v
 python3 scripts/package_plugin.py
-claude --plugin-dir dist/ally-session-analyzer-0.18.0.zip
+claude --plugin-dir dist/ally-session-analyzer-0.19.0.zip
 ```
 
 The ZIP includes only allowlisted implementation files, skills and documentation. It excludes private logs, stores, reports, tests and legacy variants. The engine and regression tests run without Claude; opt-in live tests use the operator's authenticated Claude host. CLI plugin loading is tested; permanent desktop installation and other operating systems are not certified.

@@ -35,6 +35,31 @@ def scope_rows(store, run):
         return [dict(r) for r in db.execute("SELECT e.* FROM scope_events s JOIN events e ON e.id=s.event_id AND e.dataset_id=? WHERE s.scope_id=? ORDER BY s.ordinal", (scope["dataset_id"], run["scope_id"]))]
 
 
+def queued_instruction_metadata(raw):
+    """Recognize a structured historical update, never prose claiming user origin."""
+    attachment = raw.get('attachment')
+    if (raw.get('type') != 'attachment' or not isinstance(attachment, dict)
+            or attachment.get('type') != 'queued_command' or attachment.get('commandMode') != 'prompt'
+            or not isinstance(attachment.get('prompt'), str) or not attachment['prompt'].strip()):
+        return None
+    origin = attachment.get('origin')
+    human = isinstance(origin, dict) and origin.get('kind') == 'human' and attachment.get('humanTurn') is True
+    return {'source_kind': 'queued_command_attachment',
+            'origin_basis': 'captured_human_update' if human else 'queued_update_origin_unverified'}
+
+
+def instruction_updates(store, run):
+    """Source inventory separate from reconstructed turns and token accounting."""
+    result = []
+    for row in scope_rows(store, run):
+        if row['agent_id'] != 'main' or row['kind'] != 'attachment':
+            continue
+        metadata = queued_instruction_metadata(strict_json(row['raw']))
+        if metadata:
+            result.append({'source_id': row['id'], 'timestamp': row['timestamp'], **metadata})
+    return result
+
+
 def entities(store, run, kind):
     with store.connect() as db:
         return [strict_json(r[0]) for r in db.execute("SELECT payload FROM scope_entities WHERE scope_id=? AND kind=? ORDER BY id", (run["scope_id"], kind))]

@@ -183,7 +183,7 @@ class Service:
                 function = getattr(module, name, None)
                 if function:
                     kwargs = dict(a)
-                    if name in ("read_investigation_evidence", "read_investigation_batch", "search_investigation_text", "read_turn_evidence", "get_tool_output_index", "export_session_investigation"):
+                    if name in ("read_investigation_evidence", "read_investigation_batch", "search_investigation_text", "read_turn_evidence", "get_tool_output_index", "export_session_investigation", "prepare_session_reply"):
                         kwargs["allow_content"] = self.allow_content
                     return function(self.store, **kwargs)
         if name == "import_bundle":

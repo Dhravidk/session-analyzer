@@ -58,17 +58,23 @@ def request_coverage(store, run):
     """Task requests include SDK submissions, without claiming human origin."""
     from .session_diagnostics import inspected_reference
     from .session_investigation import accounting
-    from .session_scope import scope_rows
+    from .session_scope import instruction_updates, scope_rows
     main = {r['id'] for r in scope_rows(store, run) if r['agent_id']=='main'}
     delivered = exposure(store,run['id'])['sources']
     turns = [t for t in accounting(store,run)['turns'] if t['request_event_id'] in main]
     missing = [{'turn_id':t['id'],'turn_number':i,'source_id':t['request_event_id']}
                for i,t in enumerate(turns,1) if not inspected_reference(store,run,{'source_id':t['request_event_id']},delivered)]
-    return {'main_requests':len(turns), 'fully_read':len(turns)-len(missing), 'unread_requests':missing,
-            'population':'captured_main_task_requests', 'coverage_status':'empty_population' if not turns else 'partial' if missing else 'fully_delivered',
-            'complete_for_observed_population':bool(turns) and not missing,
+    updates = instruction_updates(store, run)
+    unread_updates = [u for u in updates if not inspected_reference(store,run,{'source_id':u['source_id']},delivered)]
+    unread = missing + unread_updates
+    return {'main_requests':len(turns), 'fully_read':len(turns)-len(missing), 'unread_requests':unread,
+            'instruction_update_sources':len(updates), 'instruction_updates_fully_read':len(updates)-len(unread_updates),
+            'update_origin_counts':dict(Counter(u['origin_basis'] for u in updates)),
+            'population':'captured_main_task_requests_and_structured_instruction_updates',
+            'coverage_status':'empty_population' if not turns and not updates else 'partial' if unread else 'fully_delivered',
+            'complete_for_observed_population':bool(turns or updates) and not unread,
             'origin_counts':dict(Counter(t['origin_basis'] for t in turns)),
-            'limitation':'Reading requests establishes exposure only, not a requirement inventory, fulfillment, full trajectory coverage or comprehension.'}
+            'limitation':'Reading indexed requests/updates establishes analyzer exposure only, not delivery into a past response, a complete requirement inventory, fulfillment or comprehension. Updates embedded only in ordinary prose/tool results may need source investigation; source counts are not unique obligations.'}
 
 
 def get_investigation_review(store, investigation_id, limit=20, offset=0):

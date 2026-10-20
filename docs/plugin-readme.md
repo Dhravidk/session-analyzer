@@ -1,8 +1,10 @@
-# Ally Session Analyzer 0.18.0
+# Ally Session Analyzer 0.19.0
 
-Claude's default session readout starts with “You spent approximately $… (… input tokens, including … cached input tokens; … output tokens, including … reasoning tokens) on this session.” The counts come from the scoped accounting; missing values and partial costs stay explicit. It then gives recommendations or the outcome, session evidence, and concrete edits where supported, preserving required approval before implementation.
+Claude's default session readout starts with “You spent approximately $… (… input tokens, including … cached input tokens; … output tokens, including … reasoning tokens) on this session.” The counts come from scoped accounting; missing values and partial costs stay explicit. The recommendation or outcome comes next, followed immediately by separate **Task outcome** and **Instruction following** assessments, decisive evidence and supported edits. Claude checks actual requests, authorizations, actions/results and later recovery. Required approval before implementation remains intact; an unverified result is not automatically a failure.
 
-Cache and compaction diagnosis or tuning is on request. The headline still includes cached input, and the existing token accounting, tool-call evidence, compaction records, timelines and follow-up tools remain available. This changes the default message, not the underlying analysis. The plugin preflights new general replies without editing their authored body or historical findings.
+Cache and compaction diagnosis or tuning is on request. The headline still includes cached input, and the existing token accounting, tool-call evidence, compaction records, timelines and follow-up tools remain available. The plugin requires both authored compliance assessments in the visible body before returning a ready reply. It preserves the body and historical findings verbatim; this presence check does not establish their truth. No compliance score or automatic violation is generated.
+
+With disclosure enabled, read indexed ordinary requests and structured queued updates before a whole-session verdict; source continuations remain required. Updates do not become new reconstructed turns or change token totals. Keep the default body within 450 words. Check recorded parent branches before blaming an assistant for ignoring a message; an earlier timestamp does not prove delivery into that response's context. No user host/model settings or global hooks are changed.
 
 ## Ask Claude without opening the GUI
 
@@ -24,7 +26,7 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.18.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.19.0.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. To create a full saved report, use the investigation workflow below; its managed runner adds a separate evidence-review host. Ordinary chat answers do not receive that independent review automatically. Skill instructions and successful tool checks do not guarantee that every Claude answer is correct.
@@ -50,7 +52,7 @@ Local deterministic accounting and a single-session investigation workflow for a
 The session library and standalone report offer HTML, Markdown (.md), and JSON exports. Markdown uses the saved analysis and included source text without another model call. The CLI and `export_session_investigation` tool accept format `md`; their existing source-disclosure controls still apply.
 
 ```sh
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.18.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.19.0.zip
 ```
 
 Use `/ally-session-analyzer:analyze /absolute/path/session.log` to import and measure, `/ally-session-analyzer:explain ANALYSIS_ID` for accounting, or `/ally-session-analyzer:investigate INVESTIGATION_ID` for the scoped investigation. The investigation skill can also select one root from an analysis. Loading the plugin does not collect logs automatically.

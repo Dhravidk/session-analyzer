@@ -43,6 +43,9 @@ def source_role(store, run, source_id):
 def record_role(raw, kind=None):
     if kind == 'artifact':
         return 'artifact'
+    from .session_scope import queued_instruction_metadata
+    if queued_instruction_metadata(raw):
+        return 'user_statement'
     blocks = content_blocks(raw)
     if any(b.get('type') == 'tool_result' for b in blocks) or isinstance(raw.get('toolUseResult'), dict):
         return 'tool_result'

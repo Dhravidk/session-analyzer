@@ -47,3 +47,11 @@ python3 scripts/test_claude_readout.py --claude /absolute/path/approved/claude
 ```
 
 This uses a labelled synthetic session and a $2 total allowance. It checks the computed first sentence, a default reply that keeps resource detail on request, the requested follow-up, original accounting and executed-tool policy. Prompts, immutable tested package, every answer, rejected attempts and raw host traces remain under `.analysis/claude-readout/`. The formatting check does not certify factual correctness or reliable behavior across models. No private developer log is used.
+
+For an explicitly selected real log, with permission to send controlled excerpts to the approved Claude host:
+
+```sh
+python3 scripts/test_claude_developer_reply.py --source /absolute/path/session.jsonl --allow-content --claude /absolute/path/approved/claude
+```
+
+This exercises the native conversational reply with a $3 cap and 600-second timeout. `--effort high` selects a higher-effort test without changing user host settings. It preserves the immutable tested ZIP, question, raw transcript, unedited answer and audit under `.analysis/claude-developer-reply/`. Checks cover the exact computed opening, visible authored assessments, request/update exposure, verbatim ready reply, default topic scope, executed-tool policy and unchanged source/accounting. Review the actual claims against their sources separately. It is not a completed independently reviewed investigation. The development harness and selected logs are excluded from the distributable ZIP.

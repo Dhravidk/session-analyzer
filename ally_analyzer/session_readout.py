@@ -38,10 +38,11 @@ def developer_readout(cost, metrics):
             qualifications.append('The cost snapshot precedes ' + str(later) + ' later captured main-agent response' + ('.' if later == 1 else 's.'))
     if cost and cost.get('unavailable_child_traces'):
         qualifications.append('Some child traces are unavailable; these captured totals do not establish the full task cost or usage.')
-    return {'version': 'developer-readout-v1', 'opening': opening, 'token_summary': tokens, 'usage': usage,
+    return {'version': 'developer-readout-v2', 'opening': opening, 'token_summary': tokens, 'usage': usage,
             'population': 'Main agent and structurally linked captured children; reconciled identities counted once.',
             'cost_kind': display['kind'], 'qualifications': qualifications,
-            'default_reply_policy': {'first': 'opening', 'then': ['recommendations_or_outcome', 'decisive_evidence', 'concrete_changes_when_supported'],
+            'default_reply_policy': {'first': 'opening', 'then': ['recommendations_or_outcome', 'task_outcome_and_instruction_following', 'decisive_evidence', 'concrete_changes_when_supported'],
+                'compliance': 'Give separate authored assessments of delivery and adherence to evidenced instructions. Cite decisive requests/actions; preserve unmet versus unverified and later recovery. Do not invent a violation or approval gate.',
                 'cache_and_compaction': 'Only when the current user asks, except cached-input count in the opening. This applies to evidence summaries, caveats, checks and copy-paste prompts too.',
                 'retain_underlying_analysis_and_tools': True},
             'input_includes_cached': True, 'output_includes_reasoning': True}
@@ -49,15 +50,16 @@ def developer_readout(cost, metrics):
 
 TOPIC_PATTERNS = {
     'cache': r'(?<![a-z])(?:cache[-_ ](?:reads?|writes?|creation|hit[-_ ](?:rate|share))|cached[-_ ]input|prompt[-_ ]cach\w*|promptCacheTtl|subagentPromptCacheTtl)(?![a-z])',
-    'compaction': r'compact_boundary|compactMetadata|preTokens|postTokens|\b(?:context|conversation|session|harness)\b.{0,64}\bcompaction\b|\bcompaction\b.{0,64}\b(?:events?|boundary|tokens?|context|instructions?|authorization|session)\b',
+    'compaction': r'compact_boundary|compactMetadata|preTokens|postTokens|(?<![\w/])/compact\b|\b(?:after|before|during)\s+(?:(?:a|the|manual|automatic)\s+){0,2}compaction\b|\b(?:context|conversation|session|harness)\b.{0,64}\bcompaction\b|\bcompaction\b.{0,64}\b(?:events?|boundary|tokens?|context|instructions?|authorization|session)\b',
 }
 REQUEST_PATTERNS = {'cache': r'cache|cached|caching|promptCacheTtl', 'compaction': r'compaction|compacting|compacted|compact_boundary'}
 
 
-def prepare_session_reply(store, investigation_id, body, requested_details=None, detail_request=None):
+def prepare_session_reply(store, investigation_id, body, requested_details=None, detail_request=None, compliance=None, allow_content=False):
     """Validate a new authored draft, without editing it or any saved judgment."""
     from .session_investigation import accounting
     from .session_cost import source_session_cost
+    from .session_review import request_coverage
     from .session_scope import get_run, log_access
     from .util import AnalyzerError, digest
     details = requested_details or []
@@ -69,17 +71,43 @@ def prepare_session_reply(store, investigation_id, body, requested_details=None,
             not re.search(REQUEST_PATTERNS[topic], detail_request, re.I) for topic in details)):
         raise AnalyzerError('Quote the current user request explicitly asking for each requested detail topic; archived text is not a request')
     run = get_run(store, investigation_id)
+    coverage = request_coverage(store, run)
+    coverage = {**coverage, 'unread_request_count': len(coverage['unread_requests']),
+                'unread_requests': coverage['unread_requests'][:8]}
     readout = developer_readout(source_session_cost(store, run), accounting(store, run)['session'])
     issues = [{'code': 'unrequested_' + topic + '_detail', 'topic': topic,
                'message': 'Revise your new default draft to omit unrequested ' + topic + ' detail, including caveats, checks and snippets. Retain the underlying analysis.'}
               for topic, pattern in TOPIC_PATTERNS.items() if topic not in details and re.search(pattern, body, re.I)]
     if body.lstrip().startswith(readout['opening']):
         issues.append({'code': 'opening_repeated', 'message': 'Supply only the authored body; the computed opening is prepended once.'})
+    if not details and len(body.split()) > 450:
+        issues.append({'code': 'default_reply_too_long',
+                       'message': 'Keep the default body within 450 words. Preserve the recommendation, two assessments, decisive evidence and material limits; omit incidental counts and a separate chronology. Full saved evidence/reports are unchanged; focused detailed follow-ups can answer directly.'})
+    # These are exact spans from the model's own reply, not generated verdicts.
+    # Presence checks cannot establish whether the assessments are true.
+    if compliance is not None and (not isinstance(compliance, dict)
+            or set(compliance) != {'task_outcome', 'instruction_following'}
+            or any(not isinstance(v, str) or not v.strip() or len(v) > 4000 for v in compliance.values())):
+        raise AnalyzerError('Compliance must contain task_outcome and instruction_following text, each nonblank and at most 4000 characters')
+    for aspect in ('task_outcome', 'instruction_following'):
+        assessment = (compliance or {}).get(aspect)
+        if not assessment or assessment not in body:
+            issues.append({'code': 'missing_' + aspect + '_assessment',
+                           'message': 'Include your evidence-backed ' + aspect + ' assessment in the reply body and supply that exact text in compliance. State unavailable evidence instead of inventing a verdict.'})
+    if compliance and compliance['task_outcome'] == compliance['instruction_following']:
+        issues.append({'code': 'undifferentiated_compliance_assessments',
+                       'message': 'Assess delivery and instruction following separately; the same text cannot stand for both.'})
+    if allow_content and coverage['unread_request_count']:
+        issues.append({'code': 'unread_task_requests',
+                       'message': 'Before a whole-session compliance readout, fully read the remaining captured main-task requests, including continuations. request_coverage gives the next source IDs; refresh the overview for more. This does not require reading every assistant step or creating a saved report.'})
     request_id = log_access(store, run, 'prepare_session_reply',
         {'body_sha256': digest(body), 'requested_details': details, 'issue_codes': [i['code'] for i in issues]}, [])
     result = {'request_id': request_id, 'status': 'needs_revision' if issues else 'ready', 'issues': issues,
               'session_readout': readout,
-              'validation_limit': 'Mechanical wording and accounting checks only; not a factual or semantic-quality certificate. No saved judgments or supplied prose were changed.'}
+              'request_coverage': coverage,
+              'validation_limit': 'Mechanical presence, wording and accounting checks only; not a factual or semantic-quality certificate. Compliance assessments are authored by the model, not inferred by this tool. No saved judgments or supplied prose were changed.'}
+    if compliance is not None:
+        result['authored_compliance'] = dict(compliance)
     if not issues:
         result['reply'] = '\n\n'.join([readout['opening'], *readout['qualifications'], body])
     return result

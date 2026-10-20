@@ -1,3 +1,17 @@
+# Implementation status — 0.19.0
+
+General developer replies keep the computed cost/four-count opening, then the recommendation or outcome and separate concise **Task outcome** and **Instruction following** assessments. The writing guidance checks actual requests, approval boundaries, actions/results and the captured ending. It distinguishes pending-work admissions from proven absent files, unmet from unverified obligations, and delivery from procedural adherence. Exact skill edits still need inspected target snapshots; an adequate ignored rule is not grounds for duplication.
+
+`prepare_session_reply` requires two distinct assessment spans already present in the visible authored body. With disclosure enabled it also requires full delivery of all captured main-task requests, using bounded unread-ID previews from the overview. This catches skipped later authorizations and request continuations without requiring every assistant step or a saved report. Metadata-only scopes keep disclosure disabled and preserve judgment limits. The tool checks exposure/presence and preserves prose; it does not author or certify a compliance verdict. Default resource-detail checks, underlying accounting, source identities and follow-up tools remain intact.
+
+The request and requirement-map inventories also include structured `queued_command` prompt attachments, with captured-human versus unverified origin labels. These remain separate source counts, not new turns or unique obligation counts. Reminder-like prose inside a tool result is not promoted into a human request. The writing guidance still investigates relevant results for updates missing from the structured inventory, and checks recorded parents before equating chronology with model input delivery. Default bodies are limited to 450 words by returning an overlong draft for Claude to revise; saved reports are not truncated.
+
+An opt-in native-host harness preserves immutable tested packages, raw transcripts, unedited answers and audits for explicitly selected logs. Mechanical checks and manual source review are reported separately; earlier failed or inaccurate outputs remain unchanged. See [validation](validation.md) for the release's observed behavior and limits.
+
+The final offline suite passed 339 tests with two optional private-corpus skips. Both real-log native runs passed all nine mechanical checks; fresh source-review and standalone-readout stages each passed their eight checks while preserving prior answers. All 82 runtime/skill members in the private ZIP match those tested packages. Native strict plugin validation passed. These examples demonstrate the tested format and source-reviewed conclusions, not flawless unattended first-pass analysis.
+
+---
+
 # Implementation status — 0.18.0
 
 General Claude readouts begin with computed session cost, input, cached input, output and reasoning within output. `session_readout.opening` and its qualifications use the same scoped accounting as the report; unavailable/partial values remain explicit. Session metric version 4 adds separately reported thinking without changing existing token totals. Recommendations/outcome, decisive evidence and supported concrete edits follow, retaining required approval before implementation.

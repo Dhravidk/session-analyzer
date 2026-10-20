@@ -103,6 +103,7 @@ def compact_metrics(metrics):
 
 
 def get_session_overview(store, investigation_id):
+    from .session_review import request_coverage
     run = get_run(store, investigation_id)
     scope, metrics = get_scope(store, run), accounting(store, run)
     rows = scope_rows(store, run)
@@ -127,7 +128,11 @@ def get_session_overview(store, investigation_id):
     from .session_cost import compact_cost, source_session_cost
     from .session_readout import developer_readout
     cost = source_session_cost(store, run)
+    coverage = request_coverage(store, run)
+    coverage = {**coverage, 'unread_request_count': len(coverage['unread_requests']),
+                'unread_requests': coverage['unread_requests'][:8]}
     return {"request_id": request_id, "investigation": run, "scope_id": scope["id"], "event_count": len(rows),
+            "request_coverage": coverage,
             "source_cost": compact_cost(cost), "session_readout": developer_readout(cost, metrics['session']),
             "session_metrics": compact_metrics(metrics["session"]), "turn_count": len(metrics["turns"]),
             "turn_attribution_coverage": metrics["attribution_coverage"], "turn_patterns": patterns,
