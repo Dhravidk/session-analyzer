@@ -1,8 +1,10 @@
-# Ally Session Analyzer 0.19.0
+# Ally Session Analyzer 0.20.0
 
-Claude's default session readout starts with **“You spent approximately $… (… input tokens, including … cached input tokens; … output tokens, including … reasoning tokens) on this session.”** The values come from scoped accounting; unavailable values and partial cost stay explicit. The recommendation or outcome comes next, followed immediately by separate **Task outcome** and **Instruction following** assessments, decisive evidence and supported concrete changes. Claude checks the actual request, authorizations, actions/results and captured ending; unmet and unverified outcomes stay distinct. Required approval before implementation remains intact. Caching and compaction diagnosis or tuning is on request; all underlying accounting, evidence and follow-up tools remain available. Source cost is separate from analyzer cost and is not an invoice.
+Release candidate: final-package live validation is on hold after the approved Claude account returned HTTP 429. See [the release audit](docs/release-audit-0.20.0.md) for the passed earlier automatic-flow test and the remaining distribution gate.
 
-`prepare_session_reply` requires both authored assessments to appear in the visible body before returning a ready reply. It preserves their exact wording and all historical findings; it does not infer a verdict or certify semantic correctness. A missing external artifact is not proof of nonproduction, and an already adequate ignored instruction does not justify adding the same rule again.
+Claude's default session readout starts with **“You spent approximately $…”** and gives token counts and dollar amounts for input (including cached input) and output (including reasoning). Only the analyzed session is priced; analyzer/reviewer usage is excluded. A matching pinned rate card and complete source usage are needed for category dollars. A recorded total alone cannot supply that split; missing values and partial cost stay explicit. The recommendation or outcome comes next, followed immediately by separate **Task outcome** and **Instruction following** assessments, decisive evidence and supported concrete changes. Claude checks the actual request, authorizations, actions/results and captured ending; unmet and unverified outcomes stay distinct. Required approval before implementation remains intact. Caching and compaction diagnosis or tuning is on request; all underlying accounting, evidence and follow-up tools remain available. Source cost is separate from analyzer cost and is not an invoice.
+
+`prepare_session_reply` saves a valid draft and returns `review_required`. Claude automatically invokes the packaged `ally-session-analyzer:source-review` native Agent, which rereads the original requests/updates and decisive evidence in a fresh context, checks proposed edits against applicable instructions, and submits the complete reviewed body. The parent retrieves and copies only the accepted reply. There is no request for another user review pass or unreviewed fallback. Original drafts, review notes, rejected submissions and accepted wording remain immutable. The server checks linkage, fresh reads, literal quotes and visible assessments; it cannot certify entailment or independently attest the caller's identity. A missing external artifact is not proof of nonproduction, and an already adequate ignored instruction does not justify adding the same rule again.
 
 With disclosure enabled, the general readout requires reading indexed ordinary requests and structured queued instruction updates, including continuations. These updates stay separate from reconstructed turns and token counts. The default body is at most 450 words; Claude revises it rather than the tool shortening it. Guidance also checks recorded parent branches before attributing an ignored authorization: chronological order alone does not prove delivery into a model response.
 
@@ -26,10 +28,10 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.19.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.20.0.zip
 ```
 
-Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. To create a full saved report, use the investigation workflow below; its managed runner adds a separate evidence-review host. Ordinary chat answers do not receive that independent review automatically. Skill instructions and successful tool checks do not guarantee that every Claude answer is correct.
+Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. The general conversational readout automatically uses the packaged native source-review Agent; no second user prompt is required. Focused follow-ups do not restart a full review. The full saved-report workflow below retains its separate managed evidence-review host. Skill instructions and passed tool checks do not guarantee semantic correctness.
 
 
 ## Browse local sessions
@@ -87,7 +89,7 @@ This is packaged with the plugin; run it from the unpacked directory. It uses th
 
 The workflow maps all main-session task requests before completion; it does not require reading every assistant step. A voluntary partial finish remains a checkpoint, with at most one additional review continuation inside the original budget. The first finish submission is a saved draft. A separate Claude process rereads primary evidence, reviews causes, recovery, task outcome and missing-evidence claims, and can continue unfinished inquiry. It makes corrections through append-only revisions. Exact quoted evidence must occur in the source and have been delivered during review. Current records and the exact final draft need attributed review checks before finalization. This is model review, not an engine proof of entailment. `partial` remains valid; absent child logs do not by themselves require partial investigation. A completed investigation does not mean the developer's task succeeded.
 
-Each stage's prompt, transcript, answer, budget and usage are preserved. The original and revised text, negative review checks, HTML/JSON, immutable package snapshot and transport audit are retained in the new output directory. No Codex editor or automatic recommendation application runs. The model receives no example-specific answer or source IDs. The older interactive workflow below remains available; it does not automatically launch an independent review process.
+Each stage's prompt, transcript, answer, budget and usage are preserved. The original and revised text, negative review checks, HTML/JSON, immutable package snapshot and transport audit are retained in the new output directory. No Codex editor or automatic recommendation application runs. The model receives no example-specific answer or source IDs. The interactive full-investigation workflow below remains available. Its full-report review lifecycle is separate from the automatic native review of a general conversational readout.
 
 ## Interactive investigation with approved Claude
 
@@ -123,7 +125,7 @@ A recommendation contains its trigger, target, concrete change, tradeoffs and fa
 
 ## Read the session report
 
-The opening shows source-agent cost and four token counts before Claude's saved synopsis and outcome. `get_session_overview.session_readout.opening` gives Claude the computed sentence to copy, with material qualifications. Total input includes cached input; inclusive output includes separately reported reasoning. Missing reasoning is unavailable, not zero, and is never inferred from text. The population is the main agent and structurally linked captured children, with reconciled identities counted once. Detailed cache and compaction work stays in the existing accounting, timelines, source records and follow-up tools, rather than unsolicited default commentary. A user who asks for it gets those details through the same tools.
+The opening shows source-agent cost and four token counts with their dollar amounts before Claude's saved synopsis and outcome. `get_session_overview.session_readout.opening` gives Claude the computed sentence to copy, with material qualifications. Total input includes cached input; inclusive output includes separately reported reasoning. Missing reasoning is unavailable, not zero, and is never inferred from text. The population is the main agent and structurally linked captured children, with reconciled identities counted once. Detailed cache and compaction work stays in the existing accounting, timelines, source records and follow-up tools, rather than unsolicited default commentary. A user who asks for it gets those details through the same tools.
 
 With a pinned rate card, reconciled captured response usage is priced once; incomplete pricing is a subtotal. Without priced usage, a usable latest main-trace host snapshot can supply a recorded estimate. Cumulative snapshots are never summed or added to response costs. Snapshot freshness, missing children, rate-card provenance and exact values remain inspectable. No usable cost evidence means unavailable, not zero. Old saved JSON without cost accounting stays unavailable until re-exported from its investigation store.
 
@@ -163,7 +165,7 @@ The writing skill requires specific evidence, plain language and concrete remain
 ```sh
 python3 -m unittest discover -v
 python3 scripts/package_plugin.py
-claude --plugin-dir dist/ally-session-analyzer-0.19.0.zip
+claude --plugin-dir dist/ally-session-analyzer-0.20.0.zip
 ```
 
 The ZIP includes only allowlisted implementation files, skills and documentation. It excludes private logs, stores, reports, tests and legacy variants. The engine and regression tests run without Claude; opt-in live tests use the operator's authenticated Claude host. CLI plugin loading is tested; permanent desktop installation and other operating systems are not certified.

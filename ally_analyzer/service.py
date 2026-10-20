@@ -167,7 +167,7 @@ class Service:
             return guide
         if name in {t["name"] for t in SESSION_TOOLS}:
             validate(a, self.tool_definition(name)["inputSchema"])
-            from . import session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries, session_readout
+            from . import session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries, session_readout, session_reply_review
             if self.investigation_id and a.get("investigation_id") != self.investigation_id:
                 session_scope.log_access(self.store, session_scope.get_run(self.store, self.investigation_id), "blocked_scope", {"name": name}, error="Different investigation ID rejected")
                 raise AnalyzerError("This host is bound to a different investigation")
@@ -179,11 +179,13 @@ class Service:
                 session_scope.get_run(self.store, a["investigation_id"])
                 self.investigation_id = a["investigation_id"]
                 self.session_only = True
-            for module in (session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries, session_readout):
+            if name == 'prepare_session_reply':
+                return session_reply_review.prepare_reviewed_session_reply(self.store, **a, allow_content=self.allow_content)
+            for module in (session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries, session_readout, session_reply_review):
                 function = getattr(module, name, None)
                 if function:
                     kwargs = dict(a)
-                    if name in ("read_investigation_evidence", "read_investigation_batch", "search_investigation_text", "read_turn_evidence", "get_tool_output_index", "export_session_investigation", "prepare_session_reply"):
+                    if name in ("read_investigation_evidence", "read_investigation_batch", "search_investigation_text", "read_turn_evidence", "get_tool_output_index", "export_session_investigation", "get_session_reply_draft", "submit_session_reply_review", "get_reviewed_session_reply"):
                         kwargs["allow_content"] = self.allow_content
                     return function(self.store, **kwargs)
         if name == "import_bundle":

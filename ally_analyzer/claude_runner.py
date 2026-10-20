@@ -82,11 +82,13 @@ def terminal_host_failure(outcome, final):
     return None
 
 
-def audit_tool_policy(calls, transcript, allowed, allowed_skills=('ally-session-analyzer:write-report',)):
+def audit_tool_policy(calls, transcript, allowed, allowed_skills=('ally-session-analyzer:write-report',), allowed_agents=()):
     """Keep failed attempts visible; a host-rejected unknown tool did not execute."""
     def permitted(c):
-        return c['name'] in allowed or (c['name']=='Skill' and isinstance(c.get('input'),dict)
+        return (c['name'] in allowed or (c['name']=='Skill' and isinstance(c.get('input'),dict)
                                         and c['input'].get('skill') in allowed_skills)
+                or (c['name']=='Agent' and isinstance(c.get('input'),dict)
+                    and c['input'].get('subagent_type') in allowed_agents))
     undeclared = [c for c in calls if not permitted(c)]
     results = {}
     for line in transcript.read_text().splitlines():
@@ -133,6 +135,7 @@ def main(argv=None):
         selected_files = [plugin/'.claude-plugin/plugin.json', plugin/'.mcp.json', plugin/'bin/ally-session',
                           plugin/'scripts/ally-session.py']
         selected_files += list((plugin/'ally_analyzer').glob('*.py')) + list((plugin/'skills').glob('*/SKILL.md'))
+        selected_files += list((plugin/'agents').glob('*.md'))
         selected_files += [plugin/'ally_analyzer'/name for name in ('session_report.css','session_report.js',
                           'session_library.html','session_library.css','session_library.js')]
         selected_files += list((plugin/'ally_analyzer/icons').glob('*'))

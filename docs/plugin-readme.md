@@ -1,8 +1,10 @@
-# Ally Session Analyzer 0.19.0
+# Ally Session Analyzer 0.20.0
+
+Release candidate: final-package live validation is on hold after the approved Claude account returned HTTP 429. See [the release audit](docs/release-audit-0.20.0.md) for the passed earlier automatic-flow test and remaining distribution gate. Automatic review uses native plugin Agent support, tested on Claude Code 2.1.299; an unavailable reviewer leaves an explicit incomplete review.
 
 Claude's default session readout starts with “You spent approximately $…” and gives token counts and dollar amounts for input (including cached input) and output (including reasoning). Costs cover only the analyzed session, never the analyzer or reviewer. The two included portions are not added again. Source usage and a matching pinned rate card are required for category costs; a recorded total alone cannot provide that split. Missing values and partial costs stay explicit. The recommendation or outcome comes next, followed immediately by separate **Task outcome** and **Instruction following** assessments, decisive evidence and supported edits. Claude checks actual requests, authorizations, actions/results and later recovery. Required approval before implementation remains intact; an unverified result is not automatically a failure.
 
-Cache and compaction diagnosis or tuning is on request. The headline still includes cached input, and the existing token accounting, tool-call evidence, compaction records, timelines and follow-up tools remain available. The plugin requires both authored compliance assessments in the visible body before returning a ready reply. It preserves the body and historical findings verbatim; this presence check does not establish their truth. No compliance score or automatic violation is generated.
+Cache and compaction diagnosis or tuning is on request. The headline still includes cached input, and the existing token accounting, tool-call evidence, compaction records, timelines and follow-up tools remain available. `prepare_session_reply` saves an immutable draft and requires the packaged native `ally-session-analyzer:source-review` Agent automatically. The fresh reviewer rereads original requests/updates and decisive results, checks edits against existing instructions and saves a standalone body; the parent retrieves and copies the accepted reply verbatim. No extra user prompt is required, and no unreviewed ready fallback exists. Repeated submissions reuse the same draft; at most two review submissions are allowed. Drafts, notes and reviewed wording are retained. Backend checks verify linkage, fresh exposure, quotes and visible assessments, not semantic truth or independent caller identity. No compliance score or automatic violation is generated.
 
 With disclosure enabled, read indexed ordinary requests and structured queued updates before a whole-session verdict; source continuations remain required. Updates do not become new reconstructed turns or change token totals. Keep the default body within 450 words. Check recorded parent branches before blaming an assistant for ignoring a message; an earlier timestamp does not prove delivery into that response's context. No user host/model settings or global hooks are changed.
 
@@ -26,10 +28,10 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.19.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.20.0.zip
 ```
 
-Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. To create a full saved report, use the investigation workflow below; its managed runner adds a separate evidence-review host. Ordinary chat answers do not receive that independent review automatically. Skill instructions and successful tool checks do not guarantee that every Claude answer is correct.
+Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. The general conversational readout automatically uses the packaged native source-review Agent; no second user prompt is required. Focused follow-ups do not restart a full review. The full saved-report workflow below retains its separate managed evidence-review host. Skill instructions and passed tool checks do not guarantee semantic correctness.
 
 
 ## Browse local sessions
@@ -52,7 +54,7 @@ Local deterministic accounting and a single-session investigation workflow for a
 The session library and standalone report offer HTML, Markdown (.md), and JSON exports. Markdown uses the saved analysis and included source text without another model call. The CLI and `export_session_investigation` tool accept format `md`; their existing source-disclosure controls still apply.
 
 ```sh
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.19.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.20.0.zip
 ```
 
 Use `/ally-session-analyzer:analyze /absolute/path/session.log` to import and measure, `/ally-session-analyzer:explain ANALYSIS_ID` for accounting, or `/ally-session-analyzer:investigate INVESTIGATION_ID` for the scoped investigation. The investigation skill can also select one root from an analysis. Loading the plugin does not collect logs automatically.
@@ -96,7 +98,7 @@ This is packaged with the plugin; run it from the unpacked directory. It uses th
 
 The workflow maps all main-session task requests before completion; it does not require reading every assistant step. A voluntary partial finish remains a checkpoint, with at most one additional review continuation inside the original budget. The first finish submission is a saved draft. A separate Claude process rereads primary evidence, reviews causes, recovery, task outcome and missing-evidence claims, and can continue unfinished inquiry. It makes corrections through append-only revisions. Exact quoted evidence must occur in the source and have been delivered during review. Current records and the exact final draft need attributed review checks before finalization. This is model review, not an engine proof of entailment. `partial` remains valid; absent child logs do not by themselves require partial investigation. A completed investigation does not mean the developer's task succeeded.
 
-Each stage's prompt, transcript, answer, budget and usage are preserved. The original and revised text, negative review checks, HTML/JSON, immutable package snapshot and transport audit are retained in the new output directory. No Codex editor or automatic recommendation application runs. The model receives no example-specific answer or source IDs. The older interactive workflow below remains available; it does not automatically launch an independent review process.
+Each stage's prompt, transcript, answer, budget and usage are preserved. The original and revised text, negative review checks, HTML/JSON, immutable package snapshot and transport audit are retained in the new output directory. No Codex editor or automatic recommendation application runs. The model receives no example-specific answer or source IDs. The interactive full-investigation workflow below remains available. Its full-report review lifecycle is separate from the automatic native review of a general conversational readout.
 
 ## Subagent collection and inspection
 

@@ -23,6 +23,8 @@ class PackagingTests(unittest.TestCase):
                 members=set(archive.namelist())
                 self.assertIn('scripts/ally-session.py',members)
                 self.assertEqual(len([n for n in members if n.endswith('/SKILL.md')]),6)
+                self.assertIn('agents/source-review.md', members)
+                self.assertIn('ally_analyzer/session_reply_review.py', members)
                 self.assertTrue({'ally_analyzer/session_library.html','ally_analyzer/session_library.js',
                                  'ally_analyzer/session_library.css'} <= members)
                 self.assertFalse(any(n.startswith(('.analysis/','tests/','variants/','output/')) for n in members))

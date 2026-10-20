@@ -57,7 +57,7 @@ def developer_readout(cost, metrics):
             'cost_kind': display['kind'], 'qualifications': qualifications,
             'default_reply_policy': {'first': 'opening', 'then': ['recommendations_or_outcome', 'task_outcome_and_instruction_following', 'decisive_evidence', 'concrete_changes_when_supported'],
                 'compliance': 'Give separate authored assessments of delivery and adherence to evidenced instructions. Cite decisive requests/actions; preserve unmet versus unverified and later recovery. Do not invent a violation or approval gate.',
-                'cache_and_compaction': 'Only when the current user asks, except cached-input count in the opening. This applies to evidence summaries, caveats, checks and copy-paste prompts too.',
+                'cache_and_compaction': 'Only when the current user asks, except cached-input count and cost in the opening. This applies to evidence summaries, caveats, checks and copy-paste prompts too.',
                 'retain_underlying_analysis_and_tools': True},
             'input_includes_cached': True, 'output_includes_reasoning': True}
 

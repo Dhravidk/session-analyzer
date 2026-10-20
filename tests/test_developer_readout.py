@@ -174,9 +174,11 @@ class DeveloperReadoutTests(unittest.TestCase):
         with patch.dict(os.environ, {'ALLY_ANALYZER_INVESTIGATION_ID': self.iid}, clear=True):
             service = Service(self.store); self.addCleanup(service.close)
         result = service.call('prepare_session_reply', {'investigation_id': self.iid, 'body': ASSESSMENTS, 'compliance': COMPLIANCE})
-        self.assertEqual(result['status'], 'ready')
+        self.assertEqual(result['status'], 'review_required')
+        self.assertNotIn('reply', result)
         self.assertFalse(service.allow_content)
-        self.assertGreater(result['request_coverage']['unread_request_count'], 0)
+        draft = service.call('get_session_reply_draft', {'investigation_id': self.iid, 'draft_id': result['draft_id']})
+        self.assertGreater(draft['review_request_coverage']['unread_request_count'], 0)
         with self.assertRaises(AnalyzerError):
             service.call('prepare_session_reply', {'investigation_id': 'unrelated', 'body': ASSESSMENTS, 'compliance': COMPLIANCE})
 
@@ -222,8 +224,8 @@ class DeveloperReadoutTests(unittest.TestCase):
         self.assertEqual(still_blocked['request_coverage']['unread_request_count'], 1)
         service.call('read_investigation_evidence', {'investigation_id': self.iid, 'source_id': requests[1]['source_id']})
         ready = service.call('prepare_session_reply', {'investigation_id': self.iid, 'body': ASSESSMENTS, 'compliance': COMPLIANCE})
-        self.assertEqual(ready['status'], 'ready')
-        self.assertTrue(ready['reply'].endswith(ASSESSMENTS))
+        self.assertEqual(ready['status'], 'review_required')
+        self.assertNotIn('reply', ready)
 
     def test_unread_request_preview_is_bounded_and_refreshable(self):
         self.load([human(i, 'Synthetic task ' + str(i)) for i in range(10)])
@@ -293,7 +295,7 @@ class DeveloperReadoutTests(unittest.TestCase):
         self.assertIn('Synthetic added scope.', read['text'])
         self.assertEqual(record_role(queued_update(1)), 'user_statement')
         ready = service.call('prepare_session_reply', {'investigation_id': self.iid, 'body': ASSESSMENTS, 'compliance': COMPLIANCE})
-        self.assertEqual(ready['status'], 'ready')
+        self.assertEqual(ready['status'], 'review_required')
         self.assertEqual(ready['request_coverage']['instruction_updates_fully_read'], 1)
         self.assertEqual(get_session_overview(self.store, self.iid)['session_metrics'], before)
         partial_map = {'requirements': [{'intent_references': [{'source_id': ordinary['source_id']}], 'intent_changes': []}], 'context_only': []}

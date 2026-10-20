@@ -1,3 +1,17 @@
+# Implementation status — 0.20.0
+
+## Automatic conversational source review (0.20.0)
+
+Distribution is on hold pending a final-package native check after the approved Claude account limit resets. An earlier candidate passed the real collection-log default flow; the planning run was interrupted and the later candidate was blocked at startup by HTTP 429. See [the release audit](release-audit-0.20.0.md); those blocked checks are not passes.
+
+General developer readouts now save an immutable draft and invoke the packaged native Claude source-review Agent automatically, within the same user turn. The server withholds a ready reply until a review is recorded for that exact draft. The fresh reviewer rereads requests and structured updates after draft creation, checks decisive results, chronology, authorization and recommendation targets, and submits its standalone body. Parent retrieval copies only accepted wording. Replays reuse saved progress; review submissions are bounded at two. Focused follow-ups and the managed full-report workflow keep their existing scope.
+
+First-line dollars and token counts come only from the analyzed evidence scope. Inclusive input includes ordinary input, cache creation and reads; cached input is its read subset. Inclusive output includes separately recorded reasoning, priced at the output rate. Only input plus output adds to the total. Matching pinned rates and complete source fields are required; a host snapshot alone leaves category dollars unavailable. Analyzer/reviewer usage never enters these totals.
+
+Drafts, internal notes, rejected reviews and accepted prose are immutable. The backend checks exact draft linkage, fresh request/update exposure, literal quotes and format; it does not independently attest caller identity or verify entailment. Native Agent invocation is inspected in the opt-in host trace. A saved review is not a correctness guarantee. See the 0.20.0 release audit for the actual default-flow tests and limits.
+
+---
+
 # Implementation status — 0.19.0
 
 General developer replies keep the computed cost/four-count opening, then the recommendation or outcome and separate concise **Task outcome** and **Instruction following** assessments. The writing guidance checks actual requests, approval boundaries, actions/results and the captured ending. It distinguishes pending-work admissions from proven absent files, unmet from unverified obligations, and delivery from procedural adherence. Exact skill edits still need inspected target snapshots; an adequate ignored rule is not grounds for duplication.
@@ -16,7 +30,7 @@ The final offline suite passed 339 tests with two optional private-corpus skips.
 
 General Claude readouts begin with computed session cost, input, cached input, output and reasoning within output. `session_readout.opening` and its qualifications use the same scoped accounting as the report; unavailable/partial values remain explicit. Session metric version 4 adds separately reported thinking without changing existing token totals. Recommendations/outcome, decisive evidence and supported concrete edits follow, retaining required approval before implementation.
 
-Cache/compaction diagnosis and tuning is on request. Accounting, tool-call evidence, timelines, registered queries and captured events remain intact. `prepare_session_reply` checks a new authored body for common unrequested resource-detail terms and prepends the computed opening. A rejected draft is returned for Claude to revise; a ready reply preserves the body verbatim. This read-only scoped tool logs validation metadata without changing saved findings. It is a mechanical preflight, not a semantic-quality certificate or a global Claude hook.
+Cache/compaction diagnosis and tuning is on request. Accounting, tool-call evidence, timelines, registered queries and captured events remain intact. `prepare_session_reply` checks a new authored body for common unrequested resource-detail terms and prepends the computed opening. A rejected draft is returned for Claude to revise; a ready reply preserves the body verbatim. Its mechanical preflight remains separate from the new immutable reply-draft/review records; it does not change saved investigation findings or certify semantic quality. It is not a global Claude hook.
 
 The offline suite passed 327 tests with two optional private-corpus skips. An actual two-turn Claude check passed the default/follow-up behavior and exact-copy check after earlier failures exposed prompt-only leakage and rejected aliases. Runtime/skill files in the final package match the retained successful test package. See [release evidence](release-audit-0.18.0.md) and [validation](validation.md), including observed semantic limits.
 

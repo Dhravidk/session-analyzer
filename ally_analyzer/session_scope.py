@@ -398,10 +398,10 @@ def get_related_evidence(store, investigation_id, anchor, relations=None, depth=
         log_access(store, run, "graph", request, error=str(exc)); raise
 
 
-def exposure(store, investigation_id, workflow_phase=None):
+def exposure(store, investigation_id, workflow_phase=None, after_access_id=0):
     ranges, sizes, metadata_ids = defaultdict(list), {}, set()
     with store.connect() as db:
-        rows = db.execute("SELECT payload FROM investigation_access WHERE investigation_id=? ORDER BY id", (investigation_id,)).fetchall()
+        rows = db.execute("SELECT payload FROM investigation_access WHERE investigation_id=? AND id>? ORDER BY id", (investigation_id, after_access_id)).fetchall()
     if workflow_phase:
         rows = [r for r in rows if strict_json(r[0]).get('workflow_phase') == workflow_phase]
     failed = 0

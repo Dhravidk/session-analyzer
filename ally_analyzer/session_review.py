@@ -54,13 +54,14 @@ def latest_draft(store, investigation_id):
     return next((v for v in values if v['id'] == selected), None)
 
 
-def request_coverage(store, run):
+def request_coverage(store, run, delivered=None):
     """Task requests include SDK submissions, without claiming human origin."""
     from .session_diagnostics import inspected_reference
     from .session_investigation import accounting
     from .session_scope import instruction_updates, scope_rows
     main = {r['id'] for r in scope_rows(store, run) if r['agent_id']=='main'}
-    delivered = exposure(store,run['id'])['sources']
+    if delivered is None:
+        delivered = exposure(store,run['id'])['sources']
     turns = [t for t in accounting(store,run)['turns'] if t['request_event_id'] in main]
     missing = [{'turn_id':t['id'],'turn_number':i,'source_id':t['request_event_id']}
                for i,t in enumerate(turns,1) if not inspected_reference(store,run,{'source_id':t['request_event_id']},delivered)]

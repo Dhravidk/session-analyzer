@@ -30,6 +30,7 @@ from tests.test_session_workflow import human
 
 PREFIX = 'mcp__plugin_ally-session-analyzer_ally-session-analyzer__'
 READERS = ('get_definitions', 'get_session_guide', 'get_session_overview', 'prepare_session_reply', 'get_investigation_records',
+           'get_session_reply_draft', 'submit_session_reply_review', 'get_reviewed_session_reply',
            'read_investigation_evidence', 'read_investigation_batch', 'read_turn_evidence',
            'get_related_evidence', 'search_investigation_text', 'get_recorded_failures',
            'get_context_timeline', 'get_tool_output_index', 'get_subagent_details',
@@ -37,7 +38,7 @@ READERS = ('get_definitions', 'get_session_guide', 'get_session_overview', 'prep
 
 
 def ready_replies(path, calls):
-    invocation_ids = {c['id'] for c in calls if c['name'].endswith('prepare_session_reply')}
+    invocation_ids = {c['id'] for c in calls if c['name'].endswith(('prepare_session_reply', 'get_reviewed_session_reply'))}
     replies = []
     for line in path.read_text().splitlines():
         try: row = json.loads(line)
@@ -106,8 +107,8 @@ def main():
         stage = work / ('turn-' + str(index + 1)); stage.mkdir()
         (stage / 'request.txt').write_text(prompt)
         cap = remaining / (2 - index)
-        argv = [args.claude, '--plugin-dir', package['path'], '--setting-sources', '', '--tools', 'Skill',
-                '--allowedTools', *allowed, 'Skill(ally-session-analyzer:explain)', 'Skill(ally-session-analyzer:write-report)',
+        argv = [args.claude, '--plugin-dir', package['path'], '--setting-sources', '', '--tools', 'Skill,Agent',
+                '--allowedTools', *allowed, 'Skill(ally-session-analyzer:explain)', 'Skill(ally-session-analyzer:write-report)', 'Agent(ally-session-analyzer:source-review)',
                 '--permission-mode', 'dontAsk', '--model', args.model, '--effort', 'low', '--max-budget-usd', str(cap),
                 '--output-format', 'stream-json', '--verbose', *(['--resume', session_id] if index else ['--session-id', session_id]), '-p', prompt]
         (stage / 'argv.json').write_text(json.dumps(argv, indent=2) + '\n')
@@ -123,7 +124,8 @@ def main():
         charged += cost if isinstance(cost, (int, float)) and not isinstance(cost, bool) and cost >= 0 else cap
         stages.append({'outcome': outcome, 'final': final, 'host': host, 'malformed': malformed,
                        'policy': audit_tool_policy(calls, stage / 'transcript.jsonl', allowed,
-                           ('ally-session-analyzer:explain', 'ally-session-analyzer:write-report')),
+                           ('ally-session-analyzer:explain', 'ally-session-analyzer:write-report'),
+                           ('ally-session-analyzer:source-review',)),
                        'calls': [c['name'] for c in calls], 'answer': answer,
                        'copied_ready_reply': any(answer.strip() == reply.strip() for reply in ready_replies(stage / 'transcript.jsonl', calls))})
         if outcome['exit_code'] != 0 or final.get('is_error'):
