@@ -1,5 +1,6 @@
 """A cost-and-usage opening over recorded accounting, never an authored finding."""
 import re
+from decimal import Decimal
 
 from .session_cost import cost_readout
 
@@ -9,18 +10,30 @@ def developer_readout(cost, metrics):
     fields = {'input_tokens': 'prompt_tokens', 'cached_input_tokens': 'cached_tokens',
               'output_tokens': 'completion_tokens', 'reasoning_output_tokens': 'thinking_tokens'}
     usage = {}
+    components = (cost or {}).get('priced_usage', {}).get('components', {})
     for name, key in fields.items():
         metric = metrics.get(key, {})
         # An empty or missing population does not establish zero usage.
         known = bool(metric.get('eligible')) and metric.get('value') is not None
         usage[name] = {k: metric.get(k) for k in ('definition_id', 'known', 'eligible', 'known_subtotal')}
         usage[name]['value'] = metric['value'] if known else None
+        component = components.get(name[:-7], {})
+        usage[name]['cost_usd'] = component.get('value_usd')
+        usage[name]['cost_coverage'] = {k: component.get(k) for k in ('known_responses', 'eligible_responses')}
+    def amount(name):
+        value = usage[name]['cost_usd']
+        if value is None:
+            return 'cost unavailable'
+        value = Decimal(value)
+        # Tiny known costs must remain visible, rather than rounding to zero.
+        return '$' + (format(value, ',.2f') if value == 0 or value >= Decimal('.01')
+                      else format(value, 'f').rstrip('0').rstrip('.'))
     def pair(total, subset, total_label, subset_label):
         whole, part = usage[total]['value'], usage[subset]['value']
         text = format(whole, ',') + ' ' + total_label if whole is not None else total_label + ' unavailable'
         if whole is not None and part is not None:
-            return text + ', including ' + format(part, ',') + ' ' + subset_label
-        return text + '; ' + (subset_label + ' unavailable' if part is None else format(part, ',') + ' ' + subset_label + ' recorded')
+            return text + ' / ' + amount(total) + ', including ' + format(part, ',') + ' ' + subset_label + ' / ' + amount(subset)
+        return text + ' / ' + amount(total) + '; ' + (subset_label + ' unavailable' if part is None else format(part, ',') + ' ' + subset_label + ' recorded') + ' / ' + amount(subset)
     tokens = (pair('input_tokens', 'cached_input_tokens', 'input tokens', 'cached input tokens') + '; '
               + pair('output_tokens', 'reasoning_output_tokens', 'output tokens', 'reasoning tokens'))
     if display['kind'] == 'unavailable':
@@ -38,7 +51,8 @@ def developer_readout(cost, metrics):
             qualifications.append('The cost snapshot precedes ' + str(later) + ' later captured main-agent response' + ('.' if later == 1 else 's.'))
     if cost and cost.get('unavailable_child_traces'):
         qualifications.append('Some child traces are unavailable; these captured totals do not establish the full task cost or usage.')
-    return {'version': 'developer-readout-v2', 'opening': opening, 'token_summary': tokens, 'usage': usage,
+    return {'version': 'developer-readout-v3', 'opening': opening, 'token_summary': tokens, 'usage': usage,
+            'billing_scope': 'analyzed_session_only',
             'population': 'Main agent and structurally linked captured children; reconciled identities counted once.',
             'cost_kind': display['kind'], 'qualifications': qualifications,
             'default_reply_policy': {'first': 'opening', 'then': ['recommendations_or_outcome', 'task_outcome_and_instruction_following', 'decisive_evidence', 'concrete_changes_when_supported'],

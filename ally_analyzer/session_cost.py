@@ -1,7 +1,7 @@
 """Source-session cost facts. Estimates and cumulative snapshots are never added."""
 from decimal import Decimal, InvalidOperation
 
-from .engine import price_response
+from .engine import price_response_components
 from .session_scope import entities, get_scope, scope_rows
 from .util import digest, timestamp
 
@@ -33,7 +33,8 @@ def source_session_cost(store, run):
     scope = get_scope(store, run)
     prices = store.analysis(run['analysis_id'])['configuration'].get('price_book')
     responses = [r for r in entities(store, run, 'response') if r['eligible']]
-    priced = [(r, price_response(r, prices)) for r in responses]
+    components = [(r, price_response_components(r, prices)) for r in responses]
+    priced = [(r, p['input'] + p['output'] if p is not None else None) for r, p in components]
     known = [(r, value) for r, value in priced if value is not None]
     estimate = {
         'value_usd': str(sum(value for _, value in known)) if known else None,
@@ -43,6 +44,22 @@ def source_session_cost(store, run):
         'response_ids': [r['id'] for r, _ in known],
         'source_ids': sorted({sid for r, _ in known for sid in r['evidence']}),
         'population': 'Main agent and structurally linked captured children; response identities counted once.',
+    }
+    estimate['components'] = {}
+    for key in ('input', 'cached_input', 'output', 'reasoning_output'):
+        values = [parts[key] for _, parts in components if parts is not None and parts[key] is not None]
+        complete = bool(responses) and len(values) == len(responses)
+        estimate['components'][key] = {
+            'value_usd': str(sum(values)) if complete else None,
+            'known_subtotal_usd': str(sum(values)) if values else None,
+            'known_responses': len(values), 'eligible_responses': len(responses),
+            'complete_for_captured_responses': complete,
+        }
+    estimate['component_definitions'] = {
+        'input': 'Inclusive input cost: ordinary input, cache creation at its recorded TTL, and cache reads.',
+        'cached_input': 'Cache-read cost, already included in input cost; not cache creation.',
+        'output': 'Inclusive output cost, including separately recorded reasoning.',
+        'reasoning_output': 'Recorded reasoning tokens priced at the output rate, already included in output cost.',
     }
     rows = scope_rows(store, run)
     provenance = {r['id']: {} for r in rows}
@@ -107,7 +124,7 @@ def source_session_cost(store, run):
         limitations.append('Multiple cost snapshots were captured, but their relative order cannot be established. No snapshot was selected as the latest.')
     if invalid:
         limitations.append(str(invalid) + ' invalid main-trace cost snapshots excluded.')
-    return {'version': 'source-session-cost-v1', 'priced_usage': estimate,
+    return {'version': 'source-session-cost-v2', 'billing_scope': 'analyzed_session_only', 'priced_usage': estimate,
             'unavailable_child_traces': len({x['child_agent_id'] for x in scope['capture_gaps'].get('missing_child_traces', [])}),
             'recorded_snapshot': snapshot, 'limitations': limitations}
 

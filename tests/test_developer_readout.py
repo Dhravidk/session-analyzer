@@ -46,7 +46,7 @@ class DeveloperReadoutTests(unittest.TestCase):
         self.load([human(0), response(1), snapshot(2, 12.34)])
         overview = get_session_overview(self.store, self.iid)
         text = overview['session_readout']['opening']
-        self.assertEqual(text, 'You spent approximately $12.34 (60 input tokens, including 30 cached input tokens; 40 output tokens, including 12 reasoning tokens) on this session.')
+        self.assertEqual(text, 'You spent approximately $12.34 (60 input tokens / cost unavailable, including 30 cached input tokens / cost unavailable; 40 output tokens / cost unavailable, including 12 reasoning tokens / cost unavailable) on this session.')
         self.assertEqual(overview['session_readout']['cost_kind'], 'recorded_snapshot')
         self.assertIn('final session cost is unverified', ' '.join(overview['session_readout']['qualifications']))
         self.assertEqual(overview['session_metrics']['thinking_tokens']['value'], 12)
@@ -59,7 +59,7 @@ class DeveloperReadoutTests(unittest.TestCase):
     def test_missing_reasoning_is_unavailable_while_output_stays_inclusive(self):
         self.load([human(0), response(1), response(2, u=usage(thinking=None)), snapshot(3, 4)])
         readout = get_session_overview(self.store, self.iid)['session_readout']
-        self.assertIn('80 output tokens; reasoning tokens unavailable', readout['opening'])
+        self.assertIn('80 output tokens / cost unavailable; reasoning tokens unavailable / cost unavailable', readout['opening'])
         self.assertIsNone(readout['usage']['reasoning_output_tokens']['value'])
         self.assertEqual(readout['usage']['reasoning_output_tokens']['known_subtotal'], 12)
 
@@ -69,6 +69,24 @@ class DeveloperReadoutTests(unittest.TestCase):
         self.assertIn('input tokens unavailable', readout['opening'])
         self.assertIn('reasoning tokens unavailable', readout['opening'])
         self.assertNotIn('$0.00', readout['opening'])
+
+    def test_priced_opening_has_inclusive_dollars_for_all_four_categories(self):
+        self.load([human(0), response(1)])
+        aid = analyze_dataset(self.store, self.store.analysis(self.aid)['dataset_id'], prices=PRICES)['analysis_id']
+        run = start_session_investigation(self.store, aid, 'session-a', 'Synthetic dollar breakdown')['investigation']
+        readout = get_session_overview(self.store, run['id'])['session_readout']
+        self.assertIn('60 input tokens / $0.000038, including 30 cached input tokens / $0.000003', readout['opening'])
+        self.assertIn('40 output tokens / $0.00008, including 12 reasoning tokens / $0.000024', readout['opening'])
+        self.assertEqual(readout['billing_scope'], 'analyzed_session_only')
+
+    def test_snapshot_cost_is_never_allocated_to_components_or_analyzer(self):
+        self.load([human(0), response(1), snapshot(2, 4)])
+        data = report_data(self.store, self.iid)
+        data['investigation']['analyzer_usage'] = {'total_cost_usd': 999, 'input_tokens': 9999999}
+        text = agent_cost_html(data)
+        self.assertIn('$4.00', text)
+        self.assertNotIn('999', text)
+        self.assertEqual(data['session_readout']['opening'].count('cost unavailable'), 4)
 
     def test_partial_pricing_cannot_become_spent_total(self):
         prices = copy.deepcopy(PRICES)

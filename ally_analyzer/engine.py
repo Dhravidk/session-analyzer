@@ -59,6 +59,12 @@ def validate_prices(prices):
 
 
 def price_response(r, prices):
+    parts = price_response_components(r, prices)
+    return parts['input'] + parts['output'] if parts is not None else None
+
+
+def price_response_components(r, prices):
+    """Price one source response; cached input/reasoning are inclusive subsets."""
     if not prices or len(r["models"]) != 1:
         return None
     rate = prices["rates"].get(r["models"][0])
@@ -75,10 +81,16 @@ def price_response(r, prices):
         w5 = w1 = 0
     if not integer(w5) or not integer(w1) or w5 + w1 != t["cache_creation_input_tokens"]:
         return None
-    parts = [(t["input_tokens"], "input_per_million"), (t["output_tokens"], "output_per_million"),
-             (t["cache_read_input_tokens"], "cache_read_per_million"), (w5, "cache_write_5m_per_million"),
-             (w1, "cache_write_1h_per_million")]
-    return sum(Decimal(v) * Decimal(str(rate[k])) for v, k in parts) / Decimal(1000000)
+    def price(value, key):
+        return Decimal(value) * Decimal(str(rate[key])) / Decimal(1000000)
+    cached = price(t['cache_read_input_tokens'], 'cache_read_per_million')
+    input_cost = (price(t['input_tokens'], 'input_per_million') + cached
+                  + price(w5, 'cache_write_5m_per_million') + price(w1, 'cache_write_1h_per_million'))
+    thinking = t.get('thinking_tokens')
+    return {'input': input_cost, 'cached_input': cached,
+            'output': price(t['output_tokens'], 'output_per_million'),
+            'reasoning_output': price(thinking, 'output_per_million')
+                if integer(thinking) and thinking <= t['output_tokens'] else None}
 
 
 def measurement(name, value, unit="count", known=None, eligible=None, extra=None):

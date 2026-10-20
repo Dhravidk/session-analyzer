@@ -62,6 +62,29 @@ class SessionCostTests(unittest.TestCase):
         self.assertEqual(cost_readout(cost)['value'], '<$0.01')
         self.assertEqual(cost['priced_usage']['price_book']['version'], PRICES['version'])
         self.assertEqual(get_session_overview(self.store, self.iid)['source_cost']['priced_usage']['value_usd'], '0.000118')
+        parts = cost['priced_usage']['components']
+        self.assertEqual(Decimal(parts['input']['value_usd']), Decimal('0.000038'))
+        self.assertEqual(Decimal(parts['cached_input']['value_usd']), Decimal('0.000003'))
+        self.assertEqual(Decimal(parts['output']['value_usd']), Decimal('0.000080'))
+        self.assertEqual(Decimal(parts['reasoning_output']['value_usd']), Decimal('0.000024'))
+        # Only the two inclusive categories add to the source total.
+        self.assertEqual(sum(Decimal(parts[k]['value_usd']) for k in ('input', 'output')),
+                         Decimal(cost['priced_usage']['value_usd']))
+
+    def test_unknown_reasoning_does_not_remove_known_output_cost(self):
+        cost = self.cost([human(0), response(1, u=usage(thinking=None))], PRICES)
+        parts = cost['priced_usage']['components']
+        self.assertEqual(Decimal(parts['output']['value_usd']), Decimal('0.000080'))
+        self.assertIsNone(parts['reasoning_output']['value_usd'])
+        self.assertIsNone(parts['reasoning_output']['known_subtotal_usd'])
+        self.assertEqual(cost['priced_usage']['value_usd'], '0.000118')
+
+    def test_mixed_cache_ttls_are_priced_without_double_counting(self):
+        row = response(1)
+        row['message']['usage']['cache_creation'] = {'ephemeral_5m_input_tokens': 5, 'ephemeral_1h_input_tokens': 15}
+        cost = self.cost([human(0), row], PRICES)
+        self.assertEqual(Decimal(cost['priced_usage']['components']['input']['value_usd']), Decimal('0.00004925'))
+        self.assertEqual(Decimal(cost['priced_usage']['value_usd']), Decimal('0.00012925'))
 
     def test_partial_pricing_is_a_subtotal_even_with_a_host_estimate(self):
         missing = response(2)
@@ -74,6 +97,8 @@ class SessionCostTests(unittest.TestCase):
         self.assertIn('full cost is unknown', cost_readout(cost)['basis'])
         self.assertEqual(cost['recorded_snapshot']['value_usd'], '42')
         self.assertEqual(cost['priced_usage']['value_usd'], '0.000118')
+        self.assertIsNone(cost['priced_usage']['components']['input']['value_usd'])
+        self.assertEqual(cost['priced_usage']['components']['input']['known_subtotal_usd'], '0.000038')
 
     def test_streaming_fragments_are_priced_as_one_response(self):
         cost = self.cost([human(0), response(1, mid='streamed', request='stream-request', block=0),
