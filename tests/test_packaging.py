@@ -112,12 +112,20 @@ class PackagingTests(unittest.TestCase):
                 body='Synthetic protocol fixture: obtain evidence before proposing changes.\n\n'+'\n'.join(text)
                 draft=tool('prepare_collection_reply',collection_id=cid,sessions=entries,body=body)
                 self.assertEqual(draft['status'],'review_required');self.assertNotIn('reply',draft)
-                tool('get_collection_reply_draft',collection_id=cid,draft_id=draft['draft_id'])
+                original=tool('get_collection_reply_draft',collection_id=cid,draft_id=draft['draft_id'])['draft']
+                repeated=tool('prepare_collection_reply',collection_id=cid,sessions=entries,body=body)
+                self.assertEqual(repeated['draft_id'],draft['draft_id'])
+                reopened=tool('get_collection_reply_draft',collection_id=cid,draft_id=draft['draft_id'])['draft']
+                self.assertEqual(reopened,original)
                 ready=tool('submit_collection_reply_review',collection_id=cid,draft_id=draft['draft_id'],sessions=entries,
                            body=body,notes='Synthetic metadata-only submission, not an actual native Agent review.',source_checks=[])
                 self.assertEqual(ready['status'],'ready',ready)
                 self.assertTrue(ready['reply'].endswith(body))
                 self.assertEqual(tool('get_reviewed_collection_reply',collection_id=cid,draft_id=draft['draft_id'])['reply'],ready['reply'])
+                resumed=tool('prepare_collection_reply',collection_id=cid,sessions=entries,body=body)
+                self.assertEqual(resumed['draft_id'],draft['draft_id'])
+                self.assertEqual(resumed['review_id'],ready['review_id'])
+                self.assertEqual(resumed['reply'],ready['reply'])
 
 
 

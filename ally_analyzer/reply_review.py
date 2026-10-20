@@ -1,8 +1,9 @@
 """Shared reply-review evidence checks and cross-process admission rules.
 
-Validation performs ordinary reads/cache/log writes before admission. Only the
-short final check-and-append uses BEGIN IMMEDIATE. Never call validators while
-holding that writer reservation: they open their own SQLite connections.
+Validation performs ordinary reads/cache/log writes before registration or
+admission. Only their short check-and-append transactions use BEGIN IMMEDIATE.
+Never call validators while holding that writer reservation: they open their
+own SQLite connections.
 """
 from .session_investigation import put_record, records
 from .session_review import request_coverage
@@ -15,6 +16,35 @@ LIMIT = ('Authored source review, not a correctness certificate. MCP validates s
          'independently attest caller identity or entailment. Native Agent provenance '
          'must be checked in the host trace. No historical prose was changed.')
 REVIEW_KINDS = ('reply_review', 'collection_reply_review')
+DRAFT_KINDS = ('reply_draft', 'collection_reply_draft')
+
+
+def register_draft(store, owner_id, kind, draft, investigation_ids):
+    """Reuse or append one draft per owner/kind/key with its winning boundary.
+
+    Call only after validation has finished opening its own connections. The
+    writer reservation covers lookup, all marker reads and the unchanged append.
+    Existing duplicates keep their history: the first in established stored
+    ordering remains canonical, without moving markers or transferring reviews.
+    """
+    ids = tuple(investigation_ids)
+    if kind not in DRAFT_KINDS or not ids or len(ids) != len(set(ids)):
+        raise AnalyzerError('Supply a reply-draft kind and distinct freshness investigation IDs')
+    if kind == 'reply_draft' and ids != (owner_id,):
+        raise AnalyzerError('A single-session draft must use its own investigation boundary')
+    key = digest(draft)
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        existing = next((r for r in records(store, owner_id, kind, connection=db) if r['draft_key'] == key), None)
+        if existing:
+            return existing
+        markers = {iid: db.execute('SELECT COALESCE(MAX(id),0) FROM investigation_access WHERE investigation_id=?',
+                                  (iid,)).fetchone()[0] for iid in ids}
+        boundary = ({'after_access_id': markers[owner_id]} if kind == 'reply_draft'
+                    else {'after_access_ids': markers})
+        payload = {**draft, 'draft_key': key, **boundary}
+        rid = put_record(store, {'id': owner_id}, kind, payload, connection=db)
+        return {'id': rid, **payload}
 
 
 def review_history(store, owner_id, kind, draft_id, *, connection=None):

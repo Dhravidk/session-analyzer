@@ -4,12 +4,12 @@ The Claude host invokes the packaged reviewer in a fresh native Agent context.
 MCP gates the reply on a recorded review and fresh source exposure; it cannot
 attest the identity of that caller or determine semantic correctness.
 """
-from .session_investigation import put_record, record_by_id, records
+from .session_investigation import record_by_id, records
 from .session_readout import prepare_session_reply
 from .session_scope import get_run, log_access
-from .util import AnalyzerError, digest
+from .util import AnalyzerError
 from .reply_review import (LIMIT, REVIEWER, accepted_review, fresh_request_coverage,
-                           review_history, review_retry, review_source_issues, review_source_state, save_review)
+                           register_draft, review_history, review_retry, review_source_issues, review_source_state, save_review)
 
 def prepare_reviewed_session_reply(store, investigation_id, body, requested_details=None,
                                    detail_request=None, compliance=None, allow_content=False):
@@ -18,21 +18,12 @@ def prepare_reviewed_session_reply(store, investigation_id, body, requested_deta
                                     detail_request, compliance, allow_content)
     if checked['status'] != 'ready':
         return checked
-    run = get_run(store, investigation_id)
     # Access markers are deliberately outside this key: replaying the same
     # submission resumes its saved review instead of invalidating fresh reads.
     draft = {'body': body, 'compliance': compliance, 'requested_details': requested_details or [],
              'detail_request': detail_request, 'allow_content': allow_content,
              'readout': checked['session_readout'], 'contract_version': 'source-review-v1'}
-    key = digest(draft)
-    existing = next((v for v in records(store, investigation_id, 'reply_draft') if v['draft_key'] == key), None)
-    if not existing:
-        with store.connect() as db:
-            marker = db.execute('SELECT COALESCE(MAX(id),0) FROM investigation_access WHERE investigation_id=?',
-                                (investigation_id,)).fetchone()[0]
-        draft_id = put_record(store, run, 'reply_draft', {**draft, 'draft_key': key, 'after_access_id': marker})
-    else:
-        draft_id = existing['id']
+    draft_id = register_draft(store, investigation_id, 'reply_draft', draft, [investigation_id])['id']
     return {**get_reviewed_session_reply(store, investigation_id, draft_id, allow_content),
             'request_coverage': checked['request_coverage']}
 

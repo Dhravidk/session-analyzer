@@ -8,11 +8,11 @@ from collections import Counter
 from .normalize import parse_events
 from .pricing import configured_prices
 from .session_cost import price_captured_responses, source_session_cost
-from .session_investigation import accounting, put_record, record_by_id, records
+from .session_investigation import accounting, record_by_id, records
 from .session_metrics import token_metrics
 from .session_readout import developer_readout, prepare_session_reply
 from .reply_review import (LIMIT, REVIEWER, accepted_review, fresh_request_coverage,
-                           review_history, review_retry, review_source_issues, review_source_state, save_review)
+                           register_draft, review_history, review_retry, review_source_issues, review_source_state, save_review)
 from .session_review import request_coverage
 from .session_scope import (get_run, get_scope, scope_rows,
                             start_session_investigation)
@@ -132,16 +132,8 @@ def prepare_collection_reply(store, collection_id, sessions, body=None, requeste
              'detail_request': detail_request, 'allow_content': allow_content, 'readout': readout,
              'session_readouts': {iid: c['session_readout'] for iid, c in checked.items()},
              'contract_version': 'collection-source-review-v1'}
-    key = digest(draft)
-    existing = next((r for r in records(store, collection_id, 'collection_reply_draft') if r['draft_key'] == key), None)
-    if existing:
-        did = existing['id']
-    else:
-        with store.connect() as db:
-            markers = {m['investigation_id']: db.execute('SELECT COALESCE(MAX(id),0) FROM investigation_access WHERE investigation_id=?',
-                        (m['investigation_id'],)).fetchone()[0] for m in selected['members']}
-        did = put_record(store, {'id': collection_id}, 'collection_reply_draft',
-                         {**draft, 'draft_key': key, 'after_access_ids': markers})
+    did = register_draft(store, collection_id, 'collection_reply_draft', draft,
+                         [m['investigation_id'] for m in selected['members']])['id']
     return get_reviewed_collection_reply(store, collection_id, did, allow_content)
 
 
