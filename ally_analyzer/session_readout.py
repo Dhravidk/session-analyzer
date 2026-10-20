@@ -79,7 +79,7 @@ TOPIC_PATTERNS = {
 REQUEST_PATTERNS = {'cache': r'cache|cached|caching|promptCacheTtl', 'compaction': r'compaction|compacting|compacted|compact_boundary'}
 
 
-def prepare_session_reply(store, investigation_id, body, requested_details=None, detail_request=None, compliance=None, allow_content=False):
+def prepare_session_reply(store, investigation_id, body, requested_details=None, detail_request=None, compliance=None, allow_content=False, _word_limit=450):
     """Validate a new authored draft, without editing it or any saved judgment."""
     from .session_investigation import accounting
     from .session_cost import source_session_cost
@@ -104,9 +104,9 @@ def prepare_session_reply(store, investigation_id, body, requested_details=None,
               for topic, pattern in TOPIC_PATTERNS.items() if topic not in details and re.search(pattern, body, re.I)]
     if body.lstrip().startswith(readout['opening']):
         issues.append({'code': 'opening_repeated', 'message': 'Supply only the authored body; the computed opening is prepended once.'})
-    if not details and len(body.split()) > 450:
+    if not details and len(body.split()) > _word_limit:
         issues.append({'code': 'default_reply_too_long',
-                       'message': 'Keep the default body within 450 words. Preserve the recommendation, two assessments, decisive evidence and material limits; omit incidental counts and a separate chronology. Full saved evidence/reports are unchanged; focused detailed follow-ups can answer directly.'})
+                       'message': 'Keep the default body within %d words. Preserve the recommendation, two assessments, decisive evidence and material limits; omit incidental counts and a separate chronology. Full saved evidence/reports are unchanged; focused detailed follow-ups can answer directly.' % _word_limit})
     # These are exact spans from the model's own reply, not generated verdicts.
     # Presence checks cannot establish whether the assessments are true.
     if compliance is not None and (not isinstance(compliance, dict)

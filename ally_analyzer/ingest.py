@@ -77,6 +77,18 @@ def companion_entries(path):
                      'note':'Adjacent captured logs and metadata only; collection does not establish complete child execution.'}
 
 
+def selected_path(store, source):
+    path = Path(source).expanduser()
+    if path.is_symlink():
+        raise AnalyzerError("Select a regular file or directory, not a symlink")
+    path = path.resolve()
+    if not path.exists():
+        raise AnalyzerError("Input path does not exist")
+    if path == store.root or store.root in path.parents or (path.is_dir() and path in store.root.parents):
+        raise AnalyzerError("Input and analyzer storage directories must not contain one another")
+    return path
+
+
 def import_bundle(store, source, namespace="local", labels=None, progress=None, include_subagents=True):
     if not isinstance(include_subagents,bool):
         raise AnalyzerError('include_subagents must be a boolean')
@@ -86,18 +98,36 @@ def import_bundle(store, source, namespace="local", labels=None, progress=None, 
     if (not isinstance(labels, dict) or len(labels) > 20 or
             any(not isinstance(k, str) or not isinstance(v, str) or len(v) > 200 for k, v in labels.items())):
         raise AnalyzerError("Labels must be a small string-to-string mapping")
-    path = Path(source).expanduser()
-    if path.is_symlink():
-        raise AnalyzerError("Select a regular file or directory, not a symlink")
-    path = path.resolve()
-    if not path.exists():
-        raise AnalyzerError("Input path does not exist")
-    if path == store.root or store.root in path.parents or (path.is_dir() and path in store.root.parents):
-        raise AnalyzerError("Input and analyzer storage directories must not contain one another")
+    multiple = isinstance(source, (list, tuple))
+    if multiple:
+        if not 1 <= len(source) <= 20:
+            raise AnalyzerError("Select between one and twenty log files")
+        paths = list(dict.fromkeys(selected_path(store, item) for item in source))
+        if any(not p.is_file() or p.suffix not in LOG_SUFFIXES for p in paths):
+            raise AnalyzerError("Multiple selections must be JSONL/.log files; select a ZIP or directory as one input")
+        if len(paths) == 1:
+            return import_bundle(store, paths[0], namespace, labels, progress, include_subagents)
+        path = paths[0]
+    else:
+        path = selected_path(store, source)
     entries, archive = [], None
     collection = {'status':'selected_bundle','note':'Only the selected directory or archive is collected.'}
     try:
-        if path.is_file() and zipfile.is_zipfile(path):
+        if multiple:
+            companions = []
+            for index, selected in enumerate(paths):
+                chosen = [(selected.name, selected.stat().st_size, lambda p=selected: p.open('rb'))]
+                if include_subagents:
+                    children, status = companion_entries(selected)
+                    chosen.extend(children)
+                else:
+                    status = {'status': 'parent_only'}
+                prefix = 'selection-%02d/' % (index + 1)
+                entries.extend((prefix + name, size, opener) for name, size, opener in chosen)
+                companions.append({'selection': index + 1, **status})
+            collection = {'status': 'selected_logs', 'selected_files': len(paths), 'companions': companions,
+                          'note': 'Only explicitly selected logs and their adjacent child traces were collected. Copied events are reconciled by identity.'}
+        elif path.is_file() and zipfile.is_zipfile(path):
             if path.stat().st_size > LIMITS["max_compressed_bytes"]:
                 raise AnalyzerError("Compressed archive exceeds import limit")
             archive = zipfile.ZipFile(path)

@@ -2,7 +2,7 @@
 name: write-report
 description: Write or edit Ally Session Analyzer explanations and recommendations in clear, specific prose grounded in the selected session evidence. Use before saving insights or presenting an analysis.
 metadata:
-  version: write-report-v18
+  version: write-report-v19
 ---
 
 Write for a teammate deciding whether anything should change. Make the evidence, optional action and important limit easy to find. Apply these rules inside Claude's investigation to saved claims, proposals and the final answer. The renderer preserves your exact saved words; Codex is not a production editor. This skill does not authorize applying a change or accessing more data.
@@ -12,6 +12,10 @@ Default reply contract: computed cost/token sentence first; recommendation or ou
 For a general conversational session-analysis reply, submit your authored body and `compliance` to `prepare_session_reply` before sending it. `compliance.task_outcome` and `compliance.instruction_following` must be distinct exact spans already in the body. Fix `needs_revision` issues in your new draft. A valid draft returns `review_required`; automatically invoke `ally-session-analyzer:source-review` in a fresh native Agent context with the returned IDs, without asking for another user pass. The reviewer checks original sources and submits a standalone body with `submit_session_reply_review`; the parent retrieves `get_reviewed_session_reply` and copies its ready reply verbatim. Do not self-review, restart research or use an unreviewed fallback. This preserves both authored versions and adds only computed opening facts, not renderer-written findings. Do not append paragraphs after acceptance. Requested resource detail needs the current user's request, not an archived mention. Focused follow-ups need not repeat the general readout.
 
 The packaged source-review Agent submits directly to `submit_session_reply_review`; it must not create another draft or nested review. Managed full-report investigation/review stages use their existing saved-record review workflow and return checkpoint/status or report references; those stage updates are not separate general conversational readouts. Drafting report fields and focused follow-ups do not trigger another native review.
+
+For explicitly selected multiple logs, keep the same developer-handoff style rather than replacing it with a new report format: computed combined cost/token breakdown; recommendation first; why and concise per-session evidence; a short compliance section; exact supported skill/tool edits; optional copy-paste Claude prompt last. Preserve useful content and concrete fixes, with source and target verification. Each selected log needs distinct visible task-outcome and instruction-following assessments; three short sentences per log are usually enough for the evidence. Avoid repeating those sentences in the compliance section. No authorization or result carries between sessions without evidence. Do not force the same fix onto every log or describe later artifacts as proof that a stalled branch recovered.
+
+Use `prepare_collection_reply` and the packaged source reviewer once for the collection, then copy `get_reviewed_collection_reply.ready.reply` exactly. The reviewer rereads each root separately and checks the synthesis; do not create an extra single-session reply-review cycle for each member. Combined mode supplies one complete authored body and per-root exact compliance spans; individual mode supplies each body's own spans. Aim for the original concise handoff with more space only for useful edits; the combined default body cap is 450 + 150 words per additional selected root. Each individual body keeps its 450-word cap. The computed aggregate cost deduplicates source responses; inclusive per-session totals may overlap. All original model output stays immutable, and cache/compaction detail remains on request.
 
 ## Put instruction compliance in the decision
 

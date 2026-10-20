@@ -1,3 +1,13 @@
+# Implementation status — 0.22.0
+
+Conversational `explain`/`analyze` accepts one selected log or several. Multiple roots default to a combined developer handoff; `--separate` selects individual readouts. Roots keep separate immutable evidence scopes and distinct task-outcome/instruction-following assessments. One automatic native source reviewer checks fresh evidence for every selected root and the combined advice; the backend withholds a ready reply until accepted. It validates linkage/format, not semantic truth or caller identity. An existing single-root binding cannot widen into a collection.
+
+The combined cost reconciles the union of captured response frames, never added inclusive per-root totals, cumulative snapshots or analyzer/reviewer usage. Accounting and resource tools remain available while cache/compaction detail stays on request. Guidance preserves the established handoff style, adds concise compliance, and never rewrites historical Nithin messages or Claude output. Managed full saved-report runs remain one root.
+
+Offline protocol, scope, accounting and package tests cover the change. Live Claude default-flow/style testing remains deferred until the operator confirms limits reset; distribution remains on hold. See [multiple-log usage](multiple-logs.md) and the [release audit](release-audit-0.22.0.md).
+
+---
+
 # Implementation status — 0.21.0
 
 Default analyses automatically pin the verified public-rate snapshot, with explicit operator overrides and unknown-model/mode limits preserved. The cost-first readout shows source-only token prices for input/output and their cached-input/reasoning portions. Rates, modifiers, provenance and verification date are retained. Prior cards, captured accounting, findings and Claude answers remain immutable; new cost-only previews are clearly labelled. See [automatic pricing](automatic-pricing.md).

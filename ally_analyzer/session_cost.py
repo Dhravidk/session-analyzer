@@ -30,28 +30,8 @@ def latest_snapshot(snapshots, provenance):
     return None, None
 
 
-def source_session_cost(store, run):
-    scope = get_scope(store, run)
-    prices, price_source = configured_prices(store.analysis(run['analysis_id'])['configuration'])
-    responses = [r for r in entities(store, run, 'response') if r['eligible']]
-    # Retained scopes predate geography normalization. Inspect only captured
-    # numeric-usage metadata; do not mutate their response entities or prose.
-    if prices.get('billing_rules'):
-        from .session_scope import source_record
-        restored = []
-        for response in responses:
-            if 'inference_geo' not in response:
-                geos = set()
-                for sid in response['evidence']:
-                    record = source_record(store, run, sid)['record']
-                    message = record.get('message')
-                    usage = message.get('usage') if isinstance(message, dict) else None
-                    if isinstance(usage, dict):
-                        geo = usage.get('inference_geo') or 'global'
-                        geos.add(geo if isinstance(geo, str) else 'unknown')
-                response = {**response, 'inference_geo': next(iter(geos)) if len(geos) == 1 else 'unknown'}
-            restored.append(response)
-        responses = restored
+def price_captured_responses(responses, prices, price_source):
+    """Price one already reconciled population; never sum cumulative host snapshots."""
     components = [(r, price_response_components(r, prices)) for r in responses]
     priced = [(r, p['input'] + p['output'] if p is not None else None) for r, p in components]
     known = [(r, value) for r, value in priced if value is not None]
@@ -81,6 +61,33 @@ def source_session_cost(store, run):
         'output': 'Inclusive output cost, including separately recorded reasoning.',
         'reasoning_output': 'Recorded reasoning tokens priced at the output rate, already included in output cost.',
     }
+    return estimate
+
+
+def source_session_cost(store, run):
+    scope = get_scope(store, run)
+    prices, price_source = configured_prices(store.analysis(run['analysis_id'])['configuration'])
+    responses = [r for r in entities(store, run, 'response') if r['eligible']]
+    # Retained scopes predate geography normalization. Inspect only captured
+    # numeric-usage metadata; do not mutate their response entities or prose.
+    if prices.get('billing_rules'):
+        from .session_scope import source_record
+        restored = []
+        for response in responses:
+            if 'inference_geo' not in response:
+                geos = set()
+                for sid in response['evidence']:
+                    record = source_record(store, run, sid)['record']
+                    message = record.get('message')
+                    usage = message.get('usage') if isinstance(message, dict) else None
+                    if isinstance(usage, dict):
+                        geo = usage.get('inference_geo') or 'global'
+                        geos.add(geo if isinstance(geo, str) else 'unknown')
+                response = {**response, 'inference_geo': next(iter(geos)) if len(geos) == 1 else 'unknown'}
+            restored.append(response)
+        responses = restored
+    estimate = price_captured_responses(responses, prices, price_source)
+    known = estimate['response_ids']
     rows = scope_rows(store, run)
     provenance = {r['id']: {} for r in rows}
     with store.connect() as db:

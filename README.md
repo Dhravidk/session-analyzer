@@ -1,12 +1,24 @@
-# Ally Session Analyzer 0.21.0
+# Ally Session Analyzer 0.22.0
 
-Release candidate: live Claude testing is deferred until the operator confirms that limits have reset. Automatic pricing is tested offline; distribution remains on hold. See the [0.21.0 audit](docs/release-audit-0.21.0.md) for the evidence and remaining live gate.
+Release candidate: live Claude testing is deferred until the operator confirms that limits have reset. Single/multiple-log selection, source-only pricing and the review gates are tested offline; distribution remains on hold. See the [0.22.0 audit](docs/release-audit-0.22.0.md) for the evidence and remaining live gate.
 
 Claude's default session readout starts with **“Estimated session cost: $…”** and gives token counts and dollar amounts for input (including cached input) and output (including reasoning). A verified, dated public-rate snapshot loads automatically without a model or pricing-network call. An explicit operator card overrides it. Only analyzed source usage is priced; analyzer/reviewer usage is excluded. Unknown rates/usage stay unavailable and partial costs stay explicit. The qualification identifies the public API token-price equivalent and verification date; it is not subscription billing. The recommendation or outcome comes next, followed immediately by separate **Task outcome** and **Instruction following** assessments, decisive evidence and supported concrete changes. Claude checks the actual request, authorizations, actions/results and captured ending; unmet and unverified outcomes stay distinct. Required approval before implementation remains intact. Caching and compaction diagnosis or tuning is on request; all underlying accounting, evidence and follow-up tools remain available. Source cost is separate from analyzer cost and is not an invoice.
 
 `prepare_session_reply` saves a valid draft and returns `review_required`. Claude automatically invokes the packaged `ally-session-analyzer:source-review` native Agent, which rereads the original requests/updates and decisive evidence in a fresh context, checks proposed edits against applicable instructions, and submits the complete reviewed body. The parent retrieves and copies only the accepted reply. There is no request for another user review pass or unreviewed fallback. Original drafts, review notes, rejected submissions and accepted wording remain immutable. The server checks linkage, fresh reads, literal quotes and visible assessments; it cannot certify entailment or independently attest the caller's identity. A missing external artifact is not proof of nonproduction, and an already adequate ignored instruction does not justify adding the same rule again.
 
-With disclosure enabled, the general readout requires reading indexed ordinary requests and structured queued instruction updates, including continuations. These updates stay separate from reconstructed turns and token counts. The default body is at most 450 words; Claude revises it rather than the tool shortening it. Guidance also checks recorded parent branches before attributing an ignored authorization: chronological order alone does not prove delivery into a model response.
+With disclosure enabled, the general readout requires reading indexed ordinary requests and structured queued instruction updates, including continuations. These updates stay separate from reconstructed turns and token counts. The single-session default body is at most 450 words; Claude revises it rather than the tool shortening it. Guidance also checks recorded parent branches before attributing an ignored authorization: chronological order alone does not prove delivery into a model response.
+
+## One log or several
+
+Use the same command for either option:
+
+```text
+/ally-session-analyzer:explain /path/session.jsonl
+/ally-session-analyzer:explain /path/one.jsonl /path/two.jsonl
+/ally-session-analyzer:explain /path/one.jsonl /path/two.jsonl --separate
+```
+
+Several selected roots default to one combined handoff in the established style: cost/token-dollar breakdown, recommendations, session evidence, concise compliance, supported exact edits, useful Claude prompt last. `--separate` requests individual readouts. Each root keeps its own evidence and assessment; combined costs count shared responses once and exclude analyzer/reviewer usage. The automatic native source reviewer checks every selected root and the synthesis before delivery, without another user prompt. Original handoffs/Claude outputs remain unchanged. See [multiple-log usage and scope limits](docs/multiple-logs.md), including the distinction from the one-root managed saved-report command.
 
 ## Ask Claude without opening the GUI
 
@@ -21,14 +33,14 @@ Does the evidence establish a skill defect, or is the child result missing?
 
 The `explain` skill selects relevant tools, checks the question's premise and rechecks saved judgments against primary evidence. Focused questions use the existing timeline, turn, failure, child and artifact readers; they do not require a full report. Completed investigations support new read-only `query_measurement` calculations. `inspect_response_accounting` exposes the captured numeric fields and streaming frames behind a reconciled response. Neither tool edits Claude's saved prose. The first successful data-tool response supplies the exact conversation and writing skills once per connection, even if Claude skips definitions. `get_session_guide` reloads them when native skill invocation is unavailable or context has been lost. Agent filters keep main, child and combined populations distinct.
 
-Keep using the same configured `ALLY_ANALYZER_HOME` store for follow-ups. `list_session_investigations` finds saved scopes within a selected analysis. Opening a scope binds that MCP connection; switching sessions needs a new unbound connection or an operator-selected binding. No source scanning or cross-store discovery happens automatically. A focused query scope is not a completed investigation.
+Keep using the same configured `ALLY_ANALYZER_HOME` store for follow-ups. `list_session_investigations` finds saved scopes within a selected analysis. Opening one scope binds that MCP connection; for several roots, select a collection first. A collection permits only its selected member scopes. A different selection needs a new unbound connection or an operator-selected binding. No source scanning or cross-store discovery happens automatically. A focused query scope is not a completed investigation.
 
 For a managed run, its store is `<run-directory>/store` and its `audit.json` contains the investigation ID. Reconnect directly:
 
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.21.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.22.0.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. The general conversational readout automatically uses the packaged native source-review Agent; no second user prompt is required. Focused follow-ups do not restart a full review. The full saved-report workflow below retains its separate managed evidence-review host. Skill instructions and passed tool checks do not guarantee semantic correctness.
@@ -51,7 +63,7 @@ Discovery is bounded (three levels, 10,000 parent logs, first and last 1 MiB for
 
 A local analyzer for Claude Code session archives, with deterministic accounting and an approved-Claude investigation workflow. The Python 3.9+ engine uses SQLite and the standard library; it has no model client, network dependency or Jev integration.
 
-The investigation handles **one selected session** and structurally linked, captured children. It preserves the original records, gives Claude compact navigation and measured activity, and lets Claude search, follow evidence links and reread complete visible text. Claude writes the findings and optional recommendations. The renderer preserves that wording; Codex is used for product development and tests only.
+Each evidence investigation handles **one selected session** and structurally linked, captured children. The conversational collection workflow combines explicitly selected roots while preserving those boundaries. It preserves the original records, gives Claude compact navigation and measured activity, and lets Claude search, follow evidence links and reread complete visible text. Claude writes the findings and optional recommendations. The renderer preserves that wording; Codex is used for product development and tests only.
 
 Material requirements connect to result evidence, verification scope and known revisions. Recovery episodes retain distinct attempts and deduplicated resource usage. Context/cache and captured-output views help Claude locate evidence without inventing compactions, waste or token attribution. Findings can distinguish adequate instructions that were ignored, an instruction defect, incomplete verification, tool limitations and insufficient evidence. No recommendation is required. New findings include Claude-authored local event explanations and decisive sources. Turn links open the local result; the complete finding retains its answer, sequence, qualifications and optional proposals.
 
@@ -73,7 +85,7 @@ python3 -m ally_analyzer --data-dir .analysis/ally session-start ANALYSIS_ID SES
 python3 -m ally_analyzer --data-dir .analysis/ally session-overview INVESTIGATION_ID
 ```
 
-Inputs can be ZIP archives, directories, JSONL, or `.log` files containing one JSON object per line. Import/accounting can retain multiple sessions; each investigation selects one root. Existing reports are never overwritten. Use `--help` for all commands; `--data-dir` precedes accounting commands; for `browse`, place it after `browse`.
+Inputs can be one ZIP archive/directory/log or several explicitly selected JSONL/`.log` files containing one JSON object per line. Import/accounting can retain multiple sessions; each investigation selects one root. Existing reports are never overwritten. Use `--help` for all commands; `--data-dir` precedes accounting commands; for `browse`, place it after `browse`.
 
 ## Managed Claude investigation and evidence review
 
@@ -165,7 +177,7 @@ The writing skill requires specific evidence, plain language and concrete remain
 ```sh
 python3 -m unittest discover -v
 python3 scripts/package_plugin.py
-claude --plugin-dir dist/ally-session-analyzer-0.21.0.zip
+claude --plugin-dir dist/ally-session-analyzer-0.22.0.zip
 ```
 
 The ZIP includes only allowlisted implementation files, skills and documentation. It excludes private logs, stores, reports, tests and legacy variants. The engine and regression tests run without Claude; opt-in live tests use the operator's authenticated Claude host. CLI plugin loading is tested; permanent desktop installation and other operating systems are not certified.

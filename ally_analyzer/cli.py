@@ -22,7 +22,7 @@ def parser():
     p.add_argument("--data-dir", help="Private analysis store (default: ALLY_ANALYZER_HOME or ~/.ally-session-analyzer)")
     sub = p.add_subparsers(dest="command", required=True)
     def source_args(c):
-        c.add_argument("source", help="Selected ZIP, directory or JSONL/.log file")
+        c.add_argument("source", nargs='+', help="One selected ZIP/directory/log, or several explicitly selected JSONL/.log files")
         c.add_argument("--namespace", default="local", help="Dataset owner/collection boundary")
         c.add_argument("--label", action="append", default=[], metavar="KEY=VALUE")
         c.add_argument("--parent-only", action="store_true", help="Do not collect the selected file's adjacent session/subagents logs")
@@ -96,6 +96,10 @@ def parser():
     a.add_argument("analysis_id"); a.add_argument("session_id")
     a.add_argument("--purpose", required=True); a.add_argument("--artifact-id", action="append", default=[])
     a.add_argument("--revision-of")
+    a = sub.add_parser('collection-start', help='Select roots for combined or individual source-reviewed readouts')
+    a.add_argument('analysis_id'); a.add_argument('session_ids', nargs='+')
+    a.add_argument('--purpose', required=True)
+    a.add_argument('--mode', choices=['combined', 'individual'], default='combined')
     a = sub.add_parser("session-call", help="Call a scoped investigation API using a JSON arguments file")
     a.add_argument("operation"); a.add_argument("arguments_json")
     a.add_argument("--allow-content", action="store_true")
@@ -146,7 +150,8 @@ def main(argv=None):
             serve(store, args.allow_content or os.environ.get("ALLY_ANALYZER_ALLOW_CONTENT") == "1")
             return 0
         if c in ("import", "run"):
-            result = import_bundle(store, args.source, args.namespace, labels(), include_subagents=not args.parent_only)
+            source = args.source[0] if len(args.source) == 1 else args.source
+            result = import_bundle(store, source, args.namespace, labels(), include_subagents=not args.parent_only)
             if c == "run":
                 result.update(analyze_dataset(store, result["dataset_id"], load(args.profile), load(args.prices)))
                 if args.output:
@@ -198,10 +203,13 @@ def main(argv=None):
             from .session_scope import start_session_investigation
             result = start_session_investigation(store, args.analysis_id, args.session_id, args.purpose,
                                                  revision_of=args.revision_of, artifact_ids=args.artifact_id)
+        elif c == 'collection-start':
+            from .session_collection import start_session_collection
+            result = start_session_collection(store, args.analysis_id, args.session_ids, args.purpose, args.mode)
         elif c == "session-call":
             from .service import Service
-            from .mcp import SESSION_TOOLS
-            if args.operation not in {t["name"] for t in SESSION_TOOLS}:
+            from .mcp import SESSION_TOOLS, COLLECTION_TOOLS
+            if args.operation not in {t["name"] for t in SESSION_TOOLS + COLLECTION_TOOLS}:
                 raise AnalyzerError("session-call accepts only scoped investigation APIs")
             service = Service(store, allow_content=args.allow_content)
             try:

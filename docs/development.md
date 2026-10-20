@@ -64,3 +64,6 @@ python3 scripts/test_offline_pricing.py --source /absolute/path/session.jsonl --
 ```
 
 It blocks network connections and subprocesses, saves separate computed-cost previews and checks hashes of the selected sources, canonical accounting and explicitly preserved answers. It does not rewrite Claude output or test semantic writing quality. See [automatic pricing](automatic-pricing.md). The 0.21.0 live default-flow/style check remains deferred until the operator confirms quota availability; do not run the Claude harness before then.
+
+
+For the single/multiple-log conversational workflow, see [multiple-log usage](multiple-logs.md). Run `python3 -m unittest tests.test_session_collection tests.test_interfaces tests.test_packaging -q` for scoped synthetic and extracted-package checks. `scripts/test_offline_collection.py` accepts repeated explicit `--source` paths, blocks network/subprocess launches, and preserves source/prior-output hashes; its cost preview is not a native Claude answer or quality pass. The 0.22.0 live single/batch/style checks remain paused until the operator confirms quota reset.

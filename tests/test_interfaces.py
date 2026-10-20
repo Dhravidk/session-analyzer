@@ -15,7 +15,7 @@ from ally_analyzer.mcp import Protocol, serve
 from ally_analyzer.service import Service
 from ally_analyzer.store import Store
 from ally_analyzer.util import canonical
-from tests.helpers import smoke_rows, write_log
+from tests.helpers import response, smoke_rows, write_log
 
 ROOT=Path(__file__).resolve().parent.parent
 
@@ -85,6 +85,23 @@ class InterfaceTests(unittest.TestCase):
         cmd=[sys.executable,'-m','ally_analyzer','--data-dir',str(self.store.root),'annotate',aid,fid,'--status','dismissed','--note','Expected fixture behavior']
         r=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True,timeout=10)
         self.assertEqual(r.returncode,0,r.stderr);self.assertEqual(before,canonical(canonical_report(self.store,aid)))
+
+    def test_multiple_selection_import_and_collection_default_over_mcp(self):
+        self.init()
+        second=write_log(self.root/'second.log',[response(100,session='synthetic-second')])
+        missing=self.tool('import_bundle',{})
+        self.assertTrue(missing['isError'])
+        self.assertTrue(self.tool('import_bundle',{'path':str(self.source),'paths':[str(second)]})['isError'])
+        imported=self.wait_job(self.tool('import_bundle',{'paths':[str(self.source),str(second)]})['structuredContent'])
+        analyzed=self.wait_job(self.tool('analyze_batch',{'dataset_id':imported['dataset_id']})['structuredContent'])
+        selected=self.tool('start_session_collection',{'analysis_id':analyzed['analysis_id'],
+                            'session_ids':['session-a','synthetic-second'],'purpose':'Synthetic MCP collection'})['structuredContent']
+        self.assertEqual(selected['output_mode'],'combined')
+        self.assertEqual(len(selected['members']),2)
+        self.assertTrue(self.tool('get_metrics',{'analysis_id':analyzed['analysis_id']})['isError'])
+        for member in selected['members']:
+            scoped=self.tool('get_session_overview',{'investigation_id':member['investigation_id']})
+            self.assertFalse(scoped.get('isError'),scoped)
 
     def test_malformed_stdio_recovers_and_never_logs_to_stdout(self):
         lines=[b'{broken}\n',canonical({'jsonrpc':'2.0','id':1,'method':'ping'}).encode()+b'\n']

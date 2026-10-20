@@ -103,7 +103,19 @@ class Service:
         self.jobs = JobManager(store)
         self.delivered_guides = set()
         self.investigation_id = os.environ.get("ALLY_ANALYZER_INVESTIGATION_ID")
+        self.collection_id = os.environ.get('ALLY_ANALYZER_COLLECTION_ID')
+        self.collection_members = set()
+        if self.collection_id:
+            if self.investigation_id:
+                raise AnalyzerError('Select a collection OR a single investigation binding')
+            self._bind_collection(self.collection_id)
         self.session_only = os.environ.get("ALLY_ANALYZER_SESSION_ONLY") == "1" or bool(self.investigation_id)
+
+    def _bind_collection(self, cid):
+        from .session_collection import collection
+        selected = collection(self.store, cid)
+        self.collection_id = cid
+        self.collection_members = {m['investigation_id'] for m in selected['members']}
 
     def tool_definitions(self):
         from .mcp import TOOLS
@@ -120,12 +132,15 @@ class Service:
         return workflow_tool_spec(BY_NAME[name], workflow)
 
     def tool_available(self, name):
-        from .mcp import SESSION_TOOLS
+        from .mcp import SESSION_TOOLS, COLLECTION_TOOLS
         names = {t["name"] for t in SESSION_TOOLS}
+        collections = {t['name'] for t in COLLECTION_TOOLS}
+        if self.collection_id:
+            return name in (names | collections) - {'start_session_investigation', 'start_session_collection'} or name in ('get_definitions', 'get_session_guide')
         if self.investigation_id:
             return name in names - {"start_session_investigation"} or name in ("get_definitions", "get_session_guide")
         if self.session_only:
-            return name in names or name in ("get_definitions", "get_session_guide", "list_analyses", "list_sessions", "list_session_investigations")
+            return name in names | collections or name in ("get_definitions", "get_session_guide", "list_analyses", "list_sessions", "list_session_investigations")
         return True
 
     def _guidance(self):
@@ -153,21 +168,38 @@ class Service:
         return result
 
     def _call(self, name, a):
-        from .mcp import BY_NAME, SESSION_TOOLS, validate
+        from .mcp import BY_NAME, SESSION_TOOLS, COLLECTION_TOOLS, validate
         if not self.tool_available(name):
             if self.investigation_id:
                 from .session_scope import get_run, log_access
                 log_access(self.store, get_run(self.store, self.investigation_id), "blocked_tool", {"name": name}, error="Tool not allowed by bound-session policy")
-            raise AnalyzerError("Tool is unavailable in the bound single-session workflow; legacy APIs cannot bypass its scope")
+            raise AnalyzerError("Tool is unavailable in the bound session workflow; legacy APIs cannot bypass its scope")
         if name == "get_session_guide":
             from .guidance import get_session_guide
             validate(a, BY_NAME[name]["inputSchema"])
             guide = get_session_guide(**a)
             self.delivered_guides.add(a.get('skill', 'explain'))
             return guide
+        if name in {t['name'] for t in COLLECTION_TOOLS}:
+            validate(a, BY_NAME[name]['inputSchema'])
+            from . import session_collection
+            if self.collection_id and a.get('collection_id') != self.collection_id:
+                raise AnalyzerError('This host is bound to a different session collection')
+            if name == 'start_session_collection':
+                result = session_collection.start_session_collection(self.store, **a)
+                self._bind_collection(result['collection_id'])
+                return result
+            if not self.collection_id:
+                self._bind_collection(a['collection_id'])
+            kwargs = dict(a)
+            if name in ('prepare_collection_reply', 'get_collection_reply_draft', 'submit_collection_reply_review', 'get_reviewed_collection_reply'):
+                kwargs['allow_content'] = self.allow_content
+            return getattr(session_collection, name)(self.store, **kwargs)
         if name in {t["name"] for t in SESSION_TOOLS}:
             validate(a, self.tool_definition(name)["inputSchema"])
             from . import session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries, session_readout, session_reply_review
+            if self.collection_id and a.get('investigation_id') not in self.collection_members:
+                raise AnalyzerError('This investigation is outside the selected session collection')
             if self.investigation_id and a.get("investigation_id") != self.investigation_id:
                 session_scope.log_access(self.store, session_scope.get_run(self.store, self.investigation_id), "blocked_scope", {"name": name}, error="Different investigation ID rejected")
                 raise AnalyzerError("This host is bound to a different investigation")
@@ -175,7 +207,7 @@ class Service:
                 result = session_scope.start_session_investigation(self.store, **a)
                 self.investigation_id = result["investigation"]["id"]
                 return result
-            if not self.investigation_id:
+            if not self.investigation_id and not self.collection_id:
                 session_scope.get_run(self.store, a["investigation_id"])
                 self.investigation_id = a["investigation_id"]
                 self.session_only = True
@@ -189,7 +221,10 @@ class Service:
                         kwargs["allow_content"] = self.allow_content
                     return function(self.store, **kwargs)
         if name == "import_bundle":
-            return self.jobs.submit(name, import_bundle, a["path"], namespace=a.get("namespace", "local"), labels=a.get("labels"), include_subagents=a.get('include_subagents',True))
+            validate(a, BY_NAME[name]['inputSchema'])
+            if ('path' in a) == ('paths' in a):
+                raise AnalyzerError('Supply exactly one of path or paths')
+            return self.jobs.submit(name, import_bundle, a.get('path', a.get('paths')), namespace=a.get("namespace", "local"), labels=a.get("labels"), include_subagents=a.get('include_subagents',True))
         if name == "analyze_batch":
             return self.jobs.submit(name, analyze_dataset, a["dataset_id"], profile=a.get("profile"), prices=a.get("price_book"))
         if name == "export_report":
@@ -247,6 +282,7 @@ class Service:
                                            "readonly_measurements": "query_measurement", "captured_usage_inspection": "inspect_response_accounting"},
                     "resource_definitions":RESOURCE_DEFINITIONS,
                     "session_contract": "single-session-v2", "bound_investigation_id": self.investigation_id,
+                    "bound_collection_id": self.collection_id, "collection_member_investigation_ids": sorted(self.collection_members),
                     "disclosure_policy": "metadata-v1", "content_disclosure_enabled": self.allow_content,
                     "investigation": {"excerpt_version": "selected-text-v1", "max_excerpt_characters": 24000,
                                       "interpretation_storage": "separate_from_canonical_analysis",

@@ -1,12 +1,24 @@
-# Ally Session Analyzer 0.21.0
+# Ally Session Analyzer 0.22.0
 
-Release candidate: live Claude testing is deferred until the operator confirms that limits have reset. Automatic pricing is tested offline; distribution remains on hold. See the [0.21.0 audit](docs/release-audit-0.21.0.md) for the evidence and remaining live gate.
+Release candidate: live Claude testing is deferred until the operator confirms that limits have reset. Single/multiple-log selection, source-only pricing and the review gates are tested offline; distribution remains on hold. See the [0.22.0 audit](docs/release-audit-0.22.0.md) for the evidence and remaining live gate.
 
 Claude's default session readout starts with “Estimated session cost: $…” and gives token counts and dollar amounts for input (including cached input) and output (including reasoning). Verified public pricing loads automatically from the dated bundled snapshot without a model or pricing-network call. Explicit operator cards take precedence; unknown models, modes or usage remain unavailable. The two included portions are not added again. Costs cover only analyzed source usage, never analyzer/reviewer usage, and are public API token-price equivalents rather than subscription charges or invoices. The recommendation or outcome comes next, followed immediately by separate **Task outcome** and **Instruction following** assessments, decisive evidence and supported edits. Claude checks actual requests, authorizations, actions/results and later recovery. Required approval before implementation remains intact; an unverified result is not automatically a failure.
 
 Cache and compaction diagnosis or tuning is on request. The headline still includes cached input, and the existing token accounting, tool-call evidence, compaction records, timelines and follow-up tools remain available. `prepare_session_reply` saves an immutable draft and requires the packaged native `ally-session-analyzer:source-review` Agent automatically. The fresh reviewer rereads original requests/updates and decisive results, checks edits against existing instructions and saves a standalone body; the parent retrieves and copies the accepted reply verbatim. No extra user prompt is required, and no unreviewed ready fallback exists. Repeated submissions reuse the same draft; at most two review submissions are allowed. Drafts, notes and reviewed wording are retained. Backend checks verify linkage, fresh exposure, quotes and visible assessments, not semantic truth or independent caller identity. No compliance score or automatic violation is generated.
 
-With disclosure enabled, read indexed ordinary requests and structured queued updates before a whole-session verdict; source continuations remain required. Updates do not become new reconstructed turns or change token totals. Keep the default body within 450 words. Check recorded parent branches before blaming an assistant for ignoring a message; an earlier timestamp does not prove delivery into that response's context. No user host/model settings or global hooks are changed.
+With disclosure enabled, read indexed ordinary requests and structured queued updates before a whole-session verdict; source continuations remain required. Updates do not become new reconstructed turns or change token totals. Keep each individual default body within 450 words; combined handoffs allow 150 more words per additional root. Check recorded parent branches before blaming an assistant for ignoring a message; an earlier timestamp does not prove delivery into that response's context. No user host/model settings or global hooks are changed.
+
+## One log or several
+
+Use the same command for either option:
+
+```text
+/ally-session-analyzer:explain /path/session.jsonl
+/ally-session-analyzer:explain /path/one.jsonl /path/two.jsonl
+/ally-session-analyzer:explain /path/one.jsonl /path/two.jsonl --separate
+```
+
+Several selected roots default to one combined handoff in the established style: cost/token-dollar breakdown, recommendations, session evidence, concise compliance, supported exact edits, useful Claude prompt last. `--separate` requests individual readouts. Each root keeps its own evidence and assessment; combined costs count shared responses once and exclude analyzer/reviewer usage. The automatic native source reviewer checks every selected root and the synthesis before delivery, without another user prompt. Original handoffs/Claude outputs remain unchanged. See [multiple-log usage and scope limits](docs/multiple-logs.md), including the distinction from the one-root managed saved-report command.
 
 ## Ask Claude without opening the GUI
 
@@ -21,14 +33,14 @@ Does the evidence establish a skill defect, or is the child result missing?
 
 The `explain` skill selects relevant tools, checks the question's premise and rechecks saved judgments against primary evidence. Focused questions use the existing timeline, turn, failure, child and artifact readers; they do not require a full report. Completed investigations support new read-only `query_measurement` calculations. `inspect_response_accounting` exposes the captured numeric fields and streaming frames behind a reconciled response. Neither tool edits Claude's saved prose. The first successful data-tool response supplies the exact conversation and writing skills once per connection, even if Claude skips definitions. `get_session_guide` reloads them when native skill invocation is unavailable or context has been lost. Agent filters keep main, child and combined populations distinct.
 
-Keep using the same configured `ALLY_ANALYZER_HOME` store for follow-ups. `list_session_investigations` finds saved scopes within a selected analysis. Opening a scope binds that MCP connection; switching sessions needs a new unbound connection or an operator-selected binding. No source scanning or cross-store discovery happens automatically. A focused query scope is not a completed investigation.
+Keep using the same configured `ALLY_ANALYZER_HOME` store for follow-ups. `list_session_investigations` finds saved scopes within a selected analysis. Opening one scope binds that MCP connection; for several roots, select a collection first. A collection permits only its selected member scopes. A different selection needs a new unbound connection or an operator-selected binding. No source scanning or cross-store discovery happens automatically. A focused query scope is not a completed investigation.
 
 For a managed run, its store is `<run-directory>/store` and its `audit.json` contains the investigation ID. Reconnect directly:
 
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.21.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.22.0.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. The general conversational readout automatically uses the packaged native source-review Agent; no second user prompt is required. Focused follow-ups do not restart a full review. The full saved-report workflow below retains its separate managed evidence-review host. Skill instructions and passed tool checks do not guarantee semantic correctness.
@@ -54,7 +66,7 @@ Local deterministic accounting and a single-session investigation workflow for a
 The session library and standalone report offer HTML, Markdown (.md), and JSON exports. Markdown uses the saved analysis and included source text without another model call. The CLI and `export_session_investigation` tool accept format `md`; their existing source-disclosure controls still apply.
 
 ```sh
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.21.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.22.0.zip
 ```
 
 Use `/ally-session-analyzer:analyze /absolute/path/session.log` to import and measure, `/ally-session-analyzer:explain ANALYSIS_ID` for accounting, or `/ally-session-analyzer:investigate INVESTIGATION_ID` for the scoped investigation. The investigation skill can also select one root from an analysis. Loading the plugin does not collect logs automatically.
