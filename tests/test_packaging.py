@@ -11,6 +11,7 @@ from pathlib import Path
 
 from scripts.package_plugin import build_archive
 from tests.helpers import response, write_log
+from tests.mcp_process import MCPProcess
 
 
 class PackagingTests(unittest.TestCase):
@@ -92,18 +93,13 @@ class PackagingTests(unittest.TestCase):
             selection=json.loads(selected.stdout);cid=selection['collection_id']
             # Exercise the extracted MCP's default gate with synthetic scripted
             # authorship, not a Claude invocation or semantic-review certificate.
-            process=subprocess.Popen([sys.executable,'-I',*args],cwd=root,env=env,
-                                     stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
-            def rpc(method,params):
-                process.stdin.write(json.dumps({'jsonrpc':'2.0','id':1,'method':method,'params':params})+'\n');process.stdin.flush()
-                return json.loads(process.stdout.readline())
-            def tool(name,**arguments):
-                result=rpc('tools/call',{'name':name,'arguments':arguments})['result']
-                self.assertFalse(result.get('isError'),result)
-                return result['structuredContent']
-            try:
-                rpc('initialize',{'protocolVersion':'2025-06-18','capabilities':{},'clientInfo':{'name':'synthetic-collection','version':'1'}})
-                process.stdin.write(json.dumps({'jsonrpc':'2.0','method':'notifications/initialized'})+'\n');process.stdin.flush()
+            with MCPProcess([sys.executable,'-I',*args],cwd=root,env=env) as client:
+                def tool(name,**arguments):
+                    result=client.request('tools/call',{'name':name,'arguments':arguments})['result']
+                    self.assertFalse(result.get('isError'),result)
+                    return result['structuredContent']
+                client.request('initialize',{'protocolVersion':'2025-06-18','capabilities':{},'clientInfo':{'name':'synthetic-collection','version':'1'}})
+                client.notify('notifications/initialized')
                 group=tool('get_session_collection',collection_id=cid)
                 self.assertEqual(group['output_mode'],'combined')
                 self.assertEqual(group['collection_readout']['usage']['input_tokens']['cost_usd'],'0.000292')
@@ -122,9 +118,7 @@ class PackagingTests(unittest.TestCase):
                 self.assertEqual(ready['status'],'ready',ready)
                 self.assertTrue(ready['reply'].endswith(body))
                 self.assertEqual(tool('get_reviewed_collection_reply',collection_id=cid,draft_id=draft['draft_id'])['reply'],ready['reply'])
-            finally:
-                process.stdin.close();process.wait(timeout=20)
-                process.stdout.close();process.stderr.close()
+
 
 
 if __name__=='__main__':unittest.main()
