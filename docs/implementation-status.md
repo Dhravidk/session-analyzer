@@ -1,3 +1,11 @@
+# Implementation status — 0.22.1
+
+Both single-session and collection reply acceptance now use a shared SQLite transaction for the final history checks and append. The two-submission limit and exact retries are enforced across processes; existing authored history stays immutable. Fresh-source/quote checks are shared through explicit interfaces, with workflow orchestration kept separate. Packaged MCP checks have bounded I/O and guaranteed child cleanup, including synthetic timeout and assertion-failure coverage. No developer-facing skill/agent wording or source-price rules changed. See [hardening details](review-hardening.md) and [release evidence](release-audit-0.22.1.md).
+
+Final live single-log, combined-log and separate-output checks remain pending until the user explicitly confirms Claude limits reset. No Claude command/model invocation, push or distribution is authorized during this pass.
+
+---
+
 # Implementation status — 0.22.0
 
 Conversational `explain`/`analyze` accepts one selected log or several. Multiple roots default to a combined developer handoff; `--separate` selects individual readouts. Roots keep separate immutable evidence scopes and distinct task-outcome/instruction-following assessments. One automatic native source reviewer checks fresh evidence for every selected root and the combined advice; the backend withholds a ready reply until accepted. It validates linkage/format, not semantic truth or caller identity. An existing single-root binding cannot widen into a collection.

@@ -17,7 +17,7 @@ def build_archive(destination=None):
                                            'single-session-usage.md','single-session-investigation-spec.md','session-analyzer-product-design.md',
                                            'claude-session-analyzer-spec.md','decisions/0001-session-evidence-graph.md',
                                            'system-overview.md','session-analyzer-system.mmd','release-audit-0.10.3.md',
-                                           'release-audit-0.10.4.md','release-audit-0.11.0.md','release-audit-0.12.0.md','release-audit-0.13.0.md','release-audit-0.15.0.md','release-audit-0.16.0.md','release-audit-0.16.1.md','release-audit-0.18.0.md','release-audit-0.19.0.md','release-audit-0.20.0.md','release-audit-0.21.0.md','automatic-pricing.md','multiple-logs.md','release-audit-0.22.0.md','developer-usefulness-audit-2026-10-15.md')]
+                                           'release-audit-0.10.4.md','release-audit-0.11.0.md','release-audit-0.12.0.md','release-audit-0.13.0.md','release-audit-0.15.0.md','release-audit-0.16.0.md','release-audit-0.16.1.md','release-audit-0.18.0.md','release-audit-0.19.0.md','release-audit-0.20.0.md','release-audit-0.21.0.md','automatic-pricing.md','multiple-logs.md','release-audit-0.22.0.md','release-audit-0.22.1.md','review-hardening.md','developer-usefulness-audit-2026-10-15.md')]
     files+=list((ROOT/'ally_analyzer').glob('*.py'))+[ROOT/'ally_analyzer'/name for name in ('report.html','session_report.css','session_report.js','session_library.html','session_library.css','session_library.js')]
     files.append(ROOT/'ally_analyzer/verified_prices.json')
     files+=list((ROOT/'skills').glob('*/SKILL.md'))

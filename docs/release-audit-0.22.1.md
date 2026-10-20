@@ -1,0 +1,19 @@
+# 0.22.1 candidate — atomic review acceptance and bounded package tests
+
+This is a focused hardening pass. Developer-facing skills, agent instructions, cost opening/price rules, compliance assessments, approval boundaries, disclosure controls and default resource-detail policy remain unchanged. Underlying accounting and tools are retained. No Claude command or model invocation is authorized or performed; final live single-log, combined-log and separate-output checks remain pending. No push or distribution is authorized.
+
+Both reply workflows now recheck acceptance, exact retry identity and the two-submission cap under a SQLite `BEGIN IMMEDIATE` writer reservation, then append using that same connection. The prior optimistic lookup is only a fast path. Validation occurs before the reservation, so source-cache/access-log writes do not nest under the admission lock. A shared module contains explicit public interfaces for admission/retry and fresh-source/quote checks; member-specific and single-session orchestration stay separate. Existing history and exact wording are not edited. For legacy conflicting accepted rows, retrieval/retry consistently uses the first stored acceptance and retains all rows for audit.
+
+Packaged MCP tests use bounded nonblocking reads/writes and a response-size cap. A context manager guarantees termination/kill escalation, waiting and stream cleanup on timeout and assertion failures. Stderr is drained into a temporary file rather than an unread pipe. The test helper is excluded from the distributable plugin. See [implementation details](review-hardening.md).
+
+## Regression evidence
+
+The affected **55 tests pass** against the hardened implementation. The full offline suite discovered **404 tests: 402 passed and two optional private-corpus checks skipped**, retained in `.analysis/hardening-full-offline-tests.log`. Separate spawned processes share the actual SQLite file and synchronize after real validation, before admission. No persistence method is mocked. Cases cover conflicting submissions, exact accepted/rejected retries, competing final accepted/rejected/mixed attempts, accepted retrieval, rollback after a SQLite-triggered insert failure, and retention of legacy conflicting answers. A negative control ran the conflicting and competing-final cases against commit `a95d1ad` in a temporary checkout: both tests failed in both workflows, with two concurrent successful answers and three competing successful final attempts respectively. The failures are retained as expected negative-control evidence in `.analysis/hardening-negative-control.log`, not counted as passes.
+
+Synthetic package-process tests cover an unresponsive child ignoring SIGTERM, assertion failure, incomplete/oversized lines, blocked stdin and early EOF. They invoke only Python. The packaging check also exercises the actual extracted Python CLI and MCP with synthetic authored submissions; it is not a native Claude review.
+
+The separate final clean-extraction/package-process run passed **7 tests** in `.analysis/hardening-clean-extraction-tests.log`. Byte comparison against the baseline confirmed all **11 skill, agent, pricing and readout files** unchanged. Full-suite and candidate checks are recorded in [validation](validation.md). No updated `dist/` candidate is built until offline checks pass. Private stores, logs, generated reports, negative-control outputs and archives remain ignored.
+
+## Remaining release blockers
+
+The final live approved-Claude checks for a single log, combined logs and separate output remain pending until the user explicitly confirms quota reset. Inspect actual native reviewer provenance and the unedited output/style in those runs. An offline acceptance test does not establish factual correctness or native review identity. No older live pass is presented as validation of this candidate.

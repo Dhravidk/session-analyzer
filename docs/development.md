@@ -67,3 +67,6 @@ It blocks network connections and subprocesses, saves separate computed-cost pre
 
 
 For the single/multiple-log conversational workflow, see [multiple-log usage](multiple-logs.md). Run `python3 -m unittest tests.test_session_collection tests.test_interfaces tests.test_packaging -q` for scoped synthetic and extracted-package checks. `scripts/test_offline_collection.py` accepts repeated explicit `--source` paths, blocks network/subprocess launches, and preserves source/prior-output hashes; its cost preview is not a native Claude answer or quality pass. The 0.22.0 live single/batch/style checks remain paused until the operator confirms quota reset.
+
+
+For atomic reply-review admission and bounded package-process checks, see [review hardening](review-hardening.md). The concurrency tests use spawned processes and real SQLite persistence, with synchronization after validation; the package-process cases use synthetic Python subprocesses. Run affected tests first, then the full offline suite and clean extraction before building an updated local candidate. Live single/combined/separate Claude checks remain pending until the user explicitly confirms limits reset.
