@@ -125,8 +125,10 @@ def get_session_overview(store, investigation_id):
         capture[key] = {'count': len(scope['capture_gaps'][key]), 'preview': scope['capture_gaps'][key][:5],
                         'continuation': 'get_investigation_records kind=capture_gaps'}
     from .session_cost import compact_cost, source_session_cost
+    from .session_readout import developer_readout
+    cost = source_session_cost(store, run)
     return {"request_id": request_id, "investigation": run, "scope_id": scope["id"], "event_count": len(rows),
-            "source_cost": compact_cost(source_session_cost(store, run)),
+            "source_cost": compact_cost(cost), "session_readout": developer_readout(cost, metrics['session']),
             "session_metrics": compact_metrics(metrics["session"]), "turn_count": len(metrics["turns"]),
             "turn_attribution_coverage": metrics["attribution_coverage"], "turn_patterns": patterns,
             "tool_outcomes": dict(Counter(t["outcome"] for t in tools)), "capture_gaps": capture,

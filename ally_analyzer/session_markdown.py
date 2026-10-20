@@ -11,6 +11,7 @@ import re
 from .session_finding_links import finding_links
 from .session_reading import REQUIREMENT_STATUS, current_review, remaining_work_text
 from .session_cost import cost_readout
+from .session_readout import developer_readout
 from .session_story import saved_source_explanation
 
 
@@ -117,8 +118,9 @@ def markdown_parts(data):
     draft = next((r for r in data.get('conclusion_drafts', []) if r['id'] == latest), None)
     owner = latest if draft and all(draft['conclusion'].get(k) == run.get(k) for k in ('synopsis','observed_outcome','summary')) else None
     cost = cost_readout(data.get('source_cost'))
-    heading(cost['label'] + ': ' + cost['value'], 2)
-    paragraph(cost['basis'])
+    opening = developer_readout(data.get('source_cost'), data.get('accounting', {}).get('session', {}))
+    paragraph(opening['opening'])
+    for qualification in opening['qualifications']: paragraph(qualification)
     paragraph(cost['limitations'][0])
     if data.get('source_cost'):
         add('<details>\n<summary>Cost basis and exact values</summary>\n\n')

@@ -167,7 +167,7 @@ class Service:
             return guide
         if name in {t["name"] for t in SESSION_TOOLS}:
             validate(a, self.tool_definition(name)["inputSchema"])
-            from . import session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries
+            from . import session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries, session_readout
             if self.investigation_id and a.get("investigation_id") != self.investigation_id:
                 session_scope.log_access(self.store, session_scope.get_run(self.store, self.investigation_id), "blocked_scope", {"name": name}, error="Different investigation ID rejected")
                 raise AnalyzerError("This host is bound to a different investigation")
@@ -179,7 +179,7 @@ class Service:
                 session_scope.get_run(self.store, a["investigation_id"])
                 self.investigation_id = a["investigation_id"]
                 self.session_only = True
-            for module in (session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries):
+            for module in (session_scope, session_investigation, session_report, session_validation, session_diagnostics, session_failures, session_agents, session_review, session_requirements, session_resources, session_episodes, session_queries, session_readout):
                 function = getattr(module, name, None)
                 if function:
                     kwargs = dict(a)

@@ -119,6 +119,7 @@ def cost_readout(cost):
     snapshot = cost.get('recorded_snapshot')
     if usage.get('value_usd') is not None:
         complete = usage.get('complete_for_captured_responses')
+        kind = 'priced_usage' if complete else 'priced_subtotal'
         label = 'Your agent’s estimated cost' if complete else 'Your agent’s priced usage subtotal'
         basis = (str(usage['known_responses']) + ' of ' + str(usage['eligible_responses'])
                  + ' captured responses priced with the pinned rate card. ' + usage['population'])
@@ -128,6 +129,7 @@ def cost_readout(cost):
             basis += ' Some child traces are unavailable; full task cost is unknown.'
         value = money(usage['value_usd'])
     elif snapshot:
+        kind = 'recorded_snapshot'
         label = 'Your agent’s recorded cost estimate'
         value = money(snapshot['value_usd'])
         basis = ('Latest valid host snapshot' + (' at ' + snapshot['timestamp'] if snapshot.get('timestamp') else '')
@@ -139,10 +141,11 @@ def cost_readout(cost):
         if order['comparable'] != order['main_responses']:
             basis += ' Freshness is not fully established.'
     else:
+        kind = 'unavailable'
         label, value = 'Your agent’s cost', 'Unavailable'
         basis = ('No usable cost snapshot or priced captured usage is available. Missing cost is unknown, not zero.' if cost else
                  'Cost accounting is not included in this saved report. Re-export from its investigation store to calculate it; unknown cost is not zero.')
-    return {'label': label, 'value': value, 'basis': basis,
+    return {'kind': kind, 'label': label, 'value': value, 'basis': basis,
             'limitations': cost.get('limitations', ['Estimates are not invoices. Source-agent cost is separate from analyzer cost.']),
             'source_ids': usage.get('source_ids', []) if usage.get('value_usd') is not None else (snapshot['source_ids'] if snapshot else [])}
 

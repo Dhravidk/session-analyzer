@@ -7,7 +7,7 @@ from .normalize import content_blocks
 from .session_scope import entities, get_scope, scope_rows
 from .util import digest, integer, strict_json, timestamp
 
-VERSION = "session-turn-metrics-v3"
+VERSION = "session-turn-metrics-v4"
 DEFINITIONS = {
     "task_requests": "Distinct captured main-agent task requests from explicit human/user origins, explicit SDK submissions, or inferred requests with unspecified origin. Tool results, metadata, summaries and recognized CLI controls are excluded. This population is not proof that all intended requirements were captured.",
     "human_origin_turns": "Task requests explicitly marked human or user by the captured host. This records provenance; it does not independently prove who typed the request. SDK and unspecified origins are excluded.",
@@ -20,6 +20,7 @@ DEFINITIONS = {
     "cache_creation_tokens": "Cache-creation input tokens, already included in prompt tokens.",
     "uncached_input_tokens": "Reported input tokens excluding cache reads and cache creation.",
     "completion_tokens": "Inclusive output tokens; reported thinking is already included.",
+    "thinking_tokens": "Separately reported reasoning/thinking output tokens, already included in completion tokens. Missing counts are unknown, not zero.",
     "turn_duration_seconds": "Explicit system turn_duration durationMs linked to the request, when exactly one unambiguous duration record exists. Otherwise unknown. Observed turn span is separate.",
     "observed_turn_span_seconds": "Request timestamp to last attributed event, not time to the next user message and not proven completion latency.",
 }
@@ -66,7 +67,7 @@ def token_metrics(responses):
     result = {}
     fields = {"prompt_tokens": "total_input_tokens", "cached_tokens": "cache_read_input_tokens",
               "completion_tokens": "output_tokens", "uncached_input_tokens": "input_tokens",
-              "cache_creation_tokens": "cache_creation_input_tokens"}
+              "cache_creation_tokens": "cache_creation_input_tokens", "thinking_tokens": "thinking_tokens"}
     for name, field in fields.items():
         known = [r for r in eligible if r["tokens"].get(field) is not None]
         subtotal = sum(r["tokens"][field] for r in known)

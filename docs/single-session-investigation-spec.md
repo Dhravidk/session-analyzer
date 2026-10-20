@@ -1,6 +1,6 @@
 # Single session investigation specification
 
-Revision 22 · October 19, 2026 · Governing contract for version 0.17.0 (earlier release sections retained as history)
+Revision 23 · October 20, 2026 · Governing contract for version 0.18.0 (earlier release sections retained as history)
 
 The analyzer should help a developer decide whether anything should change after one Claude Code session, and provide enough evidence to assess that decision. Deterministic metrics establish what was recorded. Contextual investigation assesses whether the activity was expected, whether it affected the task, and what remains worth changing; missing evidence can prevent a conclusion.
 
@@ -759,3 +759,12 @@ Expose source-agent cost in `get_session_overview.source_cost` and the report op
 Keep overview cost provenance bounded with counts and source previews; report exports retain the exact identities. A saved report without these new facts remains renderable but explicitly lacks cost accounting; re-export from its investigation store is required to calculate it. Rendering a saved report does not reread source files or manufacture cost values.
 
 Expand the saved requirement map near the opening as Instruction and task compliance, with dedicated navigation. No map establishes no compliance verdict. Display completed, not met, unverified, superseded and withdrawn obligations using their saved basis and evidence; do not infer a score or new violation. Investigators and reviewers prioritize material user constraints, applicable captured instructions, actual approval gates and later authorizations, including whether repeated permission requests blocked already authorized drafting. Keep required developer approval before implementation when evidenced. Inspect the captured ending and recovery before calling a planning loop unresolved. Unavailable files from another workstation establish an inspection limit, not proof they were never produced. Preserve all historical Claude-authored findings and reviews unchanged.
+
+
+## 0.18.0 — Computed developer readout and on-request resource detail
+
+General Claude readouts start with the scoped `session_readout.opening` and material qualifications: cost, total input with cached input included, output with reasoning included. Use explicit unavailable/subtotal alternatives instead of inventing missing values or a full bill. Version 4 session/turn metrics add separately reported thinking; existing token totals and the analysis accounting remain unchanged. The population includes main and structurally linked captured children once.
+
+Continue token reconciliation, tool-call accounting, context/cache timelines, actual compaction records and registered queries. The default message gives recommendations/outcome, decisive evidence and supported edits. Apart from cached input in the opening, resource diagnosis/tuning is on request from the current user, not inferred from archived text. Existing saved findings are not filtered or edited.
+
+Before a general final reply, Claude submits its own body to `prepare_session_reply`. It checks common unrequested resource-detail terms and repeated openings. A rejected draft gets precise issues for the author to revise; a ready result prepends computed facts and material qualifications while preserving the body verbatim. Requested detail topics require a quote of the current request. The tool remains scoped/read-only with respect to findings and logs only validation metadata; it adds no model call and executes no archived commands. It is a mechanical preflight, not a semantic correctness guarantee. Focused follow-ups can answer directly through existing tools. Do not create a global stop/compaction hook, strip historical prose, or weaken the developer's implementation-approval gate to enforce presentation.

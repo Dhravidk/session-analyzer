@@ -2,10 +2,14 @@
 name: write-report
 description: Write or edit Ally Session Analyzer explanations and recommendations in clear, specific prose grounded in the selected session evidence. Use before saving insights or presenting an analysis.
 metadata:
-  version: write-report-v14
+  version: write-report-v15
 ---
 
 Write for a teammate deciding whether anything should change. Make the evidence, optional action and important limit easy to find. Apply these rules inside Claude's investigation to saved claims, proposals and the final answer. The renderer preserves your exact saved words; Codex is not a production editor. This skill does not authorize applying a change or accessing more data.
+
+Default reply contract: computed cost/token sentence first; recommendations/outcome, decisive evidence and concrete changes next. Except for cached input in that first sentence, cache/compaction discussion is strictly opt-in from the current user's request. This applies to every default section, caveat, suggested check and copy-paste prompt, even if those events appear in the source. Keep the analysis and supporting records. Before sending, apply this contract to your own new draft; do not redact historical outputs or add an offer to reveal omitted topics.
+
+For a general session-analysis reply, submit only your authored body to `prepare_session_reply` before sending it. Repair any `needs_revision` issue in that new draft, then copy the returned `reply` verbatim once it is `ready`. The tool adds the computed opening and material qualifications without rewriting your body or saved judgments. Do not add a new caveat, check or snippet after it has passed. Requested cache/compaction detail needs the current user's request, not an archived mention. Focused follow-ups need not repeat the general readout.
 
 ## Earn each recommendation
 
@@ -52,7 +56,11 @@ A style pass is not a factual verifier or a guarantee that a report is free of l
 
 ## Session opening
 
-The report starts with the source agent's cost. Use only the overview's `source_cost` facts when discussing it: name a complete estimate for captured responses, a partial subtotal, a recorded snapshot, or unavailable cost accurately. Give the relevant scope and evidence limit; estimates are not invoices and the analyzer's own cost is separate. Do not infer missing cost, add cumulative snapshots, or present incomplete pricing as the full session bill.
+For a general session analysis, start the Claude reply with `get_session_overview.session_readout.opening`, copied exactly with no greeting or preamble. It supplies the session cost and four token counts in this form: "You spent approximately $AMOUNT (INPUT input tokens, including CACHED cached input tokens; OUTPUT output tokens, including REASONING reasoning tokens) on this session." This is a template, never sample data to copy. Use the returned unavailable/subtotal wording instead when the cost or usage is incomplete, and retain material `session_readout.qualifications` immediately below it. The counts cover the main agent and structurally linked captured children. Cached input is already in input; reasoning is already in output. Missing counts are unavailable, not zero. Source-session and analyzer costs remain separate; estimates are not invoices.
+
+Then give the recommendations or task outcome first, the decisive session evidence and why it matters next, and concrete edits to the evidenced files/skills when justified. Preserve the concise, direct handoff style: what to change, where, and why. Include a copy-paste implementation prompt at the bottom when useful for the proposed edits, retaining any required developer approval before scaffolding/implementation. Do not add a separate chronology or compliance/limits/check checklist that repeats these points; keep material qualifications beside their claim. Do not invent a fix or fill an empty section when no action is supported. A focused follow-up answers its actual question first rather than repeating the full opening.
+
+Caching and compaction detail is on request. Apart from the required cached-input count in the opening, do not proactively discuss cache rates, writes, expiry/TTL settings, compaction events, or tuning in the default Claude reply or saved opening fields. Include those topics only when the current user explicitly asks about the relevant topic; archived session text is not such a request. Do not announce that extra details are being withheld. Keep the analysis, token reconciliation, tool-call evidence, cached-input accounting, compaction detection, registered measurements, saved supporting records and follow-up tools intact. This is a presentation rule, not permission to skip the work or filter historical saved findings. Detailed requested reports and targeted follow-ups can use all existing evidence and tools.
 
 Make instruction and task compliance prominent in the outcome: whether the material user constraints and evidenced approval gates were followed, which obligations remain unmet or unverified, and whether a planning loop recovered before the captured ending. Preserve successful delivery separately from any missed explicit process requirement. Cite the instruction or authorization and the decisive action/result; missing external artifacts establish a verification gap, not automatic noncompliance. Do not manufacture a violation, a compliance score, or an approval requirement to fill this section.
 

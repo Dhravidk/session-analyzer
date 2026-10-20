@@ -1,3 +1,13 @@
+# Implementation status — 0.18.0
+
+General Claude readouts begin with computed session cost, input, cached input, output and reasoning within output. `session_readout.opening` and its qualifications use the same scoped accounting as the report; unavailable/partial values remain explicit. Session metric version 4 adds separately reported thinking without changing existing token totals. Recommendations/outcome, decisive evidence and supported concrete edits follow, retaining required approval before implementation.
+
+Cache/compaction diagnosis and tuning is on request. Accounting, tool-call evidence, timelines, registered queries and captured events remain intact. `prepare_session_reply` checks a new authored body for common unrequested resource-detail terms and prepends the computed opening. A rejected draft is returned for Claude to revise; a ready reply preserves the body verbatim. This read-only scoped tool logs validation metadata without changing saved findings. It is a mechanical preflight, not a semantic-quality certificate or a global Claude hook.
+
+The offline suite passed 327 tests with two optional private-corpus skips. An actual two-turn Claude check passed the default/follow-up behavior and exact-copy check after earlier failures exposed prompt-only leakage and rejected aliases. Runtime/skill files in the final package match the retained successful test package. See [release evidence](release-audit-0.18.0.md) and [validation](validation.md), including observed semantic limits.
+
+---
+
 # Implementation status — 0.17.0
 
 The report opens with source-agent cost before the saved narrative, in HTML, embedded library views and Markdown. A pinned rate card prices reconciled captured usage once; partial pricing remains a subtotal. Otherwise, a usable latest main-trace host snapshot supplies a recorded estimate. Snapshot selection uses captured source-file order when timestamps are absent, preserves ordering uncertainty, and never sums snapshots or adds them to response/child totals. Unknown cost remains unavailable. Analyzer usage is separate.

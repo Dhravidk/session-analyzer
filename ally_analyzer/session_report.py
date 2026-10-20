@@ -13,6 +13,7 @@ from .session_diagnostics import record_role, coverage_assertions
 from .session_edits import inspect_edit
 from .session_agents import build_agent_views
 from .session_cost import captured_cost_fields, cost_readout, source_session_cost
+from .session_readout import developer_readout
 from .session_failures import active_explanations, failure_coverage
 from .session_review import active_versions
 from .session_investigation import accounting, records
@@ -114,8 +115,9 @@ def report_data(store, investigation_id, include_source_text=False, allow_conten
         for sid in response['evidence']:
             if sid in sources:
                 sources[sid].setdefault('response_ids',[]).append(response['id'])
+    cost=source_session_cost(store,run)
     return {'report_version':'session-investigation-v2','investigation':run,'scope':scope,
-            'source_cost':source_session_cost(store,run),
+            'source_cost':cost,'session_readout':developer_readout(cost,metrics['session']),
             'accounting':metrics,'turn_patterns':turn_patterns(metrics['turns'],tools), **agent_views,
             'incidents':incidents,
             'requirement_map':current_map(store,investigation_id),
@@ -325,8 +327,10 @@ def requirements_html(data):
 def agent_cost_html(data):
     cost=data.get('source_cost')
     readout=cost_readout(cost)
+    opening=developer_readout(cost,data.get('accounting',{}).get('session',{}))
     body='<section id="agent-cost" class="agent-cost" aria-label="Source agent cost">'
-    body+=prose(readout['label'],'cost-label')+prose(readout['value'],'cost-value')+prose(readout['basis'],'small muted')
+    body+=prose(opening['opening'],'cost-label')
+    for qualification in opening['qualifications']:body+=prose(qualification,'small muted')
     body+=prose(readout['limitations'][0],'small muted')
     if cost:
         body+='<details><summary>Cost basis and exact values</summary>'+''.join(prose(limit,'small muted') for limit in readout['limitations'])+detail('Exact accounting',cost)+'</details>'

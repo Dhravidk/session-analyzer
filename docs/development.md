@@ -38,3 +38,12 @@ python3 scripts/test_claude_conversation.py --claude /absolute/path/approved/cla
 ```
 
 This runs three questions in one real Claude conversation, first with metadata-only disclosure and then with controlled synthetic excerpts. It saves the immutable tested plugin, prompts, raw transcripts, unedited answers and checks under `.analysis/claude-conversation/`. The $3 default cap and 600-second timeout cover the exercise; resumed host usage is reserved conservatively. Mechanical checks verify guide delivery, registered queries, source-accounting inspection, retained child collection, policy enforcement and preservation of saved judgments. Read the answers and sources separately to evaluate correctness. A passed tool-use test is not a semantic-quality pass. Rejected attempts remain in the audit.
+
+
+For an opt-in two-turn check of the developer readout in the approved Claude host:
+
+```sh
+python3 scripts/test_claude_readout.py --claude /absolute/path/approved/claude
+```
+
+This uses a labelled synthetic session and a $2 total allowance. It checks the computed first sentence, a default reply that keeps resource detail on request, the requested follow-up, original accounting and executed-tool policy. Prompts, immutable tested package, every answer, rejected attempts and raw host traces remain under `.analysis/claude-readout/`. The formatting check does not certify factual correctness or reliable behavior across models. No private developer log is used.

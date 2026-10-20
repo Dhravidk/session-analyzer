@@ -47,10 +47,11 @@ class SessionCostTests(unittest.TestCase):
         self.assertEqual(readout['value'], 'Unavailable')
         output = render_report(data)
         self.assertLess(output.index('id="agent-cost"'), output.index('<h1>'))
-        self.assertIn('unknown, not zero', agent_cost_html(data))
+        self.assertIn('Session cost is unavailable', agent_cost_html(data))
+        self.assertNotIn('$0.00', agent_cost_html(data))
         self.assertIn('A compliance verdict is not established.', output)
         markdown = render_markdown(data)
-        self.assertTrue(markdown.startswith('## Your agent’s cost: Unavailable'))
+        self.assertTrue(markdown.startswith('Session cost is unavailable'))
         self.assertLess(markdown.index('Instruction and task compliance'), markdown.index('Main\\-agent metrics'))
         self.assertEqual(data, original)
 
@@ -136,5 +137,5 @@ class SessionCostTests(unittest.TestCase):
     def test_retained_report_without_new_cost_field_remains_renderable(self):
         data = report_data(self.store, self.iid)
         data.pop('source_cost')
-        self.assertIn('Unavailable', agent_cost_html(data))
-        self.assertIn('Your agent’s cost', render_markdown(data))
+        self.assertIn('Session cost is unavailable', agent_cost_html(data))
+        self.assertIn('Session cost is unavailable', render_markdown(data))
