@@ -1,6 +1,6 @@
-# Ally Session Analyzer 0.22.1
+# Ally Session Analyzer 0.22.2
 
-Release candidate: live Claude testing is deferred until the operator confirms that limits have reset. The hardening candidate adds atomic review acceptance and bounded package-process tests; distribution remains on hold pending the final live single/combined/separate-output checks. See the [0.22.1 audit](docs/release-audit-0.22.1.md) for the evidence and remaining live gate.
+Release candidate: live Claude testing is deferred until the operator confirms that limits have reset. The candidate adds atomic draft registration with immutable freshness markers; distribution remains on hold pending final live single/combined/separate-output and interrupted-review/resume checks, including actual paid reviewer launch counts. See the [0.22.2 audit](docs/release-audit-0.22.2.md) for the evidence and remaining live gate.
 
 Claude's default session readout starts with “Estimated session cost: $…” and gives token counts and dollar amounts for input (including cached input) and output (including reasoning). Verified public pricing loads automatically from the dated bundled snapshot without a model or pricing-network call. Explicit operator cards take precedence; unknown models, modes or usage remain unavailable. The two included portions are not added again. Costs cover only analyzed source usage, never analyzer/reviewer usage, and are public API token-price equivalents rather than subscription charges or invoices. The recommendation or outcome comes next, followed immediately by separate **Task outcome** and **Instruction following** assessments, decisive evidence and supported edits. Claude checks actual requests, authorizations, actions/results and later recovery. Required approval before implementation remains intact; an unverified result is not automatically a failure.
 
@@ -40,7 +40,7 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.22.1.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.22.2.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. The general conversational readout automatically uses the packaged native source-review Agent; no second user prompt is required. Focused follow-ups do not restart a full review. The full saved-report workflow below retains its separate managed evidence-review host. Skill instructions and passed tool checks do not guarantee semantic correctness.
@@ -66,7 +66,7 @@ Local deterministic accounting and a single-session investigation workflow for a
 The session library and standalone report offer HTML, Markdown (.md), and JSON exports. Markdown uses the saved analysis and included source text without another model call. The CLI and `export_session_investigation` tool accept format `md`; their existing source-disclosure controls still apply.
 
 ```sh
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.22.1.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.22.2.zip
 ```
 
 Use `/ally-session-analyzer:analyze /absolute/path/session.log` to import and measure, `/ally-session-analyzer:explain ANALYSIS_ID` for accounting, or `/ally-session-analyzer:investigate INVESTIGATION_ID` for the scoped investigation. The investigation skill can also select one root from an analysis. Loading the plugin does not collect logs automatically.

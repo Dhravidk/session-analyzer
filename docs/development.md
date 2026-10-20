@@ -70,3 +70,6 @@ For the single/multiple-log conversational workflow, see [multiple-log usage](mu
 
 
 For atomic reply-review admission and bounded package-process checks, see [review hardening](review-hardening.md). The concurrency tests use spawned processes and real SQLite persistence, with synchronization after validation; the package-process cases use synthetic Python subprocesses. Run affected tests first, then the full offline suite and clean extraction before building an updated local candidate. Live single/combined/separate Claude checks remain pending until the user explicitly confirms limits reset.
+
+
+Draft registration uses the same short SQLite writer-reservation pattern as review admission; see [hardening details](review-hardening.md). Include `tests.test_draft_registration` in affected runs. Its separate processes force different access markers through the real persistence path. Final live single/combined/separate and interrupted-review/resume checks remain pending; actual paid reviewer launch counts must be verified after explicit quota-reset confirmation, not inferred from one saved draft ID.

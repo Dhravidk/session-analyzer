@@ -15,10 +15,20 @@ The shared module also owns fresh request/update coverage, literal quote checks 
 
 The packaged-process test helper uses bounded nonblocking stdin/stdout with selectors, line-size limits and deadlines. A context manager terminates, escalates to kill when required, waits for the subprocess, and closes its streams even after timeout, parse errors or assertion failure. Stderr goes to a temporary file so an unread stderr pipe cannot block the child. This POSIX test helper supports the documented macOS/Linux development workflow and is excluded from the plugin archive.
 
+## Atomic draft registration
+
+Both preparation workflows validate first, then use `reply_review.register_draft` for the owner/kind/key lookup, freshness marker capture and append under one `BEGIN IMMEDIATE` transaction. The helper reuses the existing draft before considering new markers. Reads logged before the winning boundary cannot support that review; later retries do not reset or advance the boundary. The existing connection-aware `records`/`put_record` functions keep lookup and append on the same SQLite connection.
+
+Legacy duplicate drafts are not deleted or rewritten. The first matching draft in established stored ordering is canonical for registration. Explicit historical IDs keep their own boundaries and accepted/rejected reviews; nothing is merged or transferred. Distinct body/policy payloads retain distinct keys. No schema migration is needed.
+
+A forwarding append hook in `test_draft_registration` forces the previous race with real marker reads and SQLite appends across separate processes; every write still executes the original persistence function. The negative control fails on the previous implementation in both workflows. The hardened race also covers individual collection output. Tests preserve pre-boundary rejection, retry/resume history and original markers, and check rollback on a real failed insert.
+
+This is a persistence guarantee, not a reviewer-launch lease. Live host tests must inspect actual Agent calls, paid reviewer counts and interrupted-review/resume behavior. Two concurrent callers can still receive the same saved draft with `review_required`; registration alone does not prove the host launches just one reviewer.
+
 ## Offline checks
 
 ```sh
-python3 -m unittest tests.test_review_concurrency tests.test_session_reply_review tests.test_session_collection tests.test_session_reading tests.test_packaging_process tests.test_packaging -q
+python3 -m unittest tests.test_draft_registration tests.test_review_concurrency tests.test_session_reply_review tests.test_session_collection tests.test_session_reading tests.test_packaging_process tests.test_packaging -q
 python3 -m unittest discover -s tests -q
 python3 -m unittest tests.test_packaging_process tests.test_packaging -q
 ```
@@ -27,4 +37,4 @@ The concurrency tests spawn separate Python processes sharing an actual SQLite s
 
 Synthetic subprocess cases cover an unresponsive process that ignores termination, partial and oversized unterminated responses, blocked stdin, early EOF and an assertion failure. They invoke Python, never Claude. The extracted-package test uses the same bounded client for actual MCP calls. Neither synthetic review acceptance nor a process test certifies model-written findings or reviewer provenance.
 
-Final live single-log, combined-log and separate-output checks remain pending until the user explicitly confirms the Claude limits have reset. Do not invoke Claude for validation before then. Keep candidate archives, private logs, stores, generated reports and test outputs out of Git; do not push or distribute.
+Final live single-log, combined-log, separate-output and interrupted-review/resume checks remain pending until the user explicitly confirms the Claude limits have reset. Do not invoke Claude for validation before then. Keep candidate archives, private logs, stores, generated reports and test outputs out of Git; do not push or distribute.

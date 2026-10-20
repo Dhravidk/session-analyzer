@@ -1,3 +1,11 @@
+# Implementation status — 0.22.2
+
+Single-session and collection draft registration now atomically rechecks owner/kind/key, captures winning access markers and saves under one SQLite writer reservation. Validation stays outside. Retries preserve the saved draft and boundary; existing duplicates and their separate reviews remain intact, with the first stored matching draft used consistently for registration. Review acceptance remains atomic. The new cross-process SQLite race fails on the previous implementation and passes with the fix. Guidance, source-cost accounting and disclosure/approval controls are unchanged.
+
+Final live single-log, combined-log, separate-output and interrupted-review/resume checks remain pending until explicit quota-reset confirmation. Verify actual Agent launches and paid reviewer invocation counts; atomic registration alone does not deduplicate host launches. No Claude invocation, push or distribution is authorized. See [release evidence](release-audit-0.22.2.md).
+
+---
+
 # Implementation status — 0.22.1
 
 Both single-session and collection reply acceptance now use a shared SQLite transaction for the final history checks and append. The two-submission limit and exact retries are enforced across processes; existing authored history stays immutable. Fresh-source/quote checks are shared through explicit interfaces, with workflow orchestration kept separate. Packaged MCP checks have bounded I/O and guaranteed child cleanup, including synthetic timeout and assertion-failure coverage. No developer-facing skill/agent wording or source-price rules changed. See [hardening details](review-hardening.md) and [release evidence](release-audit-0.22.1.md).
