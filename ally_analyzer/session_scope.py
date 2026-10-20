@@ -399,14 +399,19 @@ def get_related_evidence(store, investigation_id, anchor, relations=None, depth=
 
 
 def exposure(store, investigation_id, workflow_phase=None, after_access_id=0):
-    ranges, sizes, metadata_ids = defaultdict(list), {}, set()
     with store.connect() as db:
-        rows = db.execute("SELECT payload FROM investigation_access WHERE investigation_id=? AND id>? ORDER BY id", (investigation_id, after_access_id)).fetchall()
+        accesses = [strict_json(r[0]) for r in db.execute("SELECT payload FROM investigation_access WHERE investigation_id=? AND id>? ORDER BY id", (investigation_id, after_access_id))]
     if workflow_phase:
-        rows = [r for r in rows if strict_json(r[0]).get('workflow_phase') == workflow_phase]
+        accesses = [a for a in accesses if a.get('workflow_phase') == workflow_phase]
+    return summarize_exposure(accesses)
+
+
+def summarize_exposure(accesses):
+    """Project a captured access snapshot without another database read."""
+    ranges, sizes, metadata_ids = defaultdict(list), {}, set()
     failed = 0
-    for row in rows:
-        record = strict_json(row[0]); failed += record["status"] != "returned"
+    for record in accesses:
+        failed += record["status"] != "returned"
         for delivery in record["deliveries"]:
             metadata_ids.add(delivery["source_id"])
             if "text_sha256" not in delivery:
@@ -424,5 +429,5 @@ def exposure(store, investigation_id, workflow_phase=None, after_access_id=0):
                 merged.append([start, end])
         sources.append({"source_id": key[0], "text_sha256": key[1], "delivered_ranges": merged,
                         "delivered_characters": sum(end - start for start, end in merged), "total_characters": sizes[key]})
-    return {"requests": len(rows), "failed_or_denied_requests": failed, "metadata_sources": len(metadata_ids),
+    return {"requests": len(accesses), "failed_or_denied_requests": failed, "metadata_sources": len(metadata_ids),
             "sources": sorted(sources, key=lambda x: x["source_id"]), "meaning": "Exposure only; not comprehension or semantic completeness."}

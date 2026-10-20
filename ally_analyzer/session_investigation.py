@@ -30,16 +30,23 @@ def active_run(store, investigation_id):
     return run
 
 
-def put_record(store, run, kind, body):
+def put_record(store, run, kind, body, *, connection=None):
+    """Append unchanged content, optionally inside the caller's transaction."""
     rid = kind + "_" + digest([run["id"], body])[:24]
+    values = (run["id"], kind, rid, canonical(body), utc_now())
+    if connection is not None:
+        connection.execute("INSERT OR IGNORE INTO investigation_records VALUES (?,?,?,?,?)", values)
+        return rid
     with store.connect() as db:
-        db.execute("INSERT OR IGNORE INTO investigation_records VALUES (?,?,?,?,?)", (run["id"], kind, rid, canonical(body), utc_now()))
+        db.execute("INSERT OR IGNORE INTO investigation_records VALUES (?,?,?,?,?)", values)
     return rid
 
 
-def records(store, investigation_id, kind):
+def records(store, investigation_id, kind, *, connection=None):
+    if connection is not None:
+        return [{"id": row["id"], **strict_json(row["payload"])} for row in connection.execute("SELECT id,payload FROM investigation_records WHERE investigation_id=? AND kind=? ORDER BY created_at,id", (investigation_id, kind))]
     with store.connect() as db:
-        return [{"id": row["id"], **strict_json(row["payload"])} for row in db.execute("SELECT id,payload FROM investigation_records WHERE investigation_id=? AND kind=? ORDER BY created_at,id", (investigation_id, kind))]
+        return records(store, investigation_id, kind, connection=db)
 
 
 def record_by_id(store, investigation_id, kind, rid):

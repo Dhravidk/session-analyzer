@@ -11,9 +11,10 @@ from .session_cost import price_captured_responses, source_session_cost
 from .session_investigation import accounting, put_record, record_by_id, records
 from .session_metrics import token_metrics
 from .session_readout import developer_readout, prepare_session_reply
-from .session_reply_review import LIMIT, REVIEWER, _source_check, fresh_coverage
+from .reply_review import (LIMIT, REVIEWER, accepted_review, fresh_request_coverage,
+                           review_history, review_retry, review_source_issues, review_source_state, save_review)
 from .session_review import request_coverage
-from .session_scope import (exposure, get_run, get_scope, log_access, scope_rows,
+from .session_scope import (get_run, get_scope, scope_rows,
                             start_session_investigation)
 from .util import AnalyzerError, canonical, digest, strict_json, utc_now
 
@@ -153,7 +154,7 @@ def _draft(store, cid, did, allow_content):
 
 
 def _coverage(store, draft):
-    return {iid: fresh_coverage(store, get_run(store, iid), {'after_access_id': marker})
+    return {iid: fresh_request_coverage(store, get_run(store, iid), marker)
             for iid, marker in draft['after_access_ids'].items()}
 
 
@@ -168,8 +169,8 @@ def get_collection_reply_draft(store, collection_id, draft_id, allow_content=Fal
 
 def get_reviewed_collection_reply(store, collection_id, draft_id, allow_content=False):
     _draft(store, collection_id, draft_id, allow_content)
-    reviews = [r for r in records(store, collection_id, 'collection_reply_review') if r['draft_id'] == draft_id]
-    accepted = next((r for r in reviews if r['status'] == 'accepted'), None)
+    reviews = review_history(store, collection_id, 'collection_reply_review', draft_id)
+    accepted = accepted_review(reviews)
     if accepted:
         return _result(accepted)
     stopped = len(reviews) >= 2
@@ -187,41 +188,20 @@ def submit_collection_reply_review(store, collection_id, draft_id, sessions, not
     if draft['allow_content'] != allow_content:
         raise AnalyzerError("Review must use the draft's original disclosure policy")
     submission = {'body': body, 'sessions': sessions, 'notes': notes, 'source_checks': source_checks}
-    prior = [r for r in records(store, collection_id, 'collection_reply_review') if r['draft_id'] == draft_id]
-    read_key = digest({iid: exposure(store, iid, after_access_id=marker)['sources']
-                       for iid, marker in draft['after_access_ids'].items()})
-    repeated = next((r for r in prior if r['submission'] == submission and
-                     (r['status'] == 'accepted' or r['exposure_key'] == read_key)), None)
+    states = {iid: review_source_state(store, get_run(store, iid), marker)
+              for iid, marker in draft['after_access_ids'].items()}
+    read_key = digest({iid: state['sources'] for iid, state in states.items()})
+    repeated = review_retry(store, collection_id, 'collection_reply_review', draft_id, submission, read_key)
     if repeated:
         return _result(repeated)
-    if any(r['status'] == 'accepted' for r in prior):
-        raise AnalyzerError('This draft already has an immutable accepted review')
-    if len(prior) >= 2:
-        raise AnalyzerError('Two review submissions already exist; stop rather than restarting the review')
     issues, checked, _ = _check(store, selected, body, sessions, draft['requested_details'], draft['detail_request'], allow_content)
-    coverage = _coverage(store, draft)
-    allowed = set(draft['after_access_ids'])
-    if any(c['investigation_id'] not in allowed for c in source_checks):
+    coverage = {iid: state['coverage'] for iid, state in states.items()}
+    if any(c['investigation_id'] not in states for c in source_checks):
         raise AnalyzerError('A review source check names an unselected session')
-    for iid, marker in draft['after_access_ids'].items():
-        run = get_run(store, iid)
-        if allow_content and coverage[iid]['unread_request_count']:
-            issues.append({'code': 'review_requests_not_reread', 'investigation_id': iid})
-        with store.connect() as db:
-            accesses = [strict_json(r[0]) for r in db.execute('SELECT payload FROM investigation_access WHERE investigation_id=? AND id>?', (iid, marker))]
-        fresh = {a['request_id']: a for a in accesses if a['status'] == 'returned'}
+    for iid, state in states.items():
         checks = [c for c in source_checks if c['investigation_id'] == iid]
-        for check in checks:
-            try:
-                error = _source_check(store, run, check, fresh, allow_content)
-            except AnalyzerError:
-                error = 'The source is outside this session; no quote was verified'
-            if error:
-                issues.append({'code': 'invalid_review_source', 'investigation_id': iid, 'message': error})
-        if allow_content:
-            for aspect in ('task_outcome', 'instruction_following'):
-                if aspect not in {c['aspect'] for c in checks}:
-                    issues.append({'code': 'missing_review_' + aspect + '_source', 'investigation_id': iid})
+        issues.extend({**issue, 'investigation_id': iid} for issue in
+                      review_source_issues(store, get_run(store, iid), state, checks, allow_content))
     saved = {'collection_id': collection_id, 'draft_id': draft_id, 'status': 'rejected' if issues else 'accepted',
              'submission': submission, 'issues': issues, 'exposure_key': read_key,
              'review_request_coverage': coverage, 'validation_limit': LIMIT}
@@ -236,8 +216,7 @@ def submit_collection_reply_review(store, collection_id, draft_id, sessions, not
                 own = draft['session_readouts'][iid]
                 parts.extend(['Session ' + member['session_id'], own['opening'], *own['qualifications'], by_id[iid]['body']])
         saved['reply'] = '\n\n'.join(parts)
-    rid = put_record(store, {'id': collection_id}, 'collection_reply_review', saved)
-    return _result({'id': rid, **saved})
+    return _result(save_review(store, collection_id, 'collection_reply_review', saved))
 
 
 def _result(saved):
