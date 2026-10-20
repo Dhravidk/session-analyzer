@@ -10,6 +10,7 @@ import zipfile
 from pathlib import Path
 
 from scripts.package_plugin import build_archive
+from tests.helpers import response, write_log
 
 
 class PackagingTests(unittest.TestCase):
@@ -25,6 +26,7 @@ class PackagingTests(unittest.TestCase):
                 self.assertEqual(len([n for n in members if n.endswith('/SKILL.md')]),6)
                 self.assertIn('agents/source-review.md', members)
                 self.assertIn('ally_analyzer/session_reply_review.py', members)
+                self.assertIn('ally_analyzer/verified_prices.json', members)
                 self.assertTrue({'ally_analyzer/session_library.html','ally_analyzer/session_library.js',
                                  'ally_analyzer/session_library.css'} <= members)
                 self.assertFalse(any(n.startswith(('.analysis/','tests/','variants/','output/')) for n in members))
@@ -63,6 +65,18 @@ class PackagingTests(unittest.TestCase):
                 cwd=root,capture_output=True,text=True,timeout=20)
             self.assertEqual(browse.returncode,0,browse.stderr)
             self.assertIn('--reports',browse.stdout)
+            fixture=response(1);fixture['message']['model']='claude-opus-5-5'
+            source=write_log(root/'synthetic-model-session.jsonl',[fixture])
+            run=subprocess.run([sys.executable,'-I',str(plugin/'scripts/ally-session.py'),'run',str(source)],
+                               cwd=root,env=env,capture_output=True,text=True,timeout=20)
+            self.assertEqual(run.returncode,0,run.stderr)
+            aid=json.loads(run.stdout)['analysis_id']
+            summary=subprocess.run([sys.executable,'-I',str(plugin/'scripts/ally-session.py'),'summary',aid],
+                                   cwd=root,env=env,capture_output=True,text=True,timeout=20)
+            self.assertEqual(summary.returncode,0,summary.stderr)
+            data=json.loads(summary.stdout)
+            self.assertEqual(data['metrics']['cost_estimate_usd']['value'],'0.000946')
+            self.assertEqual(data['configuration']['price_book_source']['kind'],'bundled_verified')
 
 
 if __name__=='__main__':unittest.main()

@@ -136,6 +136,7 @@ def main(argv=None):
                           plugin/'scripts/ally-session.py']
         selected_files += list((plugin/'ally_analyzer').glob('*.py')) + list((plugin/'skills').glob('*/SKILL.md'))
         selected_files += list((plugin/'agents').glob('*.md'))
+        selected_files += [plugin/'ally_analyzer/verified_prices.json']
         selected_files += [plugin/'ally_analyzer'/name for name in ('session_report.css','session_report.js',
                           'session_library.html','session_library.css','session_library.js')]
         selected_files += list((plugin/'ally_analyzer/icons').glob('*'))

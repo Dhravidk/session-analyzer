@@ -29,7 +29,7 @@ TOOLS = [
          {"path": S, "namespace": {"type": "string", "minLength": 1, "maxLength": 128},
           "labels": {"type": "object", "additionalProperties": {"type": "string", "maxLength": 200}, "maxProperties": 20},
           "include_subagents":{"type":"boolean"}}, ["path"], False),
-    spec("analyze_batch", "Compute reproducible metrics and explicit rules for a dataset. No LLM. Returns a job ID. Missing evidence remains unknown. Optional rate card must supply exact models, TTL rates, service tier and speed.",
+    spec("analyze_batch", "Compute reproducible metrics and explicit rules for a dataset. No LLM or pricing-network call. Automatically load and pin the bundled verified public API rate snapshot; unknown models or billing modes stay unpriced. An explicit price_book overrides the catalog without merging guessed rates and must supply exact models, TTL rates, service tier and speed. Token costs exclude analyzer/reviewer usage. Returns a job ID; missing evidence remains unknown.",
          {"dataset_id": S, "profile": {"type": "object"}, "price_book": {"type": "object"}}, ["dataset_id"], False),
     spec("get_job", "Read a background job's progress/result. queued/running are incomplete; completed returns the dataset or analysis ID. owner_not_connected means the previous process cannot report live status.", {"job_id": S}, ["job_id"]),
     spec("list_datasets", "List imported dataset metadata; no source paths or transcript content.", PAGE),

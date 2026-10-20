@@ -55,3 +55,12 @@ python3 scripts/test_claude_developer_reply.py --source /absolute/path/session.j
 ```
 
 This exercises the default conversational reply and its automatically invoked native source-review Agent in ONE user turn, with a $3 cap and 600-second timeout. No second review prompt is sent. `--effort high` selects a higher-effort test without changing user host settings. It preserves the immutable tested ZIP, question, raw transcript, unedited answer and audit under `.analysis/claude-developer-reply/`. Checks cover the exact computed opening, visible authored assessments, fresh request/update exposure, verbatim accepted reply, one native Agent launch, accepted submission from that child, decisive source reads linked to that child, default topic scope, tool policy and unchanged source/accounting. Host trace linkage is checked rather than accepting a review assertion from the parent. Review the actual claims against their sources separately. It is a source-reviewed conversational answer, not a completed full managed investigation or a guarantee of accuracy. Host quota errors and interrupted runs remain failed checks; do not retry through another account or count them as passed. The development harness and selected logs are excluded from the distributable ZIP.
+
+
+For a cost-only offline check using automatic verified pricing, without invoking Claude:
+
+```sh
+python3 scripts/test_offline_pricing.py --source /absolute/path/session.jsonl --require-priced --preserve-output /absolute/path/prior-answer.md
+```
+
+It blocks network connections and subprocesses, saves separate computed-cost previews and checks hashes of the selected sources, canonical accounting and explicitly preserved answers. It does not rewrite Claude output or test semantic writing quality. See [automatic pricing](automatic-pricing.md). The 0.21.0 live default-flow/style check remains deferred until the operator confirms quota availability; do not run the Claude harness before then.

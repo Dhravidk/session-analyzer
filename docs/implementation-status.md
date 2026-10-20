@@ -1,3 +1,11 @@
+# Implementation status — 0.21.0
+
+Default analyses automatically pin the verified public-rate snapshot, with explicit operator overrides and unknown-model/mode limits preserved. The cost-first readout shows source-only token prices for input/output and their cached-input/reasoning portions. Rates, modifiers, provenance and verification date are retained. Prior cards, captured accounting, findings and Claude answers remain immutable; new cost-only previews are clearly labelled. See [automatic pricing](automatic-pricing.md).
+
+Offline checks cover both synthetic calculations and all four selected real logs. Live Claude testing is deferred at the operator's explicit request until limits reset; distribution remains on hold. The linked collection-session example was a different task from the combined Nithin handoff. Default writing/review guidance now keeps the visible answer concise and decision-focused, with detailed analysis in internal notes; its new model wording still needs a live planning-session check. See [the release audit](release-audit-0.21.0.md).
+
+---
+
 # Implementation status — 0.20.0
 
 ## Automatic conversational source review (0.20.0)

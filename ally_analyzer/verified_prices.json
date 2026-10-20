@@ -1,0 +1,135 @@
+{
+  "version": "anthropic-public-2026-10-20-v1",
+  "provider": "Anthropic",
+  "effective_date": "2026-10-20",
+  "verified_on": "2026-10-20",
+  "currency": "USD",
+  "basis": "Verified public API token rates as of this date, not historical invoice rates, subscription billing or non-token fees.",
+  "sources": [
+    "https://platform.claude.com/docs/en/about-claude/pricing",
+    "https://platform.claude.com/docs/en/models/opus-5-5/overview",
+    "https://platform.claude.com/docs/en/models/sonnet-5-5/overview",
+    "https://platform.claude.com/docs/en/models/haiku-5-5/overview",
+    "https://platform.claude.com/docs/en/models/overview",
+    "https://platform.claude.com/docs/en/models/opus-5/overview",
+    "https://platform.claude.com/docs/en/models/sonnet-5/overview",
+    "https://platform.claude.com/docs/en/models/opus-4-6/overview",
+    "https://platform.claude.com/docs/en/models/sonnet-4-6/overview",
+    "https://platform.claude.com/docs/en/models/haiku-4-5/overview"
+  ],
+  "rates": {
+    "claude-opus-5-5": {
+      "input_per_million": "4",
+      "output_per_million": "20",
+      "cache_read_per_million": "0.20",
+      "cache_write_5m_per_million": "5",
+      "cache_write_1h_per_million": "8",
+      "service_tier": "standard",
+      "speed": "standard"
+    },
+    "claude-sonnet-5-5": {
+      "input_per_million": "2",
+      "output_per_million": "10",
+      "cache_read_per_million": "0.10",
+      "cache_write_5m_per_million": "2.50",
+      "cache_write_1h_per_million": "4",
+      "service_tier": "standard",
+      "speed": "standard"
+    },
+    "claude-haiku-5-5": {
+      "input_per_million": "0.10",
+      "output_per_million": "0.50",
+      "cache_read_per_million": "0.01",
+      "cache_write_5m_per_million": "0.125",
+      "cache_write_1h_per_million": "0.20",
+      "service_tier": "standard",
+      "speed": "standard"
+    },
+    "claude-fable-5-1": {
+      "input_per_million": "10",
+      "output_per_million": "50",
+      "cache_read_per_million": "0.25",
+      "cache_write_5m_per_million": "12.50",
+      "cache_write_1h_per_million": "20",
+      "service_tier": "standard",
+      "speed": "standard"
+    },
+    "claude-opus-5": {
+      "input_per_million": "5",
+      "output_per_million": "25",
+      "cache_read_per_million": "0.50",
+      "cache_write_5m_per_million": "6.25",
+      "cache_write_1h_per_million": "10",
+      "service_tier": "standard",
+      "speed": "standard"
+    },
+    "claude-sonnet-5": {
+      "input_per_million": "2",
+      "output_per_million": "10",
+      "cache_read_per_million": "0.20",
+      "cache_write_5m_per_million": "2.50",
+      "cache_write_1h_per_million": "4",
+      "service_tier": "standard",
+      "speed": "standard"
+    },
+    "claude-opus-4-6": {
+      "input_per_million": "5",
+      "output_per_million": "25",
+      "cache_read_per_million": "0.50",
+      "cache_write_5m_per_million": "6.25",
+      "cache_write_1h_per_million": "10",
+      "service_tier": "standard",
+      "speed": "standard"
+    },
+    "claude-sonnet-4-6": {
+      "input_per_million": "3",
+      "output_per_million": "15",
+      "cache_read_per_million": "0.30",
+      "cache_write_5m_per_million": "3.75",
+      "cache_write_1h_per_million": "6",
+      "service_tier": "standard",
+      "speed": "standard"
+    },
+    "claude-haiku-4-5": {
+      "input_per_million": "1",
+      "output_per_million": "5",
+      "cache_read_per_million": "0.10",
+      "cache_write_5m_per_million": "1.25",
+      "cache_write_1h_per_million": "2",
+      "service_tier": "standard",
+      "speed": "standard"
+    },
+    "claude-haiku-4-5-20251001": {
+      "input_per_million": "1",
+      "output_per_million": "5",
+      "cache_read_per_million": "0.10",
+      "cache_write_5m_per_million": "1.25",
+      "cache_write_1h_per_million": "2",
+      "service_tier": "standard",
+      "speed": "standard"
+    }
+  },
+  "billing_rules": {
+    "us_inference_models": [
+      "claude-opus-5-5",
+      "claude-sonnet-5-5",
+      "claude-haiku-5-5",
+      "claude-fable-5-1",
+      "claude-opus-5",
+      "claude-sonnet-5",
+      "claude-opus-4-6",
+      "claude-sonnet-4-6"
+    ],
+    "context_tiers": {
+      "claude-haiku-5-5": {
+        "above_input_tokens": 100000,
+        "multiplier": "5"
+      }
+    },
+    "fast_multipliers": {
+      "claude-opus-5-5": "2",
+      "claude-opus-5": "2"
+    },
+    "us_inference_multiplier": "1.1"
+  }
+}

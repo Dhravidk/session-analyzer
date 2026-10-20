@@ -2,6 +2,7 @@
 from decimal import Decimal, InvalidOperation
 
 from .engine import price_response_components
+from .pricing import configured_prices
 from .session_scope import entities, get_scope, scope_rows
 from .util import digest, timestamp
 
@@ -31,8 +32,26 @@ def latest_snapshot(snapshots, provenance):
 
 def source_session_cost(store, run):
     scope = get_scope(store, run)
-    prices = store.analysis(run['analysis_id'])['configuration'].get('price_book')
+    prices, price_source = configured_prices(store.analysis(run['analysis_id'])['configuration'])
     responses = [r for r in entities(store, run, 'response') if r['eligible']]
+    # Retained scopes predate geography normalization. Inspect only captured
+    # numeric-usage metadata; do not mutate their response entities or prose.
+    if prices.get('billing_rules'):
+        from .session_scope import source_record
+        restored = []
+        for response in responses:
+            if 'inference_geo' not in response:
+                geos = set()
+                for sid in response['evidence']:
+                    record = source_record(store, run, sid)['record']
+                    message = record.get('message')
+                    usage = message.get('usage') if isinstance(message, dict) else None
+                    if isinstance(usage, dict):
+                        geo = usage.get('inference_geo') or 'global'
+                        geos.add(geo if isinstance(geo, str) else 'unknown')
+                response = {**response, 'inference_geo': next(iter(geos)) if len(geos) == 1 else 'unknown'}
+            restored.append(response)
+        responses = restored
     components = [(r, price_response_components(r, prices)) for r in responses]
     priced = [(r, p['input'] + p['output'] if p is not None else None) for r, p in components]
     known = [(r, value) for r, value in priced if value is not None]
@@ -41,6 +60,7 @@ def source_session_cost(store, run):
         'known_responses': len(known), 'eligible_responses': len(responses),
         'complete_for_captured_responses': bool(responses) and len(known) == len(responses),
         'price_book': {k: prices[k] for k in ('version', 'provider', 'effective_date')} if prices else None,
+        'price_book_source': price_source,
         'response_ids': [r['id'] for r, _ in known],
         'source_ids': sorted({sid for r, _ in known for sid in r['evidence']}),
         'population': 'Main agent and structurally linked captured children; response identities counted once.',
@@ -107,6 +127,8 @@ def source_session_cost(store, run):
             'population': 'Latest valid main-trace host cost snapshot; its billing scope is not independently verified.',
         }
     limitations = ['Estimates are not invoices. Source-agent cost is separate from the cost of running this analyzer.']
+    if price_source['kind'] == 'bundled_verified':
+        limitations.append('Token-price equivalent using public API rates verified ' + price_source['verified_on'] + '; excludes subscription billing and non-token fees. Historical billing rates are not independently verified.')
     if not prices:
         limitations.append('No pinned rate card supplied; captured token usage has not been priced.')
     elif len(known) != len(responses) or not responses:
@@ -169,7 +191,11 @@ def cost_readout(cost):
 
 def compact_cost(cost):
     usage = cost['priced_usage']
+    origin = usage.get('price_book_source', {})
+    origin = {**{k:v for k,v in origin.items() if k != 'sources'},
+              **({'source_count': len(origin['sources']), 'source_preview': origin['sources'][:1]} if 'sources' in origin else {})}
     return {**cost, 'priced_usage': {**{k:v for k,v in usage.items() if k not in ('response_ids', 'source_ids')},
+            'price_book_source': origin,
             'source_count': len(usage['source_ids']), 'source_preview': usage['source_ids'][:5],
             'continuation': 'Page captured responses with get_investigation_records; inspect numeric usage with inspect_response_accounting.'}}
 

@@ -1,8 +1,8 @@
-# Ally Session Analyzer 0.20.0
+# Ally Session Analyzer 0.21.0
 
-Release candidate: final-package live validation is on hold after the approved Claude account returned HTTP 429. See [the release audit](docs/release-audit-0.20.0.md) for the passed earlier automatic-flow test and remaining distribution gate. Automatic review uses native plugin Agent support, tested on Claude Code 2.1.299; an unavailable reviewer leaves an explicit incomplete review.
+Release candidate: live Claude testing is deferred until the operator confirms that limits have reset. Automatic pricing is tested offline; distribution remains on hold. See the [0.21.0 audit](docs/release-audit-0.21.0.md) for the evidence and remaining live gate.
 
-Claude's default session readout starts with “You spent approximately $…” and gives token counts and dollar amounts for input (including cached input) and output (including reasoning). Costs cover only the analyzed session, never the analyzer or reviewer. The two included portions are not added again. Source usage and a matching pinned rate card are required for category costs; a recorded total alone cannot provide that split. Missing values and partial costs stay explicit. The recommendation or outcome comes next, followed immediately by separate **Task outcome** and **Instruction following** assessments, decisive evidence and supported edits. Claude checks actual requests, authorizations, actions/results and later recovery. Required approval before implementation remains intact; an unverified result is not automatically a failure.
+Claude's default session readout starts with “Estimated session cost: $…” and gives token counts and dollar amounts for input (including cached input) and output (including reasoning). Verified public pricing loads automatically from the dated bundled snapshot without a model or pricing-network call. Explicit operator cards take precedence; unknown models, modes or usage remain unavailable. The two included portions are not added again. Costs cover only analyzed source usage, never analyzer/reviewer usage, and are public API token-price equivalents rather than subscription charges or invoices. The recommendation or outcome comes next, followed immediately by separate **Task outcome** and **Instruction following** assessments, decisive evidence and supported edits. Claude checks actual requests, authorizations, actions/results and later recovery. Required approval before implementation remains intact; an unverified result is not automatically a failure.
 
 Cache and compaction diagnosis or tuning is on request. The headline still includes cached input, and the existing token accounting, tool-call evidence, compaction records, timelines and follow-up tools remain available. `prepare_session_reply` saves an immutable draft and requires the packaged native `ally-session-analyzer:source-review` Agent automatically. The fresh reviewer rereads original requests/updates and decisive results, checks edits against existing instructions and saves a standalone body; the parent retrieves and copies the accepted reply verbatim. No extra user prompt is required, and no unreviewed ready fallback exists. Repeated submissions reuse the same draft; at most two review submissions are allowed. Drafts, notes and reviewed wording are retained. Backend checks verify linkage, fresh exposure, quotes and visible assessments, not semantic truth or independent caller identity. No compliance score or automatic violation is generated.
 
@@ -28,7 +28,7 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.20.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.21.0.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. The general conversational readout automatically uses the packaged native source-review Agent; no second user prompt is required. Focused follow-ups do not restart a full review. The full saved-report workflow below retains its separate managed evidence-review host. Skill instructions and passed tool checks do not guarantee semantic correctness.
@@ -54,7 +54,7 @@ Local deterministic accounting and a single-session investigation workflow for a
 The session library and standalone report offer HTML, Markdown (.md), and JSON exports. Markdown uses the saved analysis and included source text without another model call. The CLI and `export_session_investigation` tool accept format `md`; their existing source-disclosure controls still apply.
 
 ```sh
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.20.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.21.0.zip
 ```
 
 Use `/ally-session-analyzer:analyze /absolute/path/session.log` to import and measure, `/ally-session-analyzer:explain ANALYSIS_ID` for accounting, or `/ally-session-analyzer:investigate INVESTIGATION_ID` for the scoped investigation. The investigation skill can also select one root from an analysis. Loading the plugin does not collect logs automatically.

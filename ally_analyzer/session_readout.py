@@ -2,7 +2,7 @@
 import re
 from decimal import Decimal
 
-from .session_cost import cost_readout
+from .session_cost import cost_readout, money
 
 
 def developer_readout(cost, metrics):
@@ -40,9 +40,19 @@ def developer_readout(cost, metrics):
         opening = 'Session cost is unavailable (' + tokens + ').'
     elif display['kind'] == 'priced_subtotal':
         opening = 'Priced usage subtotal: ' + display['value'] + ' (' + tokens + '); full session cost is unknown.'
+    elif display['kind'] == 'priced_usage':
+        opening = 'Estimated session cost: ' + display['value'] + ' (' + tokens + ').'
     else:
         opening = 'You spent approximately ' + display['value'] + ' (' + tokens + ') on this session.'
     qualifications = []
+    price_source = (cost or {}).get('priced_usage', {}).get('price_book_source', {})
+    if display['kind'] in ('priced_usage', 'priced_subtotal') and price_source.get('kind') == 'bundled_verified':
+        qualifications.append('Token estimate at public API rates verified ' + price_source['verified_on'] + '; not a subscription charge. Analyzer/reviewer usage is excluded.')
+    snapshot = (cost or {}).get('recorded_snapshot')
+    if display['kind'] == 'priced_usage' and snapshot and money(snapshot['value_usd']) != display['value']:
+        later = snapshot['later_main_responses']
+        age = ' (before ' + str(later) + ' later response' + ('s)' if later != 1 else ')') if later else ''
+        qualifications.append('The log’s separate host estimate is ' + money(snapshot['value_usd']) + age + '; its billing scope and reconciliation with this token estimate are unverified.')
     if display['kind'] == 'recorded_snapshot':
         qualifications.append('Cost is the latest recorded host estimate; final session cost is unverified.')
         snapshot = cost['recorded_snapshot']
@@ -51,7 +61,7 @@ def developer_readout(cost, metrics):
             qualifications.append('The cost snapshot precedes ' + str(later) + ' later captured main-agent response' + ('.' if later == 1 else 's.'))
     if cost and cost.get('unavailable_child_traces'):
         qualifications.append('Some child traces are unavailable; these captured totals do not establish the full task cost or usage.')
-    return {'version': 'developer-readout-v3', 'opening': opening, 'token_summary': tokens, 'usage': usage,
+    return {'version': 'developer-readout-v4', 'opening': opening, 'token_summary': tokens, 'usage': usage,
             'billing_scope': 'analyzed_session_only',
             'population': 'Main agent and structurally linked captured children; reconciled identities counted once.',
             'cost_kind': display['kind'], 'qualifications': qualifications,

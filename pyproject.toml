@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ally-session-analyzer"
-version = "0.20.0"
+version = "0.21.0"
 description = "Offline deterministic Claude Code session analysis and MCP plugin"
 requires-python = ">=3.9"
 dependencies = []
@@ -13,7 +13,7 @@ dependencies = []
 ally-session = "ally_analyzer.cli:main"
 
 [tool.setuptools.package-data]
-ally_analyzer = ["report.html", "session_report.css", "session_report.js", "session_library.html", "session_library.css", "session_library.js", "icons/*"]
+ally_analyzer = ["verified_prices.json", "report.html", "session_report.css", "session_report.js", "session_library.html", "session_library.css", "session_library.js", "icons/*"]
 
 [tool.setuptools.packages.find]
 include = ["ally_analyzer*"]

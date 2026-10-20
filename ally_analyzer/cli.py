@@ -28,7 +28,7 @@ def parser():
         c.add_argument("--parent-only", action="store_true", help="Do not collect the selected file's adjacent session/subagents logs")
     def analysis_args(c):
         c.add_argument("--profile", help="JSON rule profile")
-        c.add_argument("--prices", help="Explicit, versioned JSON rate card; omitted by default")
+        c.add_argument("--prices", help="Override the automatically loaded verified public-rate snapshot with an explicit versioned JSON rate card")
     source_args(sub.add_parser("import", help="Snapshot and index a selected input"))
     a = sub.add_parser("analyze", help="Analyze an imported dataset")
     a.add_argument("dataset_id"); analysis_args(a)

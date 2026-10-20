@@ -4,7 +4,7 @@ from collections import Counter
 
 from .util import canonical, digest, integer, timestamp
 
-ADAPTER_VERSION = "native-2.1-observed-v4"
+ADAPTER_VERSION = "native-2.1-observed-v5"
 OBSERVED_VERSIONS = {"2.1." + str(n) for n in
                      (190, 263, 266, 267, 268, 269, 270, 271, 273, 274, 278,
                       283, 284, 285, 286, 289, 290, 292, 293, 294)}
@@ -92,7 +92,7 @@ def reconcile_response(group):
     tokens["total_input_tokens"] = sum(tokens[k] for k in TOKEN_FIELDS[:3]) if all(tokens[k] is not None for k in TOKEN_FIELDS[:3]) else None
     group.update({"tokens": tokens, "usage_status": status, "warnings": conflicts,
                   "cache_creation": usage.get("cache_creation"), "speed": usage.get("speed"),
-                  "service_tier": usage.get("service_tier"), "session_ids": sorted(group["session_ids"]),
+                  "service_tier": usage.get("service_tier"), "inference_geo": usage.get('inference_geo'), "session_ids": sorted(group["session_ids"]),
                   "agent_ids": sorted(group["agent_ids"]), "models": sorted(group["models"]),
                   "versions": sorted(group["versions"]), "evidence": sorted(group["evidence"]),
                   "shared_history": len(group["session_ids"]) > 1,

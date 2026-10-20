@@ -28,7 +28,7 @@ DEFINITIONS = {
     "cache_read_share": "Sum(cache read)/sum(total input) over the same complete-input population; null for zero denominator.",
     "recorded_tool_duration_ms": "Sum of explicit toolUseResult.durationMs values; excludes inferred timestamp intervals.",
     "recorded_turn_duration_ms": "Sum of explicit system turn_duration.durationMs; not developer effort or elapsed wall time.",
-    "cost_estimate_usd": "Sum of priced response usage under a pinned user-supplied rate card; not a bill. Snapshots are not added.",
+    "cost_estimate_usd": "Sum of priced source-response token usage under the pinned verified catalog or explicit rate card; not a bill. Analyzer/reviewer usage and snapshots are not added.",
 }
 
 
@@ -39,6 +39,8 @@ def validate_prices(prices):
         raise AnalyzerError("Rate card needs version, provider, effective_date, and rates")
     if not isinstance(prices.get("rates"), dict):
         raise AnalyzerError("rates must map exact model identifiers to rates")
+    if prices.get('currency') not in (None, 'USD'):
+        raise AnalyzerError('Rate-card amounts must be in USD')
     allowed = {"input_per_million", "output_per_million", "cache_read_per_million", "cache_write_5m_per_million",
                "cache_write_1h_per_million", "service_tier", "speed"}
     for model, rates in prices["rates"].items():
@@ -55,6 +57,8 @@ def validate_prices(prices):
                     raise ValueError()
             except (InvalidOperation, ValueError):
                 raise AnalyzerError("Rates must be finite nonnegative decimal values")
+    from .pricing import validate_billing_rules
+    validate_billing_rules(prices)
     return prices
 
 
@@ -65,10 +69,9 @@ def price_response(r, prices):
 
 def price_response_components(r, prices):
     """Price one source response; cached input/reasoning are inclusive subsets."""
-    if not prices or len(r["models"]) != 1:
-        return None
-    rate = prices["rates"].get(r["models"][0])
-    if not rate or rate["speed"] != r["speed"] or rate["service_tier"] != r["service_tier"]:
+    from .pricing import response_rate
+    rate = response_rate(r, prices)
+    if rate is None:
         return None
     t = r["tokens"]
     if any(t[k] is None for k in TOKEN_FIELDS):
@@ -145,9 +148,11 @@ def compute_metrics(responses, tools, lifecycle, prices):
 
 
 def analyze_dataset(store, dataset_id, profile=None, prices=None, progress=None):
+    from .pricing import resolve_prices
+    prices, price_source = resolve_prices(prices)
     config = {"engine_version": __version__, "adapter_version": ADAPTER_VERSION,
               "metric_version": "1", "disclosure_policy": "metadata-v1", "timezone": "UTC",
-              "profile": validate_profile(profile), "price_book": validate_prices(prices)}
+              "profile": validate_profile(profile), "price_book": prices, "price_book_source": price_source}
     analysis_id = "analysis_" + digest([dataset_id, config])[:24]
     with store.connect() as db:
         if db.execute("SELECT 1 FROM analyses WHERE id=?", (analysis_id,)).fetchone():
