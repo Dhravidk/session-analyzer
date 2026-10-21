@@ -1,6 +1,6 @@
 # Ally Session Analyzer 0.23.3
 
-Release held: 0.23.3 passed 447 offline tests with two optional skips and simplifies the default cost opening while retaining all accounting for follow-ups. Attempts to resume the saved 0.23.2 combined/separate reviews and run single-log/interrupted checks still returned Claude HTTP 429 after the operator confirmed reset. See the [current candidate audit](docs/release-live-audit-0.23.3.md) and [0.23.2 resume record](docs/release-live-audit-0.23.2.md); none of those blocked checks is a pass. One public `/analyze` entrypoint, source-first review, saved read offsets, persisted reviewer identity and exact-delivery metadata remain intact. Earlier authored outputs are unchanged. Nothing new has been pushed or distributed.
+Release held: the frozen 0.23.3 single-log and interrupted-review/resume checks passed, with one native reviewer per flow and exact accepted delivery. Combined and separate-output checks started but hit the shared Claude quota before reviewer launch. The saved legacy reviewers resumed under their original IDs; citation rejections and quota limits remain explicit. See the [current candidate audit](docs/release-live-audit-0.23.3.md) for exact counts and continuation state. The offline suite remains 447 passed with two optional skips. Nothing has been pushed or distributed.
 
 Analyze Claude Code logs for task outcomes, instruction compliance, token usage
 and useful next steps. Import/accounting run locally with Python's standard

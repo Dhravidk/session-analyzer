@@ -57,7 +57,7 @@ Private artifacts remain in `.analysis/`: the `cost-display-0.23.3-*` test and
 preservation records, `candidate-0.23.3-build.json`, extracted smoke-check and
 validation records, and offline pricing previews. None is packaged or tracked.
 
-## Live release blockers
+## Earlier quota-blocked attempts
 
 After the operator confirmed quota reset, both saved **0.23.2** batch reviews
 were continued with their original host, collection, draft and native reviewer
@@ -75,17 +75,87 @@ from the original failures, with append-only continuation checkpoints retained
 privately for the same saved reviewers. No replacement reviewer, fallback
 account/provider or subsequent paid model call was used.
 
-| Required flow | 0.23.2 latest attempt | 0.23.3 final package |
-| --- | --- | --- |
-| Single log | Quota-blocked before review | Pending |
-| Combined logs | Saved reviewer continuation quota-blocked | Pending |
-| Separate output | Saved reviewer continuation quota-blocked | Pending |
-| Interrupted review / same-reviewer resume | Quota-blocked before interruption | Pending |
+## Latest 0.23.3 live checks — October 21
 
-Resume existing 0.23.2 batch state without resetting its boundaries or buying a
-replacement review when the approved host has quota. The changed 0.23.3 package
-also needs live confirmation of default/follow-up presentation and all four
-final flows, with actual invocation counts, same-ID resume, fresh source
-coverage, exact accepted delivery and manual claim/source review. Earlier
-version successes and offline scripted reviews do not clear these gates.
-Release remains held: do not push or distribute until the required checks pass.
+The operator confirmed quota reset again. The two saved legacy reviewers were
+resumed **on the frozen 0.23.3 package**, with their original native IDs, drafts
+and freshness markers. Their historical cost presentation was preserved. Fresh
+0.23.3 single, combined, separate-output and interruption cases were also run:
+legacy-format compatibility does not substitute for testing the new default.
+
+| Final-package flow | Result | Fresh reviewer launches | Resume calls | Observed reviewer model responses |
+| --- | --- | ---: | ---: | ---: |
+| Single log | **Passed all 18 gates** | 1 | 0 | 13 |
+| Combined four logs | Quota-blocked after parent draft preparation | 0 | 0 | 0 |
+| Separate output, four logs | Quota-blocked during parent source reads | 0 | 0 | 0 |
+| Interrupted review / same-reviewer resume | **Passed all 22 gates** | 1 | 1 | 7 |
+
+Counts come from actual native child identities, deduplicated message IDs with
+reported usage, linked source reads and submissions. A reservation or requested
+spawn is not counted as a paid reviewer launch. These observations are not
+provider invoices; an interrupted in-flight request can lack final usage.
+
+Both passing flows used one persisted draft and one accepted review, kept the
+submission cap, freshly reread all indexed requests/instruction context through
+the actual reviewer, and delivered the saved accepted reply verbatim. Source
+accounting, original logs and the candidate hash were unchanged; executed-tool
+policy checks passed. The interruption happened after a real native source read;
+the next stage resumed the same reviewer and original draft/markers.
+
+Actual initial outputs used the total-only cost opening and omitted both routine
+pricing/host-estimate notes. Manual checks compared the decisive claims with the
+original sources: a8's retained instruction is on the final response's chain,
+the later go-ahead is on a sibling branch, and c8 has an authorized queued scope
+update followed by a copy call without a captured result. These checks support
+the qualified task/compliance readout; they do not certify every interpretation
+or future model output. Exact Claude wording is retained privately.
+
+A focused cost-details follow-up on the passed single-log conversation was
+quota-blocked before model work. It launched no reviewer, changed no draft or
+review history, and left the original answer/accounting intact. Its live display
+check remains pending; the underlying fields remain covered by offline tests.
+
+### Saved legacy reviews
+
+| Historical case resumed on 0.23.3 | New reviewer launches | Resume calls | New usage-bearing reviewer responses | Outcome |
+| --- | ---: | ---: | ---: | --- |
+| Combined | 0 | 1 | 17 (21 across all stages) | Both allowed submissions rejected; terminal `review_incomplete`. |
+| Separate output | 0 | 1 | 28 | One rejected submission, then quota; one submission remains. |
+
+All five invalid source checks across those three rejected submissions were
+independently examined offline. The combined quote exists outside both cited
+read ranges. Separate-output checks included mismatched read identities/scopes
+and literal/range mismatches. Valid checks on the same sources remained valid.
+These were correctly rejected citations, not a demonstrated quote-checker bug.
+Do not reset the combined draft or buy a replacement reviewer to evade its
+two-submission cap. Drafts, markers, rejected prose and both archive versions
+remain unchanged. These historical attempts are separate evidence from the
+fresh 0.23.3 release suite and are not reported as successful reviews.
+
+### Remaining release blockers and continuation
+
+While the batch runs were active, the account again returned HTTP 429
+`usage_limit_reached`, now reporting **1:50 p.m. America/Detroit on October 21**.
+No further model call or account/provider workaround followed the observed
+rejection. Do not infer that these tests alone consumed the shared account
+window. No push or distribution occurred.
+
+The two fresh batch conversations have append-only continuation checkpoints
+under `.analysis/claude-release-0.23.3/`, including exact package/source/accounting
+fingerprints, environment, host/collection IDs, saved drafts/reservations and
+remaining test allowances. Combined has one v5 draft with an unstarted reviewer
+reservation; separate output has its selection and parent read progress, but no
+draft/reviewer yet. Resume these same hosts without reimporting or restarting
+completed research. Keep the already passed single/interruption results.
+
+The private `NEXT-STEPS.md` and `progress-2026-10-21.json` bind the precise state,
+invocation counts, citation probes and historical continuation limits. Preserve
+all original raw stages, answers and failed audits; append new stages/audits.
+Host totals may be cumulative and are not added as separate charges. The ten
+model-free release-harness regression tests also passed during this audit.
+
+**Release remains held.** Combined/separate acceptance and the focused follow-up
+are not passed. Continue only when the approved host has quota, then verify fresh
+native source coverage, one reviewer identity/launch, exact accepted delivery,
+manual claim/source checks and unchanged fingerprints. Do not push or distribute
+until the required final checks pass.
