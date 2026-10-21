@@ -150,12 +150,19 @@ class Service:
             if skill in self.delivered_guides:
                 continue
             try:
-                guides.append(get_session_guide(skill))
+                guide = get_session_guide(skill)
+                # A first overview plus both full guides exceeded the host's
+                # inline-result limit in a live run. Keep the data inline and
+                # reference unchanged instructions; native Skill or this reader
+                # loads each guide separately when needed.
+                guides.append({**{k:v for k,v in guide.items() if k != 'instructions'},
+                    'delivery_kind':'reference',
+                    'load_with':{'tool':'get_session_guide', 'arguments':{'skill':skill}}})
                 self.delivered_guides.add(skill)
             except AnalyzerError as exc:
                 errors.append({'skill': skill, 'error': str(exc)})
         return {'session_guides': guides, 'guide_errors': errors,
-                'guide_delivery': 'Bundled conversation and writing skills delivered once per MCP connection; apply their instructions. Use get_session_guide to reload after context loss.'}
+                'guide_delivery': 'Bundled conversation and writing guide references are delivered once per connection. Load their unchanged instructions through native Skill or get_session_guide before authoring; do not duplicate a guide already loaded. Never read host spill files or launch helper agents to recover a large result: repeat the scoped query without guide attachments.'}
 
     def call(self, name, a):
         result = self._call(name, a)

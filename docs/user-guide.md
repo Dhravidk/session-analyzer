@@ -12,7 +12,7 @@ sources. Claude's interpretation can still be wrong; follow decisive citations.
 
 Start with [installation](../INSTALL.md), including the `/analyze` shortcut.
 Supporting skills are internal, so developers need only this command. The
-0.23.0 candidate addresses [earlier live failures](release-live-audit-0.22.2.md);
+0.23.1 candidate addresses [earlier live failures](release-live-audit-0.22.2.md);
 installation alone is not evidence that every review is correct.
 
 ## Analyze one log

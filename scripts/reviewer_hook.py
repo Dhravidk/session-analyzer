@@ -16,7 +16,12 @@ def main():
         if not isinstance(value, dict):
             raise ValueError('Expected a host hook object')
         payload = value
-        result = hook_event(Store(), payload)
+        if ('--analysis-only' in sys.argv and payload.get('hook_event_name') == 'PreToolUse'
+                and payload.get('tool_name') == 'Agent'
+                and (payload.get('tool_input') or {}).get('subagent_type') != 'ally-session-analyzer:source-review'
+                and not (payload.get('tool_input') or {}).get('resume')):
+            raise ValueError('During /analyze, only the saved source-review Agent may be launched. Use scoped MCP readers; do not launch helper agents for spill files')
+        result = hook_event(Store(), payload, analysis_only='--analysis-only' in sys.argv)
     except Exception as exc:
         reason = 'Session Analyzer reviewer guard: ' + str(exc)
         if payload.get('hook_event_name', 'PreToolUse') == 'PreToolUse':

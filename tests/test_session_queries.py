@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from ally_analyzer.engine import analyze_dataset, canonical_report
+from ally_analyzer.guidance import get_session_guide
 from ally_analyzer.ingest import import_bundle
 from ally_analyzer.service import Service
 from ally_analyzer.session_investigation import measure_selection, query_measurement
@@ -184,15 +185,20 @@ class SessionQueryTests(unittest.TestCase):
         with self.assertRaises(AnalyzerError): service.call('get_session_guide', {'skill':'../../private'})
         with self.assertRaises(AnalyzerError): service.call('get_session_guide', {'path':'/private'})
 
-    def test_definitions_deliver_both_skills_once_and_allow_reload(self):
+    def test_definitions_reference_both_unchanged_skills_once_and_allow_reload(self):
         service = Service(self.store); self.addCleanup(service.close)
         first = service.call('get_definitions', {})
         self.assertEqual({g['skill'] for g in first['session_guides']},
                          {'ally-session-analyzer:explain', 'ally-session-analyzer:write-report'})
         self.assertEqual(first['guide_errors'], [])
         self.assertEqual(service.call('get_definitions', {})['session_guides'], [])
-        self.assertEqual(service.call('get_session_guide', {'skill': 'explain'}),
-                         next(g for g in first['session_guides'] if g['skill'].endswith(':explain')))
+        guide = service.call('get_session_guide', {'skill': 'explain'})
+        reference = next(g for g in first['session_guides'] if g['skill'].endswith(':explain'))
+        self.assertEqual(guide['sha256'], reference['sha256'])
+        self.assertEqual(guide['instructions'], get_session_guide('explain')['instructions'])
+        self.assertEqual(reference['delivery_kind'], 'reference')
+        self.assertNotIn('instructions', reference)
+        self.assertLess(len(json.dumps(first['session_guides'])), 2000)
         self.assertFalse(service.allow_content)
         with patch('ally_analyzer.guidance.get_session_guide', side_effect=AnalyzerError('Missing bundled skill')):
             another = Service(self.store); self.addCleanup(another.close)

@@ -1,8 +1,15 @@
 ---
 name: analyze
-description: Internal workflow for /analyze: one log, multiple logs, separate output, focused follow-ups, offline accounting, saved reports or browsing.
+description: "Internal workflow for /analyze: one log, multiple logs, separate output, focused follow-ups, offline accounting, saved reports or browsing."
 argument-hint: "<log> [<log> ...] [--separate] [question]"
 user-invocable: false
+hooks:
+  PreToolUse:
+    - matcher: Agent
+      hooks:
+        - type: command
+          command: 'python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reviewer_hook.py" --analysis-only'
+          timeout: 15
 ---
 
 This is the implementation behind the single developer command `/analyze`.

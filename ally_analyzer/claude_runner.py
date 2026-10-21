@@ -106,8 +106,9 @@ def audit_tool_policy(calls, transcript, allowed, allowed_skills=('ally-session-
     for c in undeclared:
         r=results.get(c['id'],{})
         expected='<tool_use_error>Error: No such tool available: '+c['name']+'</tool_use_error>'
+        disabled='<tool_use_error>Error: No such tool available: '+c['name']+'. '+c['name']+' is disabled for this session, in subagents as well as here.</tool_use_error>'
         entry={'call_id':c['id'],'name':c['name'],'result':r}
-        (rejected if r.get('is_error') is True and r.get('content')==expected else unverified).append(entry)
+        (rejected if r.get('is_error') is True and r.get('content') in (expected, disabled) else unverified).append(entry)
     return {'allowed_calls_only':not undeclared, 'executed_calls_within_policy':not unverified,
             'rejected_unknown_tool_attempts':rejected, 'unverified_or_disallowed_calls':unverified}
 

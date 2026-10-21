@@ -109,6 +109,27 @@ class NativeReviewGuardTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(json.loads(result.stdout)['hookSpecificOutput']['permissionDecision'], 'deny')
 
+    def test_skill_scoped_guard_blocks_other_helpers_without_restricting_unrelated_work(self):
+        script = Path(__file__).resolve().parents[1]/'scripts/reviewer_hook.py'
+        env = dict(os.environ, ALLY_ANALYZER_HOME=str(self.store.root))
+        helper = {**self.launch, 'tool_input':{'subagent_type':'Explore', 'prompt':'Read a spill file'}}
+        result = subprocess.run([sys.executable, str(script), '--analysis-only'], input=json.dumps(helper),
+            capture_output=True, text=True, env=env, timeout=10)
+        self.assertEqual(json.loads(result.stdout)['hookSpecificOutput']['permissionDecision'], 'deny')
+        self.assertEqual(hook_event(self.store, helper), {})
+        with self.assertRaisesRegex(AnalyzerError, 'only the saved'):
+            hook_event(self.store, {**helper, 'tool_input':{'resume':'unrelated-helper'}}, analysis_only=True)
+
+    def test_disabled_host_tool_is_a_retained_failed_attempt_not_executed_work(self):
+        from ally_analyzer.claude_runner import audit_tool_policy
+        trace = self.root/'disabled.jsonl'
+        content = '<tool_use_error>Error: No such tool available: Bash. Bash is disabled for this session, in subagents as well as here.</tool_use_error>'
+        trace.write_text(json.dumps({'message':{'content':[{'type':'tool_result', 'tool_use_id':'blocked',
+            'is_error':True, 'content':content}]}})+'\n')
+        value = audit_tool_policy([{'id':'blocked','name':'Bash','input':{}}], trace, [])
+        self.assertTrue(value['executed_calls_within_policy'])
+        self.assertEqual(len(value['rejected_unknown_tool_attempts']), 1)
+
     def test_real_hook_process_denies_duplicate_before_an_agent_can_start(self):
         script = Path(__file__).resolve().parents[1]/'scripts/reviewer_hook.py'
         env = dict(os.environ, ALLY_ANALYZER_HOME=str(self.store.root))

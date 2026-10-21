@@ -51,7 +51,7 @@ def _ensure_open(db, row):
         raise AnalyzerError('This draft exhausted its two submissions; retain the incomplete review without another paid launch')
 
 
-def hook_event(store, payload):
+def hook_event(store, payload, *, analysis_only=False):
     event = payload.get('hook_event_name')
     session = payload.get('session_id')
     if not isinstance(session, str) or not session:
@@ -77,6 +77,8 @@ def hook_event(store, payload):
                 _event(db, row, 'resume_requested', session, target)
                 return {}
             if not relevant:
+                if analysis_only:
+                    raise AnalyzerError('During /analyze, only the saved source reviewer may be launched or resumed')
                 return {}
             if target:
                 raise AnalyzerError('No saved native reviewer matches this resume target')

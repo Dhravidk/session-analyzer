@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.23.0
+# Ally Session Analyzer 0.23.1
 
 This candidate adds one public `/analyze` entrypoint, fresh review of captured instruction context, strict default-topic checks and persisted native reviewer identity. See the repository release evidence for current validation status; earlier authored outputs remain unchanged.
 
@@ -39,7 +39,7 @@ Did the passing retry verify the same requirement and final revision?
 Does the evidence establish a skill defect, or is the child result missing?
 ```
 
-The `explain` skill selects relevant tools, checks the question's premise and rechecks saved judgments against primary evidence. Focused questions use the existing timeline, turn, failure, child and artifact readers; they do not require a full report. Completed investigations support new read-only `query_measurement` calculations. `inspect_response_accounting` exposes the captured numeric fields and streaming frames behind a reconciled response. Neither tool edits Claude's saved prose. The first successful data-tool response supplies the exact conversation and writing skills once per connection, even if Claude skips definitions. `get_session_guide` reloads them when native skill invocation is unavailable or context has been lost. Agent filters keep main, child and combined populations distinct.
+The `explain` skill selects relevant tools, checks the question's premise and rechecks saved judgments against primary evidence. Focused questions use the existing timeline, turn, failure, child and artifact readers; they do not require a full report. Completed investigations support new read-only `query_measurement` calculations. `inspect_response_accounting` exposes the captured numeric fields and streaming frames behind a reconciled response. Neither tool edits Claude's saved prose. The first successful data-tool response supplies compact references to the unchanged conversation and writing skills once per connection, even if Claude skips definitions. `get_session_guide` reloads them when native skill invocation is unavailable or context has been lost. Agent filters keep main, child and combined populations distinct.
 
 Keep using the same configured `ALLY_ANALYZER_HOME` store for follow-ups. `list_session_investigations` finds saved scopes within a selected analysis. Opening one scope binds that MCP connection; for several roots, select a collection first. A collection permits only its selected member scopes. A different selection needs a new unbound connection or an operator-selected binding. No source scanning or cross-store discovery happens automatically. A focused query scope is not a completed investigation.
 
@@ -48,7 +48,7 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.23.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.23.1.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. The general conversational readout automatically uses the packaged native source-review Agent; no second user prompt is required. Focused follow-ups do not restart a full review. The full saved-report workflow below retains its separate managed evidence-review host. Skill instructions and passed tool checks do not guarantee semantic correctness.
@@ -74,7 +74,7 @@ Local deterministic accounting and a single-session investigation workflow for a
 The session library and standalone report offer HTML, Markdown (.md), and JSON exports. Markdown uses the saved analysis and included source text without another model call. The CLI and `export_session_investigation` tool accept format `md`; their existing source-disclosure controls still apply.
 
 ```sh
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.23.0.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.23.1.zip
 ```
 
 Use `/analyze /absolute/path/session.log` to import and measure, `/analyze ANALYSIS_ID` for accounting, or `/analyze --report INVESTIGATION_ID` for the scoped investigation. The investigation skill can also select one root from an analysis. Loading the plugin does not collect logs automatically.

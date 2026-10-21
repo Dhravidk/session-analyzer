@@ -131,7 +131,10 @@ class DeveloperReadoutTests(unittest.TestCase):
             service = Service(self.store); self.addCleanup(service.close)
         result = service.call('get_session_overview', {'investigation_id': self.iid})
         self.assertIn('session_readout', result)
-        writing = next(g['instructions'] for g in result['session_guides'] if g['skill'].endswith(':write-report'))
+        self.assertLess(len(json.dumps(result)), 25000)
+        reference = next(g for g in result['session_guides'] if g['skill'].endswith(':write-report'))
+        self.assertNotIn('instructions', reference)
+        writing = service.call('get_session_guide', {'skill':'write-report'})['instructions']
         self.assertEqual(writing, get_session_guide('write-report')['instructions'])
         self.assertIn('session_readout.opening', writing)
         self.assertIn('Caching and compaction detail is on request', writing)
