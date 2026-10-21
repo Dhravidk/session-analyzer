@@ -120,4 +120,6 @@ plugin does not itself authorize deleting saved analysis stores.
 
 These commands follow the official [marketplace installation flow](https://code.claude.com/docs/en/plugin-marketplaces)
 and the installed CLI's `--help`. For agent-driven setup, see
-[the installation checklist](docs/agent-install.md).
+[the installation checklist](docs/agent-install.md). The
+[installation checkpoint](docs/installation-validation.md) records the clean
+local and GitHub installation trials and their limits.
