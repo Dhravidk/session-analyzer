@@ -32,8 +32,8 @@ instructions; they never rewrite the accepted text.
 | --- | --- |
 | Combined four logs | Started; stopped by provider HTTP 429 during source review. |
 | Separate output for four logs | Started; stopped by provider HTTP 429 at reviewer startup. |
-| Single log | Pending on 0.23.2. |
-| Interrupted review / same-reviewer resume | Pending on 0.23.2. |
+| Single log | Attempted after confirmed reset; HTTP 429 before any reviewer launch. |
+| Interrupted review / same-reviewer resume | Attempted after confirmed reset; HTTP 429 before a review could be interrupted. |
 
 Both blocked hosts reported `usage_limit_reached` and a reset at **5 a.m.
 America/Detroit**. No account, provider or model workaround was attempted, and
@@ -55,7 +55,30 @@ The [0.23.1 audit](release-live-audit-0.23.1.md) preserves the failures that led
 the source-first and exact-delivery changes; the [0.23.0 audit](release-live-audit-0.23.0.md)
 preserves the oversized-guide/helper failure.
 
-## Resume after confirmed quota reset
+## October 21 retry after operator-confirmed reset
+
+At approximately 1:24 a.m. America/Detroit, the two saved batch hosts were
+continued with their original session, collection, draft and native reviewer
+IDs. The single-log and interrupted-review tests also started against the exact
+same archive. All four returned `429 usage_limit_reached` immediately and still
+reported a **5 a.m. America/Detroit** reset. No new reviewer model response or
+source read was delivered in these attempts. Both batch drafts, freshness
+markers and launch reservations remain unchanged, with no review submissions.
+The single/interrupted attempts launched no reviewer and saved no draft.
+
+The resumed hosts repeated their earlier cumulative cost estimates; those are
+not additional charges to sum. Raw continuations are retained as `stage-2` plus
+separate `resume-audit-1.json` files; original transcripts, outputs and audits
+were not overwritten. Source/accounting and candidate-hash checks passed.
+No further model call, account/provider workaround, push or distribution
+followed the renewed quota rejection. All four behavioral gates remain
+incomplete, rather than failed correctness tests or passes.
+
+The requested total-only cost presentation is being developed separately as
+0.23.3. This frozen 0.23.2 ZIP and its saved wording have not been changed; new
+offline display checks do not clear either version's pending live gates.
+
+## Resume when the approved host has quota
 
 Private evidence is under `.analysis/claude-release-0.23.2/` in
 `combined-iwjq5d81/` and `individual-bfpjqdrn/`. Each `resume-state.json` retains
