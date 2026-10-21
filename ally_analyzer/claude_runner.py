@@ -82,13 +82,18 @@ def terminal_host_failure(outcome, final):
     return None
 
 
-def audit_tool_policy(calls, transcript, allowed, allowed_skills=('ally-session-analyzer:write-report',), allowed_agents=()):
+def audit_tool_policy(calls, transcript, allowed, allowed_skills=('ally-session-analyzer:write-report',), allowed_agents=(), allowed_agent_ids=()):
     """Keep failed attempts visible; a host-rejected unknown tool did not execute."""
     def permitted(c):
         return (c['name'] in allowed or (c['name']=='Skill' and isinstance(c.get('input'),dict)
                                         and c['input'].get('skill') in allowed_skills)
                 or (c['name']=='Agent' and isinstance(c.get('input'),dict)
-                    and c['input'].get('subagent_type') in allowed_agents))
+                    and (c['input'].get('subagent_type') in allowed_agents
+                         or c['input'].get('resume') in allowed_agent_ids))
+                or (c['name']=='SendMessage' and isinstance(c.get('input'),dict)
+                    and c['input'].get('to') in allowed_agent_ids)
+                or (c['name']=='TaskOutput' and isinstance(c.get('input'),dict)
+                    and c['input'].get('task_id') in allowed_agent_ids))
     undeclared = [c for c in calls if not permitted(c)]
     results = {}
     for line in transcript.read_text().splitlines():

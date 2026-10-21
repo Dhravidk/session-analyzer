@@ -559,10 +559,10 @@ print('fixture checked')
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 1)
             self.assertIsNone(db.execute("SELECT name FROM sqlite_master WHERE name='temporary_migration'").fetchone())
             self.assertEqual(db.execute('SELECT id FROM insights').fetchone()[0], 'old')
-        self.assertTrue((root / 'analysis.pre-v2.sqlite3').exists())
+        self.assertTrue((root / 'analysis.pre-v3.sqlite3').exists())
         Store(root)
         with sqlite3.connect(path) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 2)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 3)
             self.assertEqual(db.execute('SELECT id FROM insights').fetchone()[0], 'old')
 
 

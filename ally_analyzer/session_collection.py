@@ -6,6 +6,7 @@ Python; Claude authors the entire narrative, including cross-session advice.
 from collections import Counter
 
 from .normalize import parse_events
+from .native_review import launch_state
 from .pricing import configured_prices
 from .session_cost import price_captured_responses, source_session_cost
 from .session_investigation import accounting, record_by_id, records
@@ -153,6 +154,7 @@ def _coverage(store, draft):
 def get_collection_reply_draft(store, collection_id, draft_id, allow_content=False, include_reviews=False):
     draft = _draft(store, collection_id, draft_id, allow_content)
     return {'collection_id': collection_id, 'draft_id': draft_id, 'draft': draft,
+            'review_launch': launch_state(store, collection_id, 'collection_reply_draft', draft_id),
             **({'review_history': [r for r in records(store, collection_id, 'collection_reply_review') if r['draft_id'] == draft_id]} if include_reviews else {}),
             'members': collection(store, collection_id)['members'],
             'review_request_coverage': _coverage(store, draft), 'validation_limit': LIMIT,
@@ -168,8 +170,9 @@ def get_reviewed_collection_reply(store, collection_id, draft_id, allow_content=
     stopped = len(reviews) >= 2
     return {'status': 'review_incomplete' if stopped else 'review_required', 'collection_id': collection_id,
             'draft_id': draft_id, 'review_attempts': len(reviews), 'reviewer': REVIEWER,
+            **({'review_launch': launch_state(store, collection_id, 'collection_reply_draft', draft_id)} if not stopped else {}),
             'next': ('Stop: review remains incomplete; never present the initial draft as reviewed.' if stopped else
-                     'Automatically invoke the packaged native source-review Agent with collection_id and draft_id. It checks all selected roots separately and submits one reviewed handoff. Do not ask for another pass or self-review.'),
+                     'Follow review_launch.instruction: include its review_ticket when launching once, or resume its saved native handle. Automatically use the packaged source-review Agent with collection_id and draft_id. Do not launch a replacement, ask for another pass or self-review.'),
             'validation_limit': LIMIT}
 
 

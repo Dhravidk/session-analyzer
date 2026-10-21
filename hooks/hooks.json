@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "^(Agent|SendMessage)$",
+      "hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/reviewer_hook.py\"", "timeout": 15}]
+    }],
+    "SubagentStart": [{
+      "matcher": "^ally-session-analyzer:source-review$",
+      "hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/reviewer_hook.py\"", "timeout": 15}]
+    }]
+  }
+}

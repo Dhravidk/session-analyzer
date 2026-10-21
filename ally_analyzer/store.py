@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .util import AnalyzerError, canonical, strict_json
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS datasets (
  id TEXT PRIMARY KEY, manifest TEXT NOT NULL, imported_at TEXT NOT NULL);
@@ -44,6 +44,17 @@ CREATE INDEX IF NOT EXISTS insights_analysis ON insights(analysis_id,created_at,
 CREATE TABLE IF NOT EXISTS insight_reviews (
  insight_id TEXT NOT NULL, payload TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS insight_reviews_id ON insight_reviews(insight_id);
+CREATE TABLE IF NOT EXISTS reply_reviewer_launches (
+ ticket TEXT PRIMARY KEY, owner_id TEXT NOT NULL, draft_kind TEXT NOT NULL,
+ draft_id TEXT NOT NULL, agent_name TEXT NOT NULL, host_session_id TEXT,
+ tool_use_id TEXT, agent_id TEXT, status TEXT NOT NULL,
+ UNIQUE(owner_id,draft_kind,draft_id));
+CREATE UNIQUE INDEX IF NOT EXISTS one_pending_reviewer_per_host
+ ON reply_reviewer_launches(host_session_id) WHERE status='launching';
+CREATE TABLE IF NOT EXISTS reply_reviewer_events (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, ticket TEXT NOT NULL,
+ event TEXT NOT NULL, host_session_id TEXT NOT NULL, agent_id TEXT,
+ created_at TEXT NOT NULL);
 """
 
 
@@ -57,7 +68,7 @@ class Store:
         self.db_path = self.root / "analysis.sqlite3"
         with self.connect() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1, SCHEMA_VERSION):
+            if version not in (0, 1, 2, SCHEMA_VERSION):
                 raise AnalyzerError("Unsupported database schema version")
             db.execute("PRAGMA journal_mode=WAL")
             if version < SCHEMA_VERSION:
