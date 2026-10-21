@@ -1,6 +1,6 @@
 # Ally Session Analyzer 0.23.2
 
-This candidate adds one public `/analyze` entrypoint, fresh review of captured instruction context, strict default-topic checks and persisted native reviewer identity. See the repository release evidence for current validation status; earlier authored outputs remain unchanged.
+Release held: 0.23.2 passed 445 offline tests with two optional skips, but Claude's session quota stopped the final combined/separate checks. Single-log and interrupted-review/resume checks remain pending on this exact package. See the [current validation and resume record](docs/release-live-audit-0.23.2.md). The candidate adds one public `/analyze` entrypoint, source-first review, saved read offsets, persisted native reviewer identity and exact-delivery metadata. Earlier authored outputs remain unchanged.
 
 Analyze Claude Code logs for task outcomes, instruction compliance, token usage
 and useful next steps. Import/accounting run locally with Python's standard
