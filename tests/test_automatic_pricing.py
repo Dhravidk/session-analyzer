@@ -41,12 +41,15 @@ class AutomaticPricingTests(unittest.TestCase):
                 read=300000, output=40000, thinking=10000))])
         # Opus 5.5: $4 input, $5 writes, $.20 reads, $20 output / million.
         opening = data['session_readout']['opening']
-        self.assertEqual(opening, 'Estimated session cost: $2.26 (600,000 input tokens / $1.46, including 300,000 cached input tokens / $0.06; 40,000 output tokens / $0.80, including 10,000 reasoning tokens / $0.20).')
+        self.assertEqual(opening, 'Estimated session cost: $2.26.')
+        self.assertIn('600,000 input tokens / $1.46, including 300,000 cached input tokens / $0.06', data['session_readout']['token_summary'])
+        self.assertIn('40,000 output tokens / $0.80, including 10,000 reasoning tokens / $0.20', data['session_readout']['token_summary'])
         cfg = self.store.analysis(self.aid)['configuration']
         self.assertEqual(cfg['price_book_source']['kind'], 'bundled_verified')
         self.assertEqual(cfg['price_book_source']['verified_on'], '2026-10-20')
         self.assertEqual(len(cfg['price_book_source']['catalog_sha256']), 64)
-        self.assertIn('not a subscription charge', data['session_readout']['qualifications'][0])
+        self.assertEqual(data['session_readout']['qualifications'], [])
+        self.assertIn('not a subscription charge', data['session_readout']['cost_details_on_request'][0])
 
     def test_known_models_and_stream_updates_are_priced_once(self):
         rows = [human(0), model_response(1, mid='synthetic-stream', request='synthetic-request', block=0),
@@ -106,8 +109,31 @@ class AutomaticPricingTests(unittest.TestCase):
         data=self.overview([human(0),model_response(1),snapshot(2,9.29)])
         self.assertEqual(Decimal(data['source_cost']['priced_usage']['value_usd']),Decimal('.000946'))
         self.assertEqual(data['source_cost']['recorded_snapshot']['value_usd'],'9.29')
-        self.assertIn('separate host estimate is $9.29', ' '.join(data['session_readout']['qualifications']))
+        self.assertIn('separate host estimate is $9.29', ' '.join(data['session_readout']['cost_details_on_request']))
+        self.assertEqual(data['session_readout']['qualifications'], [])
         self.assertNotIn('$9.29',data['session_readout']['opening'])
+
+    def test_default_reviewed_reply_omits_routine_notes_but_followup_tools_retain_them(self):
+        self.overview([human(0), model_response(1, u=usage(input=100000, write=200000,
+            read=300000, output=40000, thinking=10000)), snapshot(2, 9.29)])
+        before=canonical(canonical_report(self.store,self.aid))
+        service=Service(self.store,allow_content=False);self.addCleanup(service.close)
+        with patch('socket.create_connection',side_effect=AssertionError('No network')), \
+             patch('subprocess.Popen',side_effect=AssertionError('No Claude')):
+            draft=service.call('prepare_session_reply',{'investigation_id':self.iid,'body':ASSESSMENTS,'compliance':COMPLIANCE})
+            ready=service.call('submit_session_reply_review',{'investigation_id':self.iid,'draft_id':draft['draft_id'],
+                'body':ASSESSMENTS,'compliance':COMPLIANCE,'notes':'Synthetic offline review, no model.','source_checks':[]})
+            self.assertEqual(ready['status'],'ready')
+            self.assertEqual(ready['reply'],'Estimated session cost: $2.26.\n\n'+ASSESSMENTS)
+            followup=service.call('get_session_overview',{'investigation_id':self.iid})
+        detail=followup['session_readout']
+        self.assertIn('600,000 input tokens / $1.46',detail['token_summary'])
+        self.assertEqual(detail['usage']['cached_input_tokens']['cost_usd'],'0.06')
+        self.assertEqual(detail['usage']['reasoning_output_tokens']['value'],10000)
+        self.assertTrue(any('verified 2026-10-20' in note for note in detail['cost_details_on_request']))
+        self.assertTrue(any('separate host estimate is $9.29' in note for note in detail['cost_details_on_request']))
+        self.assertEqual(followup['source_cost']['recorded_snapshot']['value_usd'],'9.29')
+        self.assertEqual(canonical(canonical_report(self.store,self.aid)),before)
 
     def test_operator_rate_card_takes_precedence_without_automatic_merge(self):
         prices=copy.deepcopy(PRICES);prices['rates']['claude-opus-5-5']=prices['rates'].pop('test-model')

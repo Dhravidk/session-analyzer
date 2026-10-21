@@ -12,7 +12,7 @@ sources. Claude's interpretation can still be wrong; follow decisive citations.
 
 Start with [installation](../INSTALL.md), including the `/analyze` shortcut.
 Supporting skills are internal, so developers need only this command. The
-0.23.2 candidate addresses [earlier live failures](release-live-audit-0.22.2.md);
+0.23.3 candidate retains the fixes for [earlier live failures](release-live-audit-0.22.2.md);
 installation alone is not evidence that every review is correct.
 
 ## Analyze one log
@@ -57,6 +57,18 @@ a full saved investigation; `/analyze --browse /path/selected-directory` opens t
 local browser. These are choices within the one entrypoint.
 
 ## Read the cost line correctly
+
+The initial answer shows only the total estimated source-session cost. Token and
+component costs, the pricing date/public API qualification, separate host
+estimates and reconciliation notes are available when you ask, for example:
+
+```text
+/analyze break down the token counts and their costs
+/analyze how was that estimate calculated, and why does it differ from the host total?
+```
+
+Incomplete pricing, unknown cost and material capture gaps remain explicit in
+the initial answer. The following details explain the retained accounting:
 
 - Input includes ordinary input, cache writes and cache reads. Do not add the
   cached portion again to the inclusive input total.

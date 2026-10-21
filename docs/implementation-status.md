@@ -1,3 +1,11 @@
+# Implementation status — 0.23.3
+
+New default readouts show total estimated source-session cost only. Token/component amounts and routine pricing/subscription, separate-host-estimate and reconciliation notes remain in the existing scoped tools for focused follow-ups; they are not appended to initial replies. Incomplete pricing and material capture limits stay explicit. Accounting, compliance, disclosure, approval boundaries and cache/compaction tools remain intact. Historical drafts retain their saved cost presentation on resume, and accepted Claude wording is returned unchanged.
+
+On October 21, after the operator confirmed reset, both saved 0.23.2 batch continuations and the single/interrupted checks were attempted. All four immediately returned provider HTTP 429 `usage_limit_reached`, reporting a 5 a.m. America/Detroit reset; none delivered new reviewer work. The saved batch IDs, drafts/markers, source accounting and frozen archives remain unchanged. Current release remains held for final live validation; no push or distribution is authorized while those gates remain incomplete.
+
+---
+
 # Implementation status — 0.22.2
 
 Single-session and collection draft registration now atomically rechecks owner/kind/key, captures winning access markers and saves under one SQLite writer reservation. Validation stays outside. Retries preserve the saved draft and boundary; existing duplicates and their separate reviews remain intact, with the first stored matching draft used consistently for registration. Review acceptance remains atomic. The new cross-process SQLite race fails on the previous implementation and passes with the fix. Guidance, source-cost accounting and disclosure/approval controls are unchanged.

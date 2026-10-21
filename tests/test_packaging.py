@@ -103,6 +103,8 @@ class PackagingTests(unittest.TestCase):
                 group=tool('get_session_collection',collection_id=cid)
                 self.assertEqual(group['output_mode'],'combined')
                 self.assertEqual(group['collection_readout']['usage']['input_tokens']['cost_usd'],'0.000292')
+                self.assertNotIn('tokens',group['collection_readout']['opening'])
+                self.assertTrue(any('public API rates' in note for note in group['collection_readout']['cost_details_on_request']))
                 entries=[];text=[]
                 for member in group['members']:
                     sid=member['session_id']
@@ -120,7 +122,12 @@ class PackagingTests(unittest.TestCase):
                 ready=tool('submit_collection_reply_review',collection_id=cid,draft_id=draft['draft_id'],sessions=entries,
                            body=body,notes='Synthetic metadata-only submission, not an actual native Agent review.',source_checks=[])
                 self.assertEqual(ready['status'],'ready',ready)
-                self.assertTrue(ready['reply'].endswith(body))
+                self.assertEqual(ready['reply'],group['collection_readout']['opening']+'\n\n'+body)
+                self.assertNotIn('Token estimate at public API rates',ready['reply'])
+                self.assertNotIn('Cumulative host estimates',ready['reply'])
+                followup=tool('get_session_collection',collection_id=cid)
+                self.assertEqual(followup['collection_readout']['usage'],group['collection_readout']['usage'])
+                self.assertEqual(followup['collection_readout']['cost_details_on_request'],group['collection_readout']['cost_details_on_request'])
                 self.assertEqual(tool('get_reviewed_collection_reply',collection_id=cid,draft_id=draft['draft_id'])['reply'],ready['reply'])
                 resumed=tool('prepare_collection_reply',collection_id=cid,sessions=entries,body=body)
                 self.assertEqual(resumed['draft_id'],draft['draft_id'])

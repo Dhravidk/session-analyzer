@@ -3,7 +3,7 @@
 The repository is `Dhravidk/session-analyzer`. The plugin keeps its existing name,
 `ally-session-analyzer`. Developers use one command, `/analyze`.
 
-The 0.23.2 candidate targets the [0.22.2 live-review failures](docs/release-live-audit-0.22.2.md).
+The 0.23.3 candidate retains the fixes for [0.22.2 live-review failures](docs/release-live-audit-0.22.2.md) and simplifies the initial cost display.
 Release readiness depends on the new candidate's offline and live checks; installing
 it does not certify a future compliance judgment.
 

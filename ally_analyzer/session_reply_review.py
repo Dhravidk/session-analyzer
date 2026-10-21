@@ -111,7 +111,9 @@ def submit_session_reply_review(store, investigation_id, draft_id, body, complia
               'review_mode': 'source_content' if allow_content else 'metadata_only',
               'validation_limit': LIMIT}
     if not issues:
-        result['reply'] = checked['reply']
+        # A saved draft retains its original computed presentation on resume,
+        # including drafts from before a display-policy upgrade.
+        result['reply'] = '\n\n'.join([draft['readout']['opening'], *draft['readout']['qualifications'], body])
     saved = save_review(store, investigation_id, 'reply_review', result)
     rid = saved['id']
     log_access(store, run, 'submit_session_reply_review', {'draft_id': draft_id, 'review_id': rid,

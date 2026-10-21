@@ -15,7 +15,7 @@ This repository is the source of the `ally-session-analyzer` Claude Code plugin.
 - For code changes, start with the [architecture](docs/architecture.md) and
   [development workflow](docs/development.md). Preserve authored output and
   append-only history. Never fix a finding by editing a saved Claude answer.
-- The 0.23.2 candidate addresses earlier live failures; require current offline/live evidence before declaring release readiness. Read the
+- The 0.23.3 candidate retains earlier live-review fixes and shows a total-only cost opening; require current offline/live evidence before declaring release readiness. Read the
   [live release audit](docs/release-live-audit-0.22.2.md) before describing it as
   ready to ship. A successful installation does not resolve those failures.
 

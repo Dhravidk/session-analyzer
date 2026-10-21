@@ -116,6 +116,13 @@ class CollectionTests(unittest.TestCase):
                           notes='Synthetic review; do not turn reported draft creation into verified delivery.', source_checks=checks)
         self.assertEqual(ready['status'],'ready',ready)
         self.assertTrue(ready['reply'].startswith('Estimated cost across 2 selected sessions:'))
+        self.assertNotIn('tokens',ready['reply'].splitlines()[0])
+        self.assertNotIn('Token estimate at public API rates',ready['reply'])
+        self.assertNotIn('Selected source responses are counted once',ready['reply'])
+        facts=self.call('get_session_collection')['collection_readout']
+        self.assertTrue(any('Selected source responses are counted once' in note for note in facts['cost_details_on_request']))
+        self.assertTrue(any('public API rates' in note for note in facts['cost_details_on_request']))
+        self.assertEqual(facts['usage']['input_tokens']['value'],120)
         self.assertTrue(ready['reply'].endswith(body))
         self.assertEqual(records(self.store, self.cid, 'collection_reply_draft'),before)
         self.assertEqual(self.call('get_reviewed_collection_reply',draft_id=did)['reply'],ready['reply'])
@@ -190,6 +197,13 @@ class CollectionTests(unittest.TestCase):
         for entry in entries: self.assertIn(entry['body'],ready['reply'])
         self.assertEqual(ready['reply'].count('Estimated session cost:'),2)
         self.assertIn('Estimated cost across 2 selected sessions:',ready['reply'])
+        self.assertNotIn('tokens',ready['reply'])
+        self.assertNotIn('Token estimate at public API rates',ready['reply'])
+        self.assertNotIn('Cumulative host estimates are not added',ready['reply'])
+        for member in self.call('get_session_collection')['members']:
+            facts=member['session_readout']
+            self.assertEqual(facts['usage']['input_tokens']['value'],60)
+            self.assertTrue(facts['cost_details_on_request'])
 
     def test_metadata_policy_and_unrequested_resource_detail_are_preserved(self):
         self.service.allow_content=False; entries,body=self.prose()

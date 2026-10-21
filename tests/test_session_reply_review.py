@@ -2,6 +2,7 @@
 import copy
 import hashlib
 import unittest
+from unittest.mock import patch
 
 from ally_analyzer.claude_runner import audit_tool_policy
 from ally_analyzer.service import Service
@@ -105,6 +106,29 @@ class SessionReplyReviewTests(unittest.TestCase):
         changed = self.draft('Different synthetic answer.\n\n' + ASSESSMENTS)
         self.assertNotEqual(changed['draft_id'], draft_id)
         self.assertEqual(changed['status'], 'review_required')
+
+    def test_resume_keeps_saved_cost_presentation_and_prior_attempts_after_display_upgrade(self):
+        self.setup_service()
+        readout=self.invoke('get_session_overview')['session_readout']
+        legacy=copy.deepcopy(readout)
+        legacy.update(version='developer-readout-v4',opening='Synthetic historical cost opening (token details).',
+                      qualifications=['Synthetic historical cost qualification.'])
+        legacy.pop('cost_details_on_request')
+        with patch('ally_analyzer.session_readout.developer_readout',return_value=legacy):
+            did=self.draft()['draft_id']
+        before=copy.deepcopy(records(self.store,self.iid,'reply_draft'))
+        rejected=self.submit(did)
+        self.assertEqual(rejected['status'],'needs_revision')
+        rejected_before=copy.deepcopy(records(self.store,self.iid,'reply_review'))
+        self.reread()
+        body='Synthetic reviewer’s exact wording; preserve (all punctuation).\n\n'+ASSESSMENTS
+        ready=self.submit(did,body=body)
+        expected='\n\n'.join([legacy['opening'],*legacy['qualifications'],body])
+        self.assertEqual(ready['reply'],expected)
+        self.assertEqual(self.invoke('get_reviewed_session_reply',draft_id=did)['reply'],expected)
+        self.assertEqual(records(self.store,self.iid,'reply_draft'),before)
+        self.assertEqual(records(self.store,self.iid,'reply_review')[:1],rejected_before)
+        self.assertEqual(self.invoke('get_session_overview')['session_readout']['version'],'developer-readout-v5')
 
     def test_reviewed_body_cannot_opt_into_unrequested_topics(self):
         self.setup_service()

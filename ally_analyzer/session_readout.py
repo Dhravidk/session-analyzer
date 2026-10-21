@@ -1,4 +1,4 @@
-"""A cost-and-usage opening over recorded accounting, never an authored finding."""
+"""A total-cost opening with retained follow-up accounting, never a finding."""
 import re
 from decimal import Decimal
 
@@ -37,22 +37,23 @@ def developer_readout(cost, metrics):
     tokens = (pair('input_tokens', 'cached_input_tokens', 'input tokens', 'cached input tokens') + '; '
               + pair('output_tokens', 'reasoning_output_tokens', 'output tokens', 'reasoning tokens'))
     if display['kind'] == 'unavailable':
-        opening = 'Session cost is unavailable (' + tokens + ').'
+        opening = 'Session cost is unavailable.'
     elif display['kind'] == 'priced_subtotal':
-        opening = 'Priced usage subtotal: ' + display['value'] + ' (' + tokens + '); full session cost is unknown.'
+        opening = 'Priced usage subtotal: ' + display['value'] + '; full session cost is unknown.'
     elif display['kind'] == 'priced_usage':
-        opening = 'Estimated session cost: ' + display['value'] + ' (' + tokens + ').'
+        opening = 'Estimated session cost: ' + display['value'] + '.'
     else:
-        opening = 'You spent approximately ' + display['value'] + ' (' + tokens + ') on this session.'
+        opening = 'You spent approximately ' + display['value'] + ' on this session.'
     qualifications = []
+    cost_details = []
     price_source = (cost or {}).get('priced_usage', {}).get('price_book_source', {})
     if display['kind'] in ('priced_usage', 'priced_subtotal') and price_source.get('kind') == 'bundled_verified':
-        qualifications.append('Token estimate at public API rates verified ' + price_source['verified_on'] + '; not a subscription charge. Analyzer/reviewer usage is excluded.')
+        cost_details.append('Token estimate at public API rates verified ' + price_source['verified_on'] + '; not a subscription charge. Analyzer/reviewer usage is excluded.')
     snapshot = (cost or {}).get('recorded_snapshot')
     if display['kind'] == 'priced_usage' and snapshot and money(snapshot['value_usd']) != display['value']:
         later = snapshot['later_main_responses']
         age = ' (before ' + str(later) + ' later response' + ('s)' if later != 1 else ')') if later else ''
-        qualifications.append('The log’s separate host estimate is ' + money(snapshot['value_usd']) + age + '; its billing scope and reconciliation with this token estimate are unverified.')
+        cost_details.append('The log’s separate host estimate is ' + money(snapshot['value_usd']) + age + '; its billing scope and reconciliation with this token estimate are unverified.')
     if display['kind'] == 'recorded_snapshot':
         qualifications.append('Cost is the latest recorded host estimate; final session cost is unverified.')
         snapshot = cost['recorded_snapshot']
@@ -61,13 +62,15 @@ def developer_readout(cost, metrics):
             qualifications.append('The cost snapshot precedes ' + str(later) + ' later captured main-agent response' + ('.' if later == 1 else 's.'))
     if cost and cost.get('unavailable_child_traces'):
         qualifications.append('Some child traces are unavailable; these captured totals do not establish the full task cost or usage.')
-    return {'version': 'developer-readout-v4', 'opening': opening, 'token_summary': tokens, 'usage': usage,
+    return {'version': 'developer-readout-v5', 'opening': opening, 'token_summary': tokens, 'usage': usage,
             'billing_scope': 'analyzed_session_only',
             'population': 'Main agent and structurally linked captured children; reconciled identities counted once.',
             'cost_kind': display['kind'], 'qualifications': qualifications,
+            'cost_details_on_request': cost_details,
             'default_reply_policy': {'first': 'opening', 'then': ['recommendations_or_outcome', 'task_outcome_and_instruction_following', 'decisive_evidence', 'concrete_changes_when_supported'],
                 'compliance': 'Give separate authored assessments of delivery and adherence to evidenced instructions. Cite decisive requests/actions; preserve unmet versus unverified and later recovery. Do not invent a violation or approval gate.',
-                'cache_and_compaction': 'Only when the current user asks, except cached-input count and cost in the opening. This applies to evidence summaries, caveats, checks and copy-paste prompts too.',
+                'cost_details': 'The initial reply uses only opening and qualifications before the authored body. Token/component breakdowns, cost_details_on_request and source_cost provenance are available for focused follow-ups; do not append them or announce their omission by default.',
+                'cache_and_compaction': 'Only when the current user asks. This applies to evidence summaries, caveats, checks and copy-paste prompts too.',
                 'retain_underlying_analysis_and_tools': True},
             'input_includes_cached': True, 'output_includes_reasoning': True}
 

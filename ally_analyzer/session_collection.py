@@ -78,7 +78,7 @@ def _facts(store, selected):
     readout['opening'] = readout['opening'].replace('Session cost is unavailable', 'Cost across ' + label + ' is unavailable')
     readout['opening'] = readout['opening'].replace('full session cost is unknown', 'full selected-session cost is unknown')
     readout['population'] = usage['population']
-    readout['qualifications'].append('Selected source responses are counted once across logs; per-session totals can overlap. Cumulative host estimates are not added.')
+    readout['cost_details_on_request'].append('Selected source responses are counted once across logs; per-session totals can overlap. Cumulative host estimates are not added.')
     return readout, {'unique_responses': len(responses), 'source_frames': len(rows),
                      'conflicting_source_identities': len(conflicts), 'missing_child_session_ids': missing}
 
