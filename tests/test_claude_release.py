@@ -79,6 +79,22 @@ class ClaudeReleaseTests(unittest.TestCase):
         self.assertEqual(activity['observed_reviewer_model_responses'], 0)
         self.assertIsNone(interruption_point(rows))
 
+    def test_sendmessage_resume_links_same_native_identity_and_stage_usage(self):
+        resumed = [message([call('resume', 'SendMessage', {'to':'native-a', 'message':'Continue the same draft'})]),
+                   message([], parent='resume', agent='native-a', mid='msg-c', usage={'input_tokens':3})]
+        activity = reviewer_activity(native_rows() + resumed)
+        self.assertEqual(activity['fresh_reviewer_launches'], 1)
+        self.assertEqual(activity['resume_calls'], 1)
+        self.assertEqual(activity['resume_targets'], ['native-a'])
+        self.assertEqual(activity['observed_reviewer_model_responses'], 3)
+        self.assertEqual(reviewer_activity(resumed, ['native-a'])['observed_reviewer_model_responses'], 1)
+
+    def test_denied_fresh_attempt_is_not_counted_as_a_paid_native_launch(self):
+        denied = message([call('duplicate', 'Agent', {'subagent_type':REVIEWER})])
+        activity = reviewer_activity(native_rows() + [denied])
+        self.assertEqual(activity['attempted_fresh_reviewer_launches'], 2)
+        self.assertEqual(activity['fresh_reviewer_launches'], 1)
+
     def test_second_fresh_reviewer_remains_visible(self):
         rows = native_rows() + [message([call('extra', 'Agent', {'subagent_type': REVIEWER})]),
                 message([], parent='extra', agent='native-b', mid='msg-other', usage={'input_tokens': 9})]

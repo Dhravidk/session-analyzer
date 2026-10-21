@@ -3,9 +3,9 @@
 The existing conversational skill accepts either option:
 
 ```text
-/ally-session-analyzer:explain /absolute/path/session.jsonl
-/ally-session-analyzer:explain /absolute/path/one.jsonl /absolute/path/two.jsonl
-/ally-session-analyzer:explain /absolute/path/one.jsonl /absolute/path/two.jsonl --separate
+/analyze /absolute/path/session.jsonl
+/analyze /absolute/path/one.jsonl /absolute/path/two.jsonl
+/analyze /absolute/path/one.jsonl /absolute/path/two.jsonl --separate
 ```
 
 Natural requests such as “analyze these four logs together” work too. Multiple roots default to a combined developer handoff. `--separate` is interpreted by the skill as `output_mode=individual`; it is not a Claude CLI flag. One root retains the existing single-session review flow. Copies of one root do not become separate sessions.

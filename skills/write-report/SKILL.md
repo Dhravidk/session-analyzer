@@ -3,6 +3,7 @@ name: write-report
 description: Write or edit Ally Session Analyzer explanations and recommendations in clear, specific prose grounded in the selected session evidence. Use before saving insights or presenting an analysis.
 metadata:
   version: write-report-v19
+user-invocable: false
 ---
 
 Write for a teammate deciding whether anything should change. Make the evidence, optional action and important limit easy to find. Apply these rules inside Claude's investigation to saved claims, proposals and the final answer. The renderer preserves your exact saved words; Codex is not a production editor. This skill does not authorize applying a change or accessing more data.

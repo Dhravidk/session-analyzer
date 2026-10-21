@@ -7,6 +7,7 @@ flowchart TD
     Scope["Scoped MCP readers: masking, pages and access records"]
     Draft["Claude authors an analysis draft"]
     Register["Atomic draft registration and original freshness markers"]
+    Guard["Host hooks: reserve one launch and persist native handle"]
     Native["Native source-review Agent: reread sources and check claims"]
     Validate{"Fresh evidence, literal quotes, format and attempt rules"}
     Accept["Atomic review acceptance; preserve all attempts"]
@@ -23,7 +24,9 @@ flowchart TD
     Scope -->|"Controlled excerpts to approved Claude host"| Draft
     Draft --> Register
     Register --> Store
-    Register --> Native
+    Register --> Guard
+    Guard --> Store
+    Guard --> Native
     Native -->|"Fresh scoped reads"| Scope
     Native --> Validate
     Validate -->|"Revision allowed; at most two submissions"| Native

@@ -13,7 +13,12 @@ def build_archive(destination=None):
     version=json.loads((ROOT/'.claude-plugin/plugin.json').read_text())['version']
     files=[ROOT/'.claude-plugin/plugin.json',ROOT/'.mcp.json',ROOT/'docs/plugin-readme.md',ROOT/'pyproject.toml',
            ROOT/'bin/ally-session',ROOT/'scripts/ally-session.py']
-    files += [ROOT/'scripts/reviewer_hook.py', ROOT/'hooks/hooks.json']
+    files += [ROOT/'scripts/reviewer_hook.py', ROOT/'scripts/install_analyze.py',
+              ROOT/'scripts/check_install.py', ROOT/'hooks/hooks.json']
+    files += [ROOT/name for name in ('INSTALL.md','CLAUDE.md','AGENTS.md',
+              'docs/user-guide.md','docs/agent-install.md','docs/architecture.md',
+              'docs/architecture.mmd','docs/development.md','docs/git-baseline-validation.md',
+              'docs/installation-validation.md','docs/release-live-audit-0.22.2.md')]
     files += [ROOT/'docs'/name for name in ('investigation-evaluation.md','writing-quality.md','implementation-status.md','validation.md',
                                            'single-session-usage.md','single-session-investigation-spec.md','session-analyzer-product-design.md',
                                            'claude-session-analyzer-spec.md','decisions/0001-session-evidence-graph.md',

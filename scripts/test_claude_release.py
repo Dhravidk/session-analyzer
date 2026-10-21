@@ -79,7 +79,7 @@ def read_ids(value):
     return found
 
 
-def reviewer_activity(rows):
+def reviewer_activity(rows, known_agent_ids=()):
     """Deduplicate stream frames, and link actual child usage/reads/submissions.
 
     A resumed Agent tool call is not a new reviewer. A model response with
@@ -89,17 +89,19 @@ def reviewer_activity(rows):
     launches, candidates, child_calls, agents, messages, submitted, reads = {}, {}, {}, set(), {}, set(), set()
     for row in rows:
         for b in blocks(row):
-            if b.get('type') == 'tool_use' and b.get('name') == 'Agent':
-                candidates[b['id']] = b.get('input', {})
+            if b.get('type') == 'tool_use' and b.get('name') in ('Agent', 'SendMessage'):
+                value = b.get('input', {})
+                candidates[b['id']] = ({**value, 'resume':value.get('to'), 'resume_tool':'SendMessage'}
+                                       if b['name'] == 'SendMessage' else value)
                 if b.get('input', {}).get('subagent_type') == REVIEWER:
                     launches[b['id']] = b['input']
     # A host may omit subagent_type when resuming a known native agent.
-    known_agents = {r['agent_id'] for r in rows if r.get('agent_id') and r.get('parent_tool_use_id') in launches}
+    known_agents = set(known_agent_ids) | {r['agent_id'] for r in rows if r.get('agent_id') and r.get('parent_tool_use_id') in launches}
     for call_id, value in candidates.items():
         if value.get('resume') in known_agents:
             launches[call_id] = value
     for row in rows:
-        if row.get('parent_tool_use_id') not in launches:
+        if row.get('parent_tool_use_id') not in launches and row.get('agent_id') not in known_agents:
             continue
         aid = row.get('agent_id')
         if aid:
@@ -127,8 +129,10 @@ def reviewer_activity(rows):
     usage_messages = list(messages.values())
     positive = [m for m in usage_messages if any(isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0
                 for k, v in m['usage'].items() if k.endswith('_tokens'))]
+    actual = {r.get('parent_tool_use_id') for r in rows if r.get('agent_id') in agents}
     return {'agent_call_count': len(launches),
-            'fresh_reviewer_launches': sum(not v.get('resume') for v in launches.values()),
+            'attempted_fresh_reviewer_launches': sum(not v.get('resume') for v in launches.values()),
+            'fresh_reviewer_launches': sum(not v.get('resume') and key in actual for key, v in launches.items()),
             'resume_calls': sum(bool(v.get('resume')) for v in launches.values()),
             'resume_targets': sorted({v['resume'] for v in launches.values() if v.get('resume')}),
             'agent_ids': sorted(agents), 'observed_reviewer_model_responses': len(positive),
@@ -265,7 +269,14 @@ def main():
     for key in ('ALLY_ANALYZER_INVESTIGATION_ID', 'ALLY_ANALYZER_COLLECTION_ID'):
         env.pop(key, None)
     env['ALLY_ANALYZER_COLLECTION_ID' if collection_mode else 'ALLY_ANALYZER_INVESTIGATION_ID'] = owner
-    prompt = ('/ally-session-analyzer:explain ' + owner + (' --separate' if args.mode == 'individual' else '') + '\n' + question + '\n'
+    # Install and exercise the actual packaged public command in this run's
+    # temporary project. Never change the operator's personal Claude skills.
+    installer = work / 'install_analyze.py'
+    with zipfile.ZipFile(saved_plugin) as archive:
+        installer.write_bytes(archive.read('scripts/install_analyze.py'))
+    subprocess.run([sys.executable, '-I', str(installer), '--config-dir', str(work / '.claude')],
+                   capture_output=True, text=True, check=True, timeout=10)
+    prompt = ('/analyze ' + owner + (' --separate' if args.mode == 'individual' else '') + '\n' + question + '\n'
               'The operator authorizes controlled excerpts through this approved Claude host. Answer in this conversation; do not apply changes or create a saved report.')
     allowed = [PREFIX + name for name in (*READERS, *COLLECTION_TOOLS)]
     session_id = str(uuid.uuid4())
@@ -282,8 +293,12 @@ def main():
         if index:
             prompt = 'Continue the interrupted analysis from its saved progress. Resume the same draft and source-review agent rather than restarting the review.'
         cap = remaining / 2 if args.mode == 'interrupted' and not index else remaining
-        command = [args.claude, '--plugin-dir', str(saved_plugin), '--setting-sources', '', '--tools', 'Skill,Agent',
-                   '--allowedTools', *allowed, 'Skill(ally-session-analyzer:explain)', 'Skill(ally-session-analyzer:write-report)', 'Agent(' + REVIEWER + ')',
+        with store.connect() as db:
+            handles = [r[0] for r in db.execute('SELECT agent_id FROM reply_reviewer_launches WHERE owner_id=? AND host_session_id=? AND agent_id IS NOT NULL', (owner, session_id))]
+        command = [args.claude, '--plugin-dir', str(saved_plugin), '--setting-sources', 'project', '--tools', 'Skill,Agent,SendMessage,TaskOutput',
+                   '--allowedTools', *allowed, 'Skill(analyze)', 'Skill(ally-session-analyzer:analyze)',
+                   'Skill(ally-session-analyzer:explain)', 'Skill(ally-session-analyzer:write-report)', 'Agent(' + REVIEWER + ')',
+                   *['SendMessage(' + handle + ')' for handle in handles],
                    '--permission-mode', 'dontAsk', '--model', args.model, '--effort', 'medium',
                    '--max-budget-usd', str(cap), '--output-format', 'stream-json', '--verbose', '--forward-subagent-text',
                    *(['--resume', session_id] if index else ['--session-id', session_id]), '-p', prompt]
@@ -300,9 +315,9 @@ def main():
         stage_rows = stream_rows(stage / 'transcript.jsonl')
         rows.extend(stage_rows)
         policy = audit_tool_policy(calls, stage / 'transcript.jsonl', allowed,
-                                  ('ally-session-analyzer:explain', 'ally-session-analyzer:write-report'), (REVIEWER,))
+                                  ('analyze', 'ally-session-analyzer:analyze', 'ally-session-analyzer:explain', 'ally-session-analyzer:write-report'), (REVIEWER,), handles)
         entry = {'outcome': outcome, 'final': final, 'host': host, 'malformed_stream_lines': malformed,
-                 'tool_policy': policy, 'activity': reviewer_activity(stage_rows),
+                 'tool_policy': policy, 'activity': reviewer_activity(stage_rows, handles),
                  'transcript_sha256': hashlib.sha256((stage / 'transcript.jsonl').read_bytes()).hexdigest()}
         stages.append(entry)
         (stage / 'audit.json').write_text(json.dumps(entry, indent=2) + '\n')
@@ -352,7 +367,8 @@ def main():
     if args.mode == 'interrupted':
         checks.update({'interrupted_during_native_review': bool(stages) and stages[0]['outcome']['interrupted_after_native_read'],
                        'same_draft_and_markers_after_resume': bool(boundary_snapshot) and drafts == boundary_snapshot,
-                       'same_reviewer_resumed': activity['resume_calls'] >= 1 and len(activity['agent_ids']) == 1 and set(activity['resume_targets']) == set(activity['agent_ids'])})
+                       'same_reviewer_resumed': activity['resume_calls'] >= 1 and len(activity['agent_ids']) == 1 and set(activity['resume_targets']) == set(activity['agent_ids']),
+                       'resumed_reviewer_has_model_usage': len(stages) == 2 and stages[1]['activity']['observed_reviewer_model_responses'] > 0})
     audit = {'mode': args.mode, 'package': package, 'source_fingerprints': fingerprints, 'session_id': session_id,
              'owner_id': owner, 'members': members, 'expected_readout': expected, 'checks': checks,
              'native_review_activity': activity, 'stages': stages, 'coverage': coverage, 'native_request_coverage': native_coverage,

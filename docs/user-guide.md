@@ -10,16 +10,17 @@ written explanation, your approved Claude Code account reads controlled evidence
 and writes the answer. A fresh native reviewer checks that answer against the
 sources. Claude's interpretation can still be wrong; follow decisive citations.
 
-Start with [installation](../INSTALL.md). The 0.22.2 development candidate has
-[known review failures](release-live-audit-0.22.2.md), including an interrupted
-review restarting paid work. Do not treat a successful install as release approval.
+Start with [installation](../INSTALL.md), including the `/analyze` shortcut.
+Supporting skills are internal, so developers need only this command. The
+0.23.0 candidate addresses [earlier live failures](release-live-audit-0.22.2.md);
+installation alone is not evidence that every review is correct.
 
 ## Analyze one log
 
 In Claude Code with the plugin loaded:
 
 ```text
-/ally-session-analyzer:explain /absolute/path/session.jsonl
+/analyze /absolute/path/session.jsonl
 ```
 
 Select the exact file. You can also ask a natural question such as “Analyze this
@@ -36,19 +37,24 @@ not invent a skill edit to make an answer sound actionable.
 ## Analyze several logs
 
 ```text
-/ally-session-analyzer:explain /absolute/path/one.jsonl /absolute/path/two.jsonl
+/analyze /absolute/path/one.jsonl /absolute/path/two.jsonl
 ```
 
 This produces a combined handoff while checking each session separately. For
 separate answers in the same reply:
 
 ```text
-/ally-session-analyzer:explain /absolute/path/one.jsonl /absolute/path/two.jsonl --separate
+/analyze /absolute/path/one.jsonl /absolute/path/two.jsonl --separate
 ```
 
 `--separate` is part of the skill's request, not a flag to the `claude` executable.
 The reviewer checks the selected collection in one pass; separate output does
 not require a whole new review per log. See [selection and scope details](multiple-logs.md).
+
+Use the same command for follow-ups, for example `/analyze what instructions were
+missed?` in the existing analysis. `/analyze --report /path/session.jsonl` requests
+a full saved investigation; `/analyze --browse /path/selected-directory` opens the
+local browser. These are choices within the one entrypoint.
 
 ## Read the cost line correctly
 

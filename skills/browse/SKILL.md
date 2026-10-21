@@ -2,7 +2,7 @@
 name: browse
 description: Open a local browser for an explicitly selected Claude session directory, switch between logs and saved reports, and start individual investigations.
 argument-hint: "<session directory>"
-disable-model-invocation: true
+user-invocable: false
 ---
 
 Open the user's selected directory with the packaged session library. This is an operator launcher, not an investigation or a way to bypass evidence disclosure.

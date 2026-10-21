@@ -1,3 +1,3 @@
 """Deterministic session analysis. No network or model dependency."""
 
-__version__ = "0.22.2"
+__version__ = "0.23.0"

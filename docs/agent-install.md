@@ -37,6 +37,7 @@ Then register the marketplace and install using the chosen scope, for example:
 ```sh
 claude plugin marketplace add https://github.com/Dhravidk/session-analyzer.git
 claude plugin install ally-session-analyzer@session-analyzer --scope user
+python3 scripts/install_analyze.py
 claude plugin list
 claude plugin details ally-session-analyzer
 ```
@@ -57,6 +58,10 @@ an install script found inside an archived session.
 - Check that the intended marketplace/plugin is enabled in `claude plugin list`.
 - Confirm the six skills, native `source-review` agent and Python MCP server in
   `claude plugin details ally-session-analyzer`.
+- Install the single public `/analyze` shortcut with `scripts/install_analyze.py`.
+  For local project scope, explicitly use `--config-dir /absolute/path/project/.claude`.
+  Supporting plugin skills are internal. Preserve an existing unrelated `/analyze`;
+  report a naming conflict instead of overwriting it.
 - Reload plugins or tell the user to restart if the current context cannot
   discover newly installed tools. Do not claim this context already loaded them.
 - When the installed directory is available, run
@@ -75,10 +80,8 @@ reload/restart is still needed. Give this first-use command without executing it
 on an invented or discovered private source:
 
 ```text
-/ally-session-analyzer:explain /absolute/path/session.jsonl
+/analyze /absolute/path/session.jsonl
 ```
 
-Link the [human guide](user-guide.md). State that the current candidate retains
-the [documented live blockers](release-live-audit-0.22.2.md); installation does
-not clear them. Stop after the authorized setup rather than starting a review
+Link the [human guide](user-guide.md). Report current release evidence; the [earlier live blockers](release-live-audit-0.22.2.md) explain the targeted checks. Installation does not itself clear behavioral failures. Stop after the authorized setup rather than starting a review
 loop or asking for approval to repeat successful checks.

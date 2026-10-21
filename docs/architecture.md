@@ -15,6 +15,7 @@ flowchart TD
     Scope["Scoped MCP readers: masking, pages and access records"]
     Draft["Claude authors an analysis draft"]
     Register["Atomic draft registration and original freshness markers"]
+    Guard["Host hooks: reserve one launch and persist native handle"]
     Native["Native source-review Agent: reread sources and check claims"]
     Validate{"Fresh evidence, literal quotes, format and attempt rules"}
     Accept["Atomic review acceptance; preserve all attempts"]
@@ -31,7 +32,9 @@ flowchart TD
     Scope -->|"Controlled excerpts to approved Claude host"| Draft
     Draft --> Register
     Register --> Store
-    Register --> Native
+    Register --> Guard
+    Guard --> Store
+    Guard --> Native
     Native -->|"Fresh scoped reads"| Scope
     Native --> Validate
     Validate -->|"Revision allowed; at most two submissions"| Native
@@ -90,12 +93,15 @@ The bundled renderer uses saved fields, not an extra prose-editing model.
 
 ## Current limitations
 
-The [0.22.2 live audit](release-live-audit-0.22.2.md) records a default-topic guard
-gap, a compliance instruction-coverage concern, and an interrupted native review
-that launched a second paid reviewer. Atomic draft registration protects stored
-identity and freshness; it does not implement a host reviewer-launch lease or
-guarantee same-agent resume. The diagram describes the normal handoff, not proof
-that every live review succeeds.
+The [0.22.2 live audit](release-live-audit-0.22.2.md) records the failures that
+motivated 0.23.0. The current candidate requires captured skill/retained-context
+reads and an instruction-context source check, rejects the observed topic leak,
+and uses plugin `PreToolUse`/`SubagentStart` hooks to reserve one launch and save
+its native ID. SQLite reservations have no automatic expiry that buys a replacement.
+The parent must resume the saved ID in the original host session. If that host
+refuses resume, review stays incomplete. The normal handoff diagram and offline
+checks do not certify semantic accuracy or actual paid invocation counts; those
+require the current live traces.
 
 For the earlier full-investigation design, see [system overview](system-overview.md)
 and [the original Mermaid source](session-analyzer-system.mmd). For current

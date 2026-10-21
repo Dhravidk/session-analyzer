@@ -6,7 +6,7 @@ General Claude replies put the computed estimated source-session cost and four t
 
 ## Ask Claude without opening the GUI
 
-Load the plugin in your approved Claude Code environment and select a session log or a saved investigation. Ask naturally, or invoke `/ally-session-analyzer:explain`:
+Load the plugin in your approved Claude Code environment and select a session log or a saved investigation. Ask naturally, or invoke `/analyze`:
 
 ```text
 Analyze /absolute/path/session.jsonl. What work is unfinished?
@@ -79,7 +79,7 @@ ALLY_ANALYZER_INVESTIGATION_ID=INVESTIGATION_ID \
 claude --plugin-dir /absolute/path/ally-session-analyzer-0.19.0.zip
 ```
 
-Invoke `/ally-session-analyzer:investigate INVESTIGATION_ID`. Controlled text access is for the approved environment. Without the content flag, metric/navigation queries work but text reads and searches fail explicitly. The bound analyzer rejects other investigations and legacy APIs. The host may expose unrelated tools; use a restricted host configuration when enforcing access beyond this plugin.
+Invoke `/analyze --report INVESTIGATION_ID`. Controlled text access is for the approved environment. Without the content flag, metric/navigation queries work but text reads and searches fail explicitly. The bound analyzer rejects other investigations and legacy APIs. The host may expose unrelated tools; use a restricted host configuration when enforcing access beyond this plugin.
 
 The workflow loads `write-report`, maps requests and outcomes, tracks material questions with `save_inquiry`, investigates original results, saves exact claims and optional recommendations, then freezes its conclusion. Claude can finish a completed inquiry with insufficient evidence. A partial run means the declared inquiry was not finished; it does not mean a supported problem was found.
 
@@ -198,7 +198,7 @@ For an Ally integration, supply the selected parent and child logs in this nativ
 
 ## Session directory browser (0.12.0)
 
-From the session directory, run `ally-session browse . --detach`, or use the packaged Python entry point. In Claude Code, use `/ally-session-analyzer:browse <directory>`. Choose `~/.claude/projects` explicitly for the native local library. A chosen root is fixed for that server; launch another directory as a separate library. The server returns its URL and PID. Repeating the command for the same library reopens its running URL. To change launch options, stop that server and relaunch it.
+From the session directory, run `ally-session browse . --detach`, or use the packaged Python entry point. In Claude Code, use `/analyze --browse <directory>`. Choose `~/.claude/projects` explicitly for the native local library. A chosen root is fixed for that server; launch another directory as a separate library. The server returns its URL and PID. Repeating the command for the same library reopens its running URL. To change launch options, stop that server and relaunch it.
 
 Folder labels show the last two recorded working-directory components; expand for the full folder and log paths. Use search and expandable folders to find a session. **Inspect current log locally** imports the selected parent and adjacent linked children, computes facts and opens the standard source inspector without a model call. **Analyze session** or **Update analysis** uses the configured approved host only after explicit excerpt approval. If the executable is not on PATH, launch with `--claude "/absolute/path/to/claude"`.
 

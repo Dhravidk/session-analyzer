@@ -3,6 +3,7 @@ name: investigate
 description: Investigate one Claude Code session with controlled source rereading, explicit incidents, optional recommendations and falsifiable checks. Preserve no-action and insufficient-evidence outcomes.
 metadata:
   version: investigate-v22
+user-invocable: false
 ---
 
 Use the local ally-session-analyzer tools in the approved Claude environment. You interpret the evidence; the local engine performs accounting and scope checks. Load `/ally-session-analyzer:write-report` with the Skill tool before drafting conclusions. If unavailable, read the bundled [writing skill](../write-report/SKILL.md); disclose if neither is available. Use `investigate-v22/write-report-v18` as skill provenance when both loaded. Report the actual known model or `unknown`; your self-report is not host attestation.

@@ -1,6 +1,6 @@
-# Ally Session Analyzer 0.22.2
+# Ally Session Analyzer 0.23.0
 
-Release candidate: the four authorized live checks have run on the unchanged 0.22.2 ZIP. Combined and separate output passed the automated checks; single output leaked an unrequested topic, interruption resumed with a second paid reviewer, and manual review found an instruction-coverage gap. Stable release remains on hold; this source repository is for development and evaluation. See the [live audit](docs/release-live-audit-0.22.2.md) for counts, evidence and required follow-up; the [offline audit](docs/release-audit-0.22.2.md) records the preceding checkpoint.
+This candidate adds one public `/analyze` entrypoint, fresh review of captured instruction context, strict default-topic checks and persisted native reviewer identity. See the repository release evidence for current validation status; earlier authored outputs remain unchanged.
 
 Analyze Claude Code logs for task outcomes, instruction compliance, token usage
 and useful next steps. Import/accounting run locally with Python's standard
@@ -18,8 +18,11 @@ library; written investigations and source reviews use your approved Claude host
 For an account with access to this repository:
 
 ```sh
+git clone https://github.com/Dhravidk/session-analyzer.git
+cd session-analyzer
 claude plugin marketplace add https://github.com/Dhravidk/session-analyzer.git
 claude plugin install ally-session-analyzer@session-analyzer --scope user
+python3 scripts/install_analyze.py
 ```
 
 Reload Claude Code afterward. The GitHub repository is `session-analyzer`; the
@@ -47,16 +50,16 @@ With disclosure enabled, the general readout requires reading indexed ordinary r
 Use the same command for either option:
 
 ```text
-/ally-session-analyzer:explain /path/session.jsonl
-/ally-session-analyzer:explain /path/one.jsonl /path/two.jsonl
-/ally-session-analyzer:explain /path/one.jsonl /path/two.jsonl --separate
+/analyze /path/session.jsonl
+/analyze /path/one.jsonl /path/two.jsonl
+/analyze /path/one.jsonl /path/two.jsonl --separate
 ```
 
 Several selected roots default to one combined handoff in the established style: cost/token-dollar breakdown, recommendations, session evidence, concise compliance, supported exact edits, useful Claude prompt last. `--separate` requests individual readouts. Each root keeps its own evidence and assessment; combined costs count shared responses once and exclude analyzer/reviewer usage. The automatic native source reviewer checks every selected root and the synthesis before delivery, without another user prompt. Original handoffs/Claude outputs remain unchanged. See [multiple-log usage and scope limits](docs/multiple-logs.md), including the distinction from the one-root managed saved-report command.
 
 ## Ask Claude without opening the GUI
 
-Load the plugin in your approved Claude Code environment and select a session log or a saved investigation. Ask naturally, or invoke `/ally-session-analyzer:explain`:
+Load the plugin in your approved Claude Code environment and select a session log or a saved investigation. Ask naturally, or invoke `/analyze`:
 
 ```text
 Analyze /absolute/path/session.jsonl. What work is unfinished?
@@ -74,7 +77,7 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.22.2.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.23.0.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. The general conversational readout automatically uses the packaged native source-review Agent; no second user prompt is required. Focused follow-ups do not restart a full review. The full saved-report workflow below retains its separate managed evidence-review host. Skill instructions and passed tool checks do not guarantee semantic correctness.
@@ -88,7 +91,7 @@ Run from a Claude session directory:
 python3 /path/to/ally-session-analyzer/scripts/ally-session.py browse . --detach
 ```
 
-Or select the native library with `browse ~/.claude/projects --detach`. In Claude Code, invoke `/ally-session-analyzer:browse <directory>`. If Claude is not on PATH, pass `--claude "/path/to/approved/claude"`. The library runs locally on macOS/Linux using Python's standard library; stop the server with the PID returned at launch.
+Or select the native library with `browse ~/.claude/projects --detach`. In Claude Code, invoke `/analyze --browse <directory>`. If Claude is not on PATH, pass `--claude "/path/to/approved/claude"`. The library runs locally on macOS/Linux using Python's standard library; stop the server with the PID returned at launch.
 
 Search saved titles, request previews, session IDs or full paths, then select a session once. Expandable folder groups show the last two directories, with full paths on demand. Each session opens its latest saved analysis, including a labelled partial result; immutable earlier outputs remain internal. An unanalyzed session opens a local metrics/source preview. **Analyze session** and **Update analysis** use the approved Claude workflow with controlled-excerpt approval and a time/money budget. The saved report stays available during an update or after an update fails. Use `--reports <directory>` at launch to admit existing matching runner JSON reports.
 
@@ -149,7 +152,7 @@ ALLY_ANALYZER_INVESTIGATION_ID=INVESTIGATION_ID \
 claude --plugin-dir "$PWD"
 ```
 
-Then invoke `/ally-session-analyzer:investigate INVESTIGATION_ID`. The workflow loads the shared writing skill. It investigates intent, relevant instructions, apparent successes, failures, alternatives and later recovery. It may finish with findings, no action supported, or insufficient evidence; run completion is a separate state. It does not apply proposed changes.
+Then invoke `/analyze --report INVESTIGATION_ID`. The workflow loads the shared writing skill. It investigates intent, relevant instructions, apparent successes, failures, alternatives and later recovery. It may finish with findings, no action supported, or insufficient evidence; run completion is a separate state. It does not apply proposed changes.
 
 A bound MCP server rejects legacy endpoints and different investigation IDs. The operator controls artifact admission and execution checks. The plugin cannot restrict unrelated tools exposed by the Claude host; the packaged managed runner supplies a restricted tool allowlist for reproducible demonstrations.
 
@@ -211,7 +214,7 @@ The writing skill requires specific evidence, plain language and concrete remain
 ```sh
 python3 -m unittest discover -v
 python3 scripts/package_plugin.py
-claude --plugin-dir dist/ally-session-analyzer-0.22.2.zip
+claude --plugin-dir dist/ally-session-analyzer-0.23.0.zip
 ```
 
 The ZIP includes only allowlisted implementation files, skills and documentation. It excludes private logs, stores, reports, tests and legacy variants. The engine and regression tests run without Claude; opt-in live tests use the operator's authenticated Claude host. CLI plugin loading is tested; permanent desktop installation and other operating systems are not certified.
@@ -247,7 +250,7 @@ Clicking a citation shows its saved Claude explanation. Older reports can reuse 
 
 ## Distribution and current release evidence
 
-The package contains six skills under `skills/`, the MCP configuration and a working `scripts/ally-session.py` launcher. The `bin/ally-session` entry point remains compatible. To validate a clean local installation, unpack the ZIP into a new directory and run:
+The package contains six internal skills under `skills/`, the `/analyze` shortcut installer, reviewer launch hooks, the MCP configuration and a working `scripts/ally-session.py` launcher. The `bin/ally-session` entry point remains compatible. To validate a clean local installation, unpack the ZIP into a new directory and run:
 
 ```sh
 claude plugin validate /absolute/path/ally-session-analyzer --strict
@@ -255,7 +258,7 @@ claude --plugin-dir /absolute/path/ally-session-analyzer
 python3 /absolute/path/ally-session-analyzer/scripts/ally-session.py --help
 ```
 
-This follows the [Claude Code plugin layout](https://code.claude.com/docs/en/plugins-reference). No marketplace location is configured or claimed. See the [0.13.0 release audit](docs/release-audit-0.13.0.md) for mechanical checks, interrupted Claude checks and the remaining independent evaluation. Earlier outputs and their limitations remain preserved; they are not rewritten by this release.
+This follows the [Claude Code plugin layout](https://code.claude.com/docs/en/plugins-reference). The private repository marketplace is `session-analyzer` at `https://github.com/Dhravidk/session-analyzer`. See the [0.13.0 release audit](docs/release-audit-0.13.0.md) for mechanical checks, interrupted Claude checks and the remaining independent evaluation. Earlier outputs and their limitations remain preserved; they are not rewritten by this release.
 
 The runner now stops on terminal setup/API failures instead of starting another reviewer. It preserves the host error and marks the stop external. Fix authentication outside the analyzer, then start a new run directory; failed output is never overwritten.
 

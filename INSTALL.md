@@ -1,12 +1,11 @@
 # Install Session Analyzer in Claude Code
 
 The repository is `Dhravidk/session-analyzer`. The plugin keeps its existing name,
-`ally-session-analyzer`, so its commands start with `/ally-session-analyzer:`.
+`ally-session-analyzer`. Developers use one command, `/analyze`.
 
-**Status:** 0.22.2 is a development candidate. Installation and offline checks
-work independently of the [known live review failures](docs/release-live-audit-0.22.2.md).
-Use it for evaluation; it is not a certified compliance verdict or a cleared
-production release.
+The 0.23.0 candidate targets the [0.22.2 live-review failures](docs/release-live-audit-0.22.2.md).
+Release readiness depends on the new candidate's offline and live checks; installing
+it does not certify a future compliance judgment.
 
 ## Requirements
 
@@ -26,8 +25,11 @@ The Python engine uses the standard library. Installing a Python package with
 Run in a terminal:
 
 ```sh
+git clone https://github.com/Dhravidk/session-analyzer.git
+cd session-analyzer
 claude plugin marketplace add https://github.com/Dhravidk/session-analyzer.git
 claude plugin install ally-session-analyzer@session-analyzer --scope user
+python3 scripts/install_analyze.py
 claude plugin list
 claude plugin details ally-session-analyzer
 ```
@@ -40,8 +42,16 @@ only when the project should declare the plugin for collaborators.
 Restart Claude Code, or run `/reload-plugins` in an existing session. The details
 should show the six skills (`analyze`, `browse`, `explain`, `investigate`,
 `review`, `write-report`), the `source-review` agent and the
-`ally-session-analyzer` MCP server. A successful install proves configuration,
+`ally-session-analyzer` MCP server. The six skills are internal; only the installed
+`/analyze` shortcut is a public command. A successful install proves configuration,
 not the accuracy of a future analysis.
+
+Claude Code prefixes plugin skills with the plugin name. The small personal
+shortcut delegates to the internal workflow, giving you exactly `/analyze`.
+The installer respects `CLAUDE_CONFIG_DIR`, preserves unrelated settings, and
+refuses to overwrite another `/analyze` command. For a project shortcut, pass
+`--config-dir /absolute/path/project/.claude` explicitly. Removing the plugin also
+requires `python3 scripts/install_analyze.py --uninstall` to remove this shortcut.
 
 The root `CLAUDE.md` guides agents working with this repository. Claude Code may
 warn that it is not loaded as plugin context; that is expected. Runtime guidance
@@ -49,12 +59,14 @@ comes from the packaged skills and reviewer agent instead.
 
 ## Load a checkout for one session
 
-This alternative leaves persistent plugin configuration unchanged:
+This alternative loads the plugin from a checkout. The shortcut installer adds
+only the personal `/analyze` command; it does not register the plugin persistently:
 
 ```sh
 git clone https://github.com/Dhravidk/session-analyzer.git
 cd session-analyzer
 python3 scripts/check_install.py
+python3 scripts/install_analyze.py
 claude --plugin-dir .
 ```
 
@@ -102,7 +114,7 @@ reuse that path for follow-ups. Do not commit the store or private logs.
 | --- | --- |
 | Repository not found | Confirm repository access and Git authentication. Website sign-in alone may not authenticate Git. |
 | `python3` not found | Make Python 3.9+ available to the terminal/desktop process that launches Claude Code; restart that process. |
-| Plugin installed, commands absent | Check `claude plugin list`, reload plugins or restart, and use the full `/ally-session-analyzer:explain` name. |
+| `/analyze` absent | Run the shortcut installer, reload/restart, and check for a conflicting existing `/analyze`. The plugin's supporting skills are intentionally hidden. |
 | MCP failed to connect | Run `scripts/check_install.py` on the plugin directory. Preserve the error; do not bypass the server with direct private-file reads. |
 | Content-dependent analysis unavailable | The operator must authorize controlled excerpts; metadata-only setup is not a failure. |
 | Existing investigation opens unexpectedly | Check `ALLY_ANALYZER_INVESTIGATION_ID` and `ALLY_ANALYZER_COLLECTION_ID`; do not carry another run's scope binding into a new selection. |
