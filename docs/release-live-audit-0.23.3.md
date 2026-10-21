@@ -5,8 +5,9 @@ The local candidate is `dist/ally-session-analyzer-0.23.3.zip`, SHA-256
 136 members, 566,604 bytes, built from
 `d605dc5a8f98c34de3f6fa016d56a440ca45ac17` after the offline checks passed.
 Every archive member matched its committed source at freeze time. The older
-0.22.2, 0.23.0, 0.23.1 and 0.23.2 archive hashes remain unchanged. No candidate
-or new commit has been pushed or distributed.
+0.22.2, 0.23.0, 0.23.1 and 0.23.2 archive hashes remain unchanged. At the end
+of these live checks, no candidate or new commit had been pushed or distributed.
+The subsequent source-publication authorization is recorded below.
 
 ## Default presentation
 
@@ -154,8 +155,20 @@ all original raw stages, answers and failed audits; append new stages/audits.
 Host totals may be cumulative and are not added as separate charges. The ten
 model-free release-harness regression tests also passed during this audit.
 
-**Release remains held.** Combined/separate acceptance and the focused follow-up
-are not passed. Continue only when the approved host has quota, then verify fresh
+**Release validation remains incomplete.** Combined/separate acceptance and the
+focused follow-up are not passed. Continue after the operator explicitly confirms
+quota availability, then verify fresh
 native source coverage, one reviewer identity/launch, exact accepted delivery,
-manual claim/source checks and unchanged fingerprints. Do not push or distribute
-until the required final checks pass.
+manual claim/source checks and unchanged fingerprints. Source publication for
+team evaluation does not clear these remaining checks.
+
+## Source publication for team evaluation — October 21
+
+After these checks, the operator explicitly requested pushing the latest source
+to the existing private GitHub repository and sharing its link with the team.
+This supersedes the earlier hold on a source push. The README labels 0.23.3 as a
+development candidate and retains the incomplete live-check status; publication
+does not certify a passed release. No additional paid Claude check is authorized
+by that request. Raw sessions, generated answers, stores, credentials and release
+archives remain ignored and local. No stable release or archive upload is part
+of this source publication.

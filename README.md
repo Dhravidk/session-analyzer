@@ -1,6 +1,6 @@
 # Ally Session Analyzer 0.23.3
 
-Release held: the frozen 0.23.3 single-log and interrupted-review/resume checks passed, with one native reviewer per flow and exact accepted delivery. Combined and separate-output checks started but hit the shared Claude quota before reviewer launch. The saved legacy reviewers resumed under their original IDs; citation rejections and quota limits remain explicit. See the [current candidate audit](docs/release-live-audit-0.23.3.md) for exact counts and continuation state. The offline suite remains 447 passed with two optional skips. Nothing has been pushed or distributed.
+Development candidate for team evaluation; release validation remains incomplete. The frozen 0.23.3 single-log and interrupted-review/resume checks passed, with one native reviewer per flow and exact accepted delivery. Combined and separate-output checks started but hit the shared Claude quota before reviewer launch. The saved legacy reviewers resumed under their original IDs; citation rejections and quota limits remain explicit. See the [current candidate audit](docs/release-live-audit-0.23.3.md) for exact counts and continuation state. The offline suite remains 447 passed with two optional skips. Source publication is authorized for team review; release archives and private evidence remain local.
 
 Analyze Claude Code logs for task outcomes, instruction compliance, token usage
 and useful next steps. Import/accounting run locally with Python's standard
