@@ -103,3 +103,32 @@ class InstructionContextTests(unittest.TestCase):
             'notes':'Synthetic collection review missing retained instructions.', 'source_checks':checks})
         self.assertEqual(rejected['status'], 'needs_revision')
         self.assertIn('missing_instruction_context_check', {i['code'] for i in rejected['issues']})
+
+    def test_new_draft_stays_hidden_until_the_last_fresh_context_tail(self):
+        self.load([human(0,'Synthetic task.'),context(1,'Synthetic retained instruction. '*700,isCompactSummary=True)])
+        self.service=Service(self.store,allow_content=True);self.addCleanup(self.service.close)
+        for row in scope_rows(self.store,self.run):
+            page=self.call('read_investigation_evidence',source_id=row['id'],max_chars=12000)
+            while page['next_start_char'] is not None:
+                page=self.call('read_investigation_evidence',source_id=row['id'],start_char=page['next_start_char'],
+                    expected_text_sha256=page['text_sha256'],max_chars=12000)
+        did=self.call('prepare_session_reply',body=ASSESSMENTS,compliance=COMPLIANCE)['draft_id']
+        original=records(self.store,self.iid,'reply_draft')
+        # The parent's global overview is complete; it cannot release a fresh reviewer draft.
+        self.assertTrue(get_session_overview(self.store,self.iid)['request_coverage']['complete_for_observed_population'])
+        hidden=self.call('get_session_reply_draft',draft_id=did)
+        self.assertTrue(all(u['resume_read']['start_char']==0 for u in hidden['review_request_coverage']['unread_requests']))
+        self.call('read_investigation_evidence',source_id=self.ids['event-0'])
+        page=self.call('read_investigation_evidence',source_id=self.ids['event-1'],max_chars=12000)
+        self.assertIsNotNone(page['next_start_char'])
+        hidden=self.call('get_session_reply_draft',draft_id=did)
+        self.assertTrue(hidden['draft_content_withheld'])
+        hint=hidden['review_request_coverage']['unread_requests'][0]['resume_read']
+        self.assertEqual(hint['start_char'],page['next_start_char'])
+        self.assertEqual(hint['expected_text_sha256'],page['text_sha256'])
+        self.call('read_investigation_evidence',source_id=self.ids['event-1'],start_char=page['next_start_char'],
+                  expected_text_sha256=page['text_sha256'],max_chars=12000)
+        shown=self.call('get_session_reply_draft',draft_id=did)
+        self.assertFalse(shown['draft_content_withheld'])
+        self.assertEqual(shown['draft']['body'],ASSESSMENTS)
+        self.assertEqual(records(self.store,self.iid,'reply_draft'),original)

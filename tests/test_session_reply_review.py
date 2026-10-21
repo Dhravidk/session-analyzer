@@ -1,5 +1,6 @@
 """Offline workflow tests on explicitly synthetic evidence, never a live host."""
 import copy
+import hashlib
 import unittest
 
 from ally_analyzer.claude_runner import audit_tool_policy
@@ -60,7 +61,12 @@ class SessionReplyReviewTests(unittest.TestCase):
         self.assertNotIn('reply', fetched)
         draft = self.invoke('get_session_reply_draft', draft_id=result['draft_id'])
         self.assertEqual(draft['review_request_coverage']['unread_request_count'], 2)
-        self.assertEqual(draft['draft']['body'], ASSESSMENTS)
+        self.assertTrue(draft['draft_content_withheld'])
+        self.assertNotIn('body', draft['draft'])
+        self.reread()
+        shown = self.invoke('get_session_reply_draft', draft_id=result['draft_id'])
+        self.assertFalse(shown['draft_content_withheld'])
+        self.assertEqual(shown['draft']['body'], ASSESSMENTS)
 
     def test_review_requires_fresh_requests_updates_and_literal_sources(self):
         self.setup_service()
@@ -153,6 +159,7 @@ class SessionReplyReviewTests(unittest.TestCase):
     def test_metadata_only_review_never_requires_or_leaks_source_quotes(self):
         self.setup_service(content=False)
         draft_id = self.draft()['draft_id']
+        self.assertFalse(self.invoke('get_session_reply_draft', draft_id=draft_id)['draft_content_withheld'])
         ready = self.submit(draft_id, source_checks=[])
         self.assertEqual(ready['status'], 'ready')
         review = records(self.store, self.iid, 'reply_review')[0]
@@ -175,6 +182,35 @@ class SessionReplyReviewTests(unittest.TestCase):
             self.submit(draft_id, body='Replacement.\n\n' + ASSESSMENTS)
         with self.assertRaises(AnalyzerError):
             self.invoke('get_reviewed_session_reply', draft_id='reply_draft_wrong_scope')
+
+    def test_ready_transport_hash_preserves_author_punctuation_and_history(self):
+        self.setup_service(content=False)
+        body='Keep the author’s text (including this); do not split it.\n\n'+ASSESSMENTS
+        did=self.draft(body)['draft_id']
+        ready=self.submit(did,body=body,source_checks=[])
+        self.assertEqual(ready['status'],'ready')
+        expected=hashlib.sha256(ready['reply'].encode('utf-8')).hexdigest()
+        self.assertEqual(ready['delivery']['reply_sha256'],expected)
+        self.assertEqual(ready['delivery']['reply_characters'],len(ready['reply']))
+        self.assertTrue(ready['reply'].endswith(body))
+        saved=records(self.store,self.iid,'reply_review')
+        fetched=self.invoke('get_reviewed_session_reply',draft_id=did)
+        self.assertEqual(fetched['delivery'],ready['delivery'])
+        self.assertEqual(fetched['reply'],saved[0]['reply'])
+        self.assertEqual(records(self.store,self.iid,'reply_review'),saved)
+
+    def test_legacy_draft_view_keeps_its_original_wording_available(self):
+        from ally_analyzer.session_investigation import put_record
+        self.setup_service()
+        did=self.draft()['draft_id']
+        original=records(self.store,self.iid,'reply_draft')[0]
+        legacy={k:v for k,v in original.items() if k!='id'}
+        legacy['contract_version']='source-review-v1'
+        old=put_record(self.store,{'id':self.iid},'reply_draft',legacy)
+        self.assertTrue(self.invoke('get_session_reply_draft',draft_id=did)['draft_content_withheld'])
+        view=self.invoke('get_session_reply_draft',draft_id=old)
+        self.assertFalse(view['draft_content_withheld'])
+        self.assertEqual(view['draft']['body'],original['body'])
 
     def test_agent_auditor_allows_only_the_packaged_reviewer(self):
         self.setup_service(content=False)

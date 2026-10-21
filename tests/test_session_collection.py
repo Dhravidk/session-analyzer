@@ -125,6 +125,41 @@ class CollectionTests(unittest.TestCase):
         with self.assertRaisesRegex(AnalyzerError,'immutable accepted'):
             self.call('submit_collection_reply_review',draft_id=did,sessions=entries,body=body+'Changed.',notes='New',source_checks=checks)
 
+    def test_new_combined_and_individual_drafts_wait_for_fresh_sources_without_changing_storage(self):
+        for mode in ('combined', 'individual'):
+            with self.subTest(mode=mode):
+                service=Service(self.store,allow_content=True);self.addCleanup(service.close)
+                selected=service.call('start_session_collection',{'analysis_id':self.aid,
+                    'session_ids':['synthetic-a','synthetic-b'],'purpose':'Synthetic source-first '+mode,'output_mode':mode})
+                cid=selected['collection_id']
+                entries=[];texts=[]
+                for member in selected['members']:
+                    iid=member['investigation_id']
+                    for row in scope_rows(self.store,get_run(self.store,iid)):
+                        service.call('read_investigation_evidence',{'investigation_id':iid,'source_id':row['id']})
+                    outcome=iid+' task unverified.';following=iid+' approval preserved.'
+                    entry={'investigation_id':iid,'compliance':{'task_outcome':outcome,'instruction_following':following}}
+                    text=outcome+' '+following
+                    if mode=='individual':entry['body']=text
+                    entries.append(entry);texts.append(text)
+                args={'collection_id':cid,'sessions':entries}
+                if mode=='combined':args['body']=' '.join(texts)
+                did=service.call('prepare_collection_reply',args)['draft_id']
+                original=records(self.store,cid,'collection_reply_draft')
+                def fetch():return service.call('get_collection_reply_draft',{'collection_id':cid,'draft_id':did})
+                hidden=fetch()
+                self.assertTrue(hidden['draft_content_withheld'])
+                self.assertNotIn('body',hidden['draft'])
+                self.assertTrue(all('body' not in s and 'compliance' not in s for s in hidden['draft']['sessions']))
+                # Reading only one root cannot release either form of the handoff.
+                for index,member in enumerate(selected['members']):
+                    iid=member['investigation_id']
+                    for row in scope_rows(self.store,get_run(self.store,iid)):
+                        service.call('read_investigation_evidence',{'investigation_id':iid,'source_id':row['id']})
+                    self.assertEqual(fetch()['draft_content_withheld'],index==0)
+                self.assertEqual(fetch()['draft'],original[0])
+                self.assertEqual(records(self.store,cid,'collection_reply_draft'),original)
+
     def test_review_requires_fresh_reads_in_both_sessions_and_rejects_cross_scope_quotes(self):
         checks = self.read_all(); entries,body = self.prose()
         did = self.call('prepare_collection_reply',sessions=entries,body=body)['draft_id']

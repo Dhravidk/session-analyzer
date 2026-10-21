@@ -13,7 +13,7 @@ from .session_investigation import accounting, record_by_id, records
 from .session_metrics import token_metrics
 from .session_readout import developer_readout, prepare_session_reply
 from .reply_review import (LIMIT, REVIEWER, accepted_review, fresh_request_coverage,
-                           register_draft, review_history, review_retry, review_source_issues, review_source_state, save_review)
+                           ready_delivery, register_draft, review_draft_view, review_history, review_retry, review_source_issues, review_source_state, save_review)
 from .session_review import request_coverage
 from .session_scope import (get_run, get_scope, scope_rows,
                             start_session_investigation)
@@ -132,7 +132,7 @@ def prepare_collection_reply(store, collection_id, sessions, body=None, requeste
     draft = {'body': body, 'sessions': sessions, 'requested_details': requested_details or [],
              'detail_request': detail_request, 'allow_content': allow_content, 'readout': readout,
              'session_readouts': {iid: c['session_readout'] for iid, c in checked.items()},
-             'contract_version': 'collection-source-review-v1'}
+             'contract_version': 'collection-source-review-v2'}
     did = register_draft(store, collection_id, 'collection_reply_draft', draft,
                          [m['investigation_id'] for m in selected['members']])['id']
     return get_reviewed_collection_reply(store, collection_id, did, allow_content)
@@ -153,11 +153,12 @@ def _coverage(store, draft):
 
 def get_collection_reply_draft(store, collection_id, draft_id, allow_content=False, include_reviews=False):
     draft = _draft(store, collection_id, draft_id, allow_content)
-    return {'collection_id': collection_id, 'draft_id': draft_id, 'draft': draft,
+    coverage = _coverage(store, draft)
+    return {'collection_id': collection_id, 'draft_id': draft_id, **review_draft_view(draft, coverage.values()),
             'review_launch': launch_state(store, collection_id, 'collection_reply_draft', draft_id),
             **({'review_history': [r for r in records(store, collection_id, 'collection_reply_review') if r['draft_id'] == draft_id]} if include_reviews else {}),
             'members': collection(store, collection_id)['members'],
-            'review_request_coverage': _coverage(store, draft), 'validation_limit': LIMIT,
+            'review_request_coverage': coverage, 'validation_limit': LIMIT,
             'instructions': 'Use the packaged native source-review Agent. Reread every selected session independently after draft creation; do not transfer authorizations or outcomes between roots. Check aggregate advice against each cited root and applicable target. Submit a complete standalone handoff and per-session exact compliance spans. No extra per-session review pass is needed.'}
 
 
@@ -218,4 +219,5 @@ def _result(saved):
     return {'collection_id': saved['collection_id'], 'draft_id': saved['draft_id'], 'review_id': saved['id'],
             'status': 'ready' if saved['status'] == 'accepted' else 'needs_revision', 'issues': saved['issues'],
             'review_request_coverage': saved['review_request_coverage'], 'validation_limit': LIMIT,
+            **(ready_delivery(saved['reply']) if saved['status'] == 'accepted' else {}),
             **({'reply': saved['reply']} if saved['status'] == 'accepted' else {})}

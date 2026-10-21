@@ -1,4 +1,4 @@
-# Ally Session Analyzer 0.23.1
+# Ally Session Analyzer 0.23.2
 
 This candidate adds one public `/analyze` entrypoint, fresh review of captured instruction context, strict default-topic checks and persisted native reviewer identity. See the repository release evidence for current validation status; earlier authored outputs remain unchanged.
 
@@ -48,7 +48,7 @@ For a managed run, its store is `<run-directory>/store` and its `audit.json` con
 ```sh
 ALLY_ANALYZER_HOME="/absolute/path/run-directory/store" \
 ALLY_ANALYZER_INVESTIGATION_ID="INVESTIGATION_ID" \
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.23.1.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.23.2.zip
 ```
 
 Metadata queries work with disclosure off. When the approved host needs controlled source text, the operator enables `ALLY_ANALYZER_ALLOW_CONTENT=1` before starting Claude. The skill must not enable it or bypass it with other file tools. The general conversational readout automatically uses the packaged native source-review Agent; no second user prompt is required. Focused follow-ups do not restart a full review. The full saved-report workflow below retains its separate managed evidence-review host. Skill instructions and passed tool checks do not guarantee semantic correctness.
@@ -74,7 +74,7 @@ Local deterministic accounting and a single-session investigation workflow for a
 The session library and standalone report offer HTML, Markdown (.md), and JSON exports. Markdown uses the saved analysis and included source text without another model call. The CLI and `export_session_investigation` tool accept format `md`; their existing source-disclosure controls still apply.
 
 ```sh
-claude --plugin-dir /absolute/path/ally-session-analyzer-0.23.1.zip
+claude --plugin-dir /absolute/path/ally-session-analyzer-0.23.2.zip
 ```
 
 Use `/analyze /absolute/path/session.log` to import and measure, `/analyze ANALYSIS_ID` for accounting, or `/analyze --report INVESTIGATION_ID` for the scoped investigation. The investigation skill can also select one root from an analysis. Loading the plugin does not collect logs automatically.

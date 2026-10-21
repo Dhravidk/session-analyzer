@@ -5,6 +5,7 @@ admission. Only their short check-and-append transactions use BEGIN IMMEDIATE.
 Never call validators while holding that writer reservation: they open their
 own SQLite connections.
 """
+import hashlib
 from .session_investigation import put_record, records
 from .session_review import request_coverage
 from .session_scope import projection, scope_rows, summarize_exposure
@@ -17,6 +18,37 @@ LIMIT = ('Authored source review, not a correctness certificate. MCP validates s
          'must be checked in the host trace. No historical prose was changed.')
 REVIEW_KINDS = ('reply_review', 'collection_reply_review')
 DRAFT_KINDS = ('reply_draft', 'collection_reply_draft')
+
+
+def ready_delivery(reply):
+    """Transport metadata only: never normalize or rewrite authored characters."""
+    return {'delivery':{'action':'copy_reply_exactly_as_final_message',
+        'reply_sha256':hashlib.sha256(reply.encode('utf-8')).hexdigest(),
+        'reply_characters':len(reply),
+        'instruction':"The reply field is the finished source-reviewed document, not a draft to edit. Deliver it as the entire final message with no preface or suffix. Preserve every character, including curly apostrophes, parentheses, semicolons and newlines. Do not apply your own writing conventions, improve punctuation, summarize or reword any paragraph. These metadata fields are not part of the reply."}}
+
+
+def review_draft_view(draft, coverages):
+    """Expose a new draft only after fresh source context, without editing storage.
+
+    Legacy drafts retain their historical read API. New v2 drafts hide authored
+    spans until the original requests/instruction context have been delivered.
+    This avoids using a parent's prose as a substitute for the fresh review.
+    """
+    withheld = (draft.get('contract_version') in ('source-review-v2', 'collection-source-review-v2')
+                and draft['allow_content'] and any(c['unread_request_count'] for c in coverages))
+    view = dict(draft)
+    if withheld:
+        for field in ('body', 'compliance'):
+            view.pop(field, None)
+        if 'sessions' in view:
+            view['sessions'] = [{k:v for k,v in s.items() if k not in ('body','compliance')} for s in view['sessions']]
+    return {'draft':view, 'draft_content_withheld':bool(withheld),
+            'review_readiness':'read_sources_first' if withheld else 'ready_to_compare_draft',
+            'next_review_step':('Read every remaining fresh request/context source and its continuations; then reload this draft. Do not compose or submit a review yet.' if withheld else
+                'Compare the original draft with the evidence just read, check decisive results/counterevidence and submit one complete reviewed body.'),
+            'visible_body_policy':{'omit_unrequested_topics':[t for t in ('cache','compaction') if t not in draft.get('requested_details', [])],
+                'instruction':'Keep unrequested topics out of visible prose, citations, caveats and prompts; describe a retained instruction without naming its resource mechanism. Do not downgrade an established instruction miss to an open question elsewhere in the same body. Preserve genuine uncertainty about cause or branch delivery separately.'}}
 
 
 def register_draft(store, owner_id, kind, draft, investigation_ids):
@@ -110,6 +142,24 @@ def review_source_state(store, run, after_access_id):
     coverage = request_coverage(store, run, sources)
     coverage = {**coverage, 'unread_request_count': len(coverage['unread_requests']),
                 'unread_requests': coverage['unread_requests'][:8]}
+    # Resume the first missing range in this draft's fresh snapshot. Reads made
+    # before its winning boundary never enter sources and cannot advance a hint.
+    for item in coverage['unread_requests']:
+        hint = {'start_char':0, 'max_chars':12000}
+        seen = [s for s in sources if s['source_id'] == item['source_id']]
+        if len(seen) == 1:
+            source = seen[0]
+            _, sha, _, _ = projection(store, run, item['source_id'], include_metadata=False)
+            if sha == source['text_sha256']:
+                cursor, end = 0, source['total_characters']
+                for left, right in source['delivered_ranges']:
+                    if left > cursor:
+                        end = left
+                        break
+                    cursor = max(cursor, right)
+                if cursor < end:
+                    hint = {'start_char':cursor, 'max_chars':min(12000, end-cursor), 'expected_text_sha256':sha}
+        item['resume_read'] = hint
     return {'sources': sources, 'exposure_key': digest(sources), 'coverage': coverage,
             'fresh_accesses': {a['request_id']: a for a in accesses if a['status'] == 'returned'}}
 

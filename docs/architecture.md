@@ -94,7 +94,7 @@ The bundled renderer uses saved fields, not an extra prose-editing model.
 ## Current limitations
 
 The [0.22.2 live audit](release-live-audit-0.22.2.md) records the failures that
-motivated 0.23.1. The current candidate requires captured skill/retained-context
+motivated 0.23.2. The current candidate requires captured skill/retained-context
 reads and an instruction-context source check, rejects the observed topic leak,
 and uses plugin `PreToolUse`/`SubagentStart` hooks to reserve one launch and save
 its native ID. SQLite reservations have no automatic expiry that buys a replacement.
