@@ -58,7 +58,7 @@ def request_coverage(store, run, delivered=None):
     """Task requests include SDK submissions, without claiming human origin."""
     from .session_diagnostics import inspected_reference
     from .session_investigation import accounting
-    from .session_scope import instruction_updates, scope_rows
+    from .session_scope import instruction_contexts, instruction_updates, scope_rows
     main = {r['id'] for r in scope_rows(store, run) if r['agent_id']=='main'}
     if delivered is None:
         delivered = exposure(store,run['id'])['sources']
@@ -67,13 +67,18 @@ def request_coverage(store, run, delivered=None):
                for i,t in enumerate(turns,1) if not inspected_reference(store,run,{'source_id':t['request_event_id']},delivered)]
     updates = instruction_updates(store, run)
     unread_updates = [u for u in updates if not inspected_reference(store,run,{'source_id':u['source_id']},delivered)]
-    unread = missing + unread_updates
+    contexts = instruction_contexts(store, run)
+    unread_contexts = [c for c in contexts if not inspected_reference(store,run,{'source_id':c['source_id']},delivered)]
+    # A context source can also be indexed as a request by an older adapter.
+    unread = list({u['source_id']:u for u in missing + unread_updates + unread_contexts}.values())
     return {'main_requests':len(turns), 'fully_read':len(turns)-len(missing), 'unread_requests':unread,
             'instruction_update_sources':len(updates), 'instruction_updates_fully_read':len(updates)-len(unread_updates),
             'update_origin_counts':dict(Counter(u['origin_basis'] for u in updates)),
-            'population':'captured_main_task_requests_and_structured_instruction_updates',
-            'coverage_status':'empty_population' if not turns and not updates else 'partial' if unread else 'fully_delivered',
-            'complete_for_observed_population':bool(turns or updates) and not unread,
+            'instruction_context_sources':contexts,
+            'instruction_context_fully_read':len(contexts)-len(unread_contexts),
+            'population':'captured_task_requests_updates_and_instruction_context',
+            'coverage_status':'empty_population' if not turns and not updates and not contexts else 'partial' if unread else 'fully_delivered',
+            'complete_for_observed_population':bool(turns or updates or contexts) and not unread,
             'origin_counts':dict(Counter(t['origin_basis'] for t in turns)),
             'limitation':'Reading indexed requests/updates establishes analyzer exposure only, not delivery into a past response, a complete requirement inventory, fulfillment or comprehension. Updates embedded only in ordinary prose/tool results may need source investigation; source counts are not unique obligations.'}
 

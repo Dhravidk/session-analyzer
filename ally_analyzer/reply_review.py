@@ -142,7 +142,11 @@ def review_source_issues(store, run, state, source_checks, allow_content):
     issues = []
     if allow_content and state['coverage']['unread_request_count']:
         issues.append({'code': 'review_requests_not_reread',
-                       'message': 'Reread remaining requests/updates after this draft was saved. Refresh draft coverage for unread IDs.'})
+                       'message': 'Reread remaining requests, updates and captured skill/retained-context sources after this draft was saved. Refresh draft coverage for unread IDs; assess applicability and counterevidence without treating these sources as new human requests.'})
+    context_ids = {c['source_id'] for c in state['coverage'].get('instruction_context_sources', [])}
+    if allow_content and context_ids and not any(c['aspect'] == 'instruction_following' and c['source_id'] in context_ids for c in source_checks):
+        issues.append({'code': 'missing_instruction_context_check',
+                       'message': 'Include an instruction_following source check quoting a captured skill or retained-context source. Explain its applicability or limits and check counterevidence; indexed human requests alone cannot justify a clean compliance verdict.'})
     for check in source_checks:
         try:
             error = literal_quote_error(store, run, check, state['fresh_accesses'], allow_content)

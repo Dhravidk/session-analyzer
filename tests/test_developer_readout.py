@@ -242,7 +242,10 @@ class DeveloperReadoutTests(unittest.TestCase):
     def test_unrequested_resume_resource_detail_in_advice_is_rejected(self):
         for sentence in ('Inspect resume handling after /compact.',
                          'The assistant reread inputs after compaction and paused.',
-                         'Investigate the pause during a manual compaction.'):
+                         'Investigate the pause during a manual compaction.',
+                         'The post-compaction summary retained that instruction.',
+                         'Check the compacted summary.',
+                         'Compaction is not discussed further.'):
             with self.subTest(sentence=sentence):
                 result = prepare_session_reply(self.store, self.iid, sentence + '\n\n' + ASSESSMENTS, compliance=COMPLIANCE)
                 self.assertEqual([i['code'] for i in result['issues']], ['unrequested_compaction_detail'])

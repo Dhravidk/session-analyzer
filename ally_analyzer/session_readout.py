@@ -74,7 +74,7 @@ def developer_readout(cost, metrics):
 
 TOPIC_PATTERNS = {
     'cache': r'(?<![a-z])(?:cache[-_ ](?:reads?|writes?|creation|hit[-_ ](?:rate|share))|cached[-_ ]input|prompt[-_ ]cach\w*|promptCacheTtl|subagentPromptCacheTtl)(?![a-z])',
-    'compaction': r'compact_boundary|compactMetadata|preTokens|postTokens|(?<![\w/])/compact\b|\b(?:after|before|during)\s+(?:(?:a|the|manual|automatic)\s+){0,2}compaction\b|\b(?:context|conversation|session|harness)\b.{0,64}\bcompaction\b|\bcompaction\b.{0,64}\b(?:events?|boundary|tokens?|context|instructions?|authorization|session)\b',
+    'compaction': r'\b(?:compaction|compacted|compacting)\b|compact_boundary|compactMetadata|preTokens|postTokens|(?<![\w/])/compact\b',
 }
 REQUEST_PATTERNS = {'cache': r'cache|cached|caching|promptCacheTtl', 'compaction': r'compaction|compacting|compacted|compact_boundary'}
 

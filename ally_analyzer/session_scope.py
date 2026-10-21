@@ -60,6 +60,34 @@ def instruction_updates(store, run):
     return result
 
 
+def instruction_contexts(store, run):
+    """Captured context candidates, never new requests or proof of applicability.
+
+    Retained summaries and host-expanded skills can contain operative rules while
+    being deliberately excluded from reconstructed task turns. Index their
+    structured origins separately; ordinary prose claiming to be a rule is not
+    promoted into this inventory. Reviewers must still check branch/scope.
+    """
+    result = []
+    for row in scope_rows(store, run):
+        if row['agent_id'] != 'main':
+            continue
+        raw = strict_json(row['raw'])
+        message = raw.get('message')
+        message = message if isinstance(message, dict) else {}
+        content = message.get('content', '')
+        texts = ([content] if isinstance(content, str) else
+                 [b.get('text', '') for b in content if isinstance(b, dict) and b.get('type') == 'text']
+                 if isinstance(content, list) else [])
+        kind = ('retained_context_summary' if raw.get('isCompactSummary') is True else
+                'captured_skill_snapshot' if raw.get('isMeta') is True and any(
+                    isinstance(t, str) and t.lstrip().startswith('Base directory for this skill:') for t in texts) else None)
+        if kind:
+            result.append({'source_id': row['id'], 'source_kind': kind,
+                           'origin_basis': 'captured_host_context_not_human_request'})
+    return result
+
+
 def entities(store, run, kind):
     with store.connect() as db:
         return [strict_json(r[0]) for r in db.execute("SELECT payload FROM scope_entities WHERE scope_id=? AND kind=? ORDER BY id", (run["scope_id"], kind))]
