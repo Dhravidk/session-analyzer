@@ -1,6 +1,40 @@
 # Ally Session Analyzer 0.22.2
 
-Release candidate: the four authorized live checks have run on the unchanged 0.22.2 ZIP. Combined and separate output passed the automated checks; single output leaked an unrequested topic, interruption resumed with a second paid reviewer, and manual review found an instruction-coverage gap. Distribution remains on hold. See the [live audit](docs/release-live-audit-0.22.2.md) for counts, evidence and required follow-up; the [offline audit](docs/release-audit-0.22.2.md) records the preceding checkpoint.
+Release candidate: the four authorized live checks have run on the unchanged 0.22.2 ZIP. Combined and separate output passed the automated checks; single output leaked an unrequested topic, interruption resumed with a second paid reviewer, and manual review found an instruction-coverage gap. Stable release remains on hold; this source repository is for development and evaluation. See the [live audit](docs/release-live-audit-0.22.2.md) for counts, evidence and required follow-up; the [offline audit](docs/release-audit-0.22.2.md) records the preceding checkpoint.
+
+Analyze Claude Code logs for task outcomes, instruction compliance, token usage
+and useful next steps. Import/accounting run locally with Python's standard
+library; written investigations and source reviews use your approved Claude host.
+
+## Start here
+
+| Reader | Guide |
+| --- | --- |
+| Installing the plugin | [Install in Claude Code](INSTALL.md) |
+| Using it on one or several logs | [Human user guide](docs/user-guide.md) |
+| Asking an agent to install it | [Agent checklist](docs/agent-install.md) and [CLAUDE.md](CLAUDE.md) |
+| Understanding or changing the code | [Architecture and Mermaid diagram](docs/architecture.md), [AGENTS.md](AGENTS.md), [development](docs/development.md) |
+
+For an account with access to this repository:
+
+```sh
+claude plugin marketplace add https://github.com/Dhravidk/session-analyzer.git
+claude plugin install ally-session-analyzer@session-analyzer --scope user
+```
+
+Reload Claude Code afterward. The GitHub repository is `session-analyzer`; the
+plugin retains its existing `ally-session-analyzer` name and command prefix.
+Python 3.9+ must be available as `python3`. See [installation](INSTALL.md) for a
+temporary checkout load, scope choices, verification and troubleshooting.
+
+To delegate setup to Claude Code, give it this request:
+
+```text
+Install https://github.com/Dhravidk/session-analyzer in Claude Code for my user.
+Read its CLAUDE.md, INSTALL.md and docs/agent-install.md, perform the installation,
+and verify it with the model-free smoke check. Do not import my logs, enable
+source-text disclosure or start a paid analysis as part of installation.
+```
 
 Claude's default session readout starts with **“Estimated session cost: $…”** and gives token counts and dollar amounts for input (including cached input) and output (including reasoning). A verified, dated public-rate snapshot loads automatically without a model or pricing-network call. An explicit operator card overrides it. Only analyzed source usage is priced; analyzer/reviewer usage is excluded. Unknown rates/usage stay unavailable and partial costs stay explicit. The qualification identifies the public API token-price equivalent and verification date; it is not subscription billing. The recommendation or outcome comes next, followed immediately by separate **Task outcome** and **Instruction following** assessments, decisive evidence and supported concrete changes. Claude checks the actual request, authorizations, actions/results and captured ending; unmet and unverified outcomes stay distinct. Required approval before implementation remains intact. Caching and compaction diagnosis or tuning is on request; all underlying accounting, evidence and follow-up tools remain available. Source cost is separate from analyzer cost and is not an invoice.
 

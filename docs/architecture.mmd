@@ -1,0 +1,38 @@
+flowchart TD
+    User["Developer selects logs and disclosure policy"]
+    Entry["Claude Code skills / CLI / local browser"]
+    Import["Local Python: snapshot selected files and linked children"]
+    Facts["Reconcile responses, tokens, source cost and tool results"]
+    Store[("Local SQLite and evidence objects")]
+    Scope["Scoped MCP readers: masking, pages and access records"]
+    Draft["Claude authors an analysis draft"]
+    Register["Atomic draft registration and original freshness markers"]
+    Native["Native source-review Agent: reread sources and check claims"]
+    Validate{"Fresh evidence, literal quotes, format and attempt rules"}
+    Accept["Atomic review acceptance; preserve all attempts"]
+    Reply["Exact accepted conversational answer"]
+    Managed["Optional managed investigation and separate review host"]
+    Export["Saved report / HTML, Markdown, JSON renderer"]
+
+    User --> Entry
+    Entry --> Import
+    Import --> Facts
+    Import --> Store
+    Facts --> Store
+    Store --> Scope
+    Scope -->|"Controlled excerpts to approved Claude host"| Draft
+    Draft --> Register
+    Register --> Store
+    Register --> Native
+    Native -->|"Fresh scoped reads"| Scope
+    Native --> Validate
+    Validate -->|"Revision allowed; at most two submissions"| Native
+    Validate -->|"Accepted"| Accept
+    Accept --> Store
+    Accept --> Reply
+    Entry -->|"Full saved report requested"| Managed
+    Managed --> Scope
+    Managed -->|"Immutable records and reviewed conclusion"| Store
+    Store --> Export
+    Export --> User
+    Reply --> User

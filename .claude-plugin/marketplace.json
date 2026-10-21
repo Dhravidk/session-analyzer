@@ -1,0 +1,12 @@
+{
+  "name": "session-analyzer",
+  "description": "Development versions of the Session Analyzer Claude Code plugin.",
+  "owner": {"name": "Session Analyzer maintainers"},
+  "plugins": [
+    {
+      "name": "ally-session-analyzer",
+      "source": "./",
+      "description": "Local session accounting and source-reviewed task and instruction-compliance analysis."
+    }
+  ]
+}

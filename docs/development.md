@@ -28,7 +28,7 @@ Build the distributable plugin with `python3 scripts/package_plugin.py`. Packagi
 
 Raw sessions, `.analysis/`, generated `output/`, release `dist/`, private corpus inventories, credentials and caches stay local and ignored. Existing validation documents refer to some of these local artifacts; cloning the source repository does not copy those artifacts. Synthetic fixtures under `tests/fixtures/` are intentionally tracked.
 
-No Git remote is configured. Commits and tags provide local history, not an off-device backup. Adding a remote or publishing the repository requires a separate user instruction.
+The source repository is hosted at [Dhravidk/session-analyzer](https://github.com/Dhravidk/session-analyzer). Preserve the local history when pushing authorized work. New remotes, pushes, tags and releases require the user's instruction; source hosting does not authorize a stable release. Ignored private evidence and stores are not backed up by the source repository.
 
 
 For an opt-in headless Claude exercise on locally generated, clearly synthetic evidence:
